@@ -36,38 +36,34 @@ namespace SpecRec
 
         public I Create<I, T>(params object[] args) where T : class, I
         {
-            var interfaceType = typeof(I);
+            var obj = FetchObject<I, T>(args);
+            LogConstructorCall<I, T>(obj, args);
+            return obj;
+        }
 
-            // Check queued objects first (SetOne)
+        private I FetchObject<I, T>(object[] args) where T : class, I
+        {
+            var interfaceType = typeof(I);
+            
             if (_queuedObjects.ContainsKey(interfaceType) && _queuedObjects[interfaceType].Count > 0)
             {
-                var queuedObj = (I)_queuedObjects[interfaceType].Dequeue();
-
-                // If the queued object implements IConstructorCalledWith, call it with constructor args
-                if (queuedObj is IConstructorCalledWith constructorLogger)
-                {
-                    constructorLogger.ConstructorCalledWith(args);
-                }
-
-                return queuedObj;
+                return (I)_queuedObjects[interfaceType].Dequeue();
             }
-
-            // Then check always objects (SetAlways)
+            
             if (_alwaysObjects.ContainsKey(interfaceType))
             {
-                var alwaysObj = (I)_alwaysObjects[interfaceType];
-
-                // If always object implements IConstructorCalledWith, call it with constructor args
-                if (alwaysObj is IConstructorCalledWith constructorLogger)
-                {
-                    constructorLogger.ConstructorCalledWith(args);
-                }
-
-                return alwaysObj;
+                return (I)_alwaysObjects[interfaceType];
             }
-
-            // Default: create concrete implementation
+            
             return (T)Activator.CreateInstance(typeof(T), args)!;
+        }
+
+        private static void LogConstructorCall<I, T>(I obj, object[] args) where T : class, I
+        {
+            if (obj is IConstructorCalledWith constructorLogger)
+            {
+                constructorLogger.ConstructorCalledWith(args);
+            }
         }
 
         public void SetOne<T>(T obj)
