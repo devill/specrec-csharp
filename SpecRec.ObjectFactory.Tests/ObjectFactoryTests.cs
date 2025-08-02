@@ -235,6 +235,88 @@ public class ObjectFactoryTests
         Assert.Equal(123, mockObj.LastConstructorArgs[1]);
     }
 
+    [Fact]
+    public void Create_WithParentType_SetChildInstance_ReturnsChildAsParent()
+    {
+        var factory = new ObjectFactory();
+        var childInstance = new ChildClass("child value");
+        
+        factory.SetOne<ParentClass>(childInstance);
+        
+        var result = factory.Create<ParentClass>();
+        
+        Assert.Same(childInstance, result);
+        Assert.IsType<ChildClass>(result);
+        Assert.Equal("child value", ((ChildClass)result).ChildProperty);
+    }
+
+    [Fact]
+    public void Create_WithParentType_SetAlwaysChild_AlwaysReturnsChild()
+    {
+        var factory = new ObjectFactory();
+        var childInstance = new ChildClass("always child");
+        
+        factory.SetAlways<ParentClass>(childInstance);
+        
+        var result1 = factory.Create<ParentClass>();
+        var result2 = factory.Create<ParentClass>();
+        
+        Assert.Same(childInstance, result1);
+        Assert.Same(childInstance, result2);
+        Assert.IsType<ChildClass>(result1);
+        Assert.Equal("always child", ((ChildClass)result1).ChildProperty);
+    }
+
+    [Fact]
+    public void Create_WithParentType_NoSetup_CreatesParentDirectly()
+    {
+        var factory = new ObjectFactory();
+        
+        var result = factory.Create<ParentClass>();
+        
+        Assert.NotNull(result);
+        Assert.IsType<ParentClass>(result);
+        Assert.IsNotType<ChildClass>(result);
+    }
+
+    [Fact]
+    public void Create_WithParentType_ChildWithConstructorArgs_LogsCorrectly()
+    {
+        var factory = new ObjectFactory();
+        var mockChild = new MockChildClass();
+        
+        factory.SetOne<ParentClass>(mockChild);
+        
+        factory.Create<ParentClass>("parent arg", 42);
+        
+        Assert.NotNull(mockChild.LastConstructorArgs);
+        Assert.Equal(2, mockChild.LastConstructorArgs.Length);
+        Assert.Equal("parent arg", mockChild.LastConstructorArgs[0]);
+        Assert.Equal(42, mockChild.LastConstructorArgs[1]);
+    }
+
+    [Fact]
+    public void Create_WithParentType_SetOnePriorityOverSetAlways()
+    {
+        var factory = new ObjectFactory();
+        var alwaysChild = new ChildClass("always");
+        var queuedChild = new ChildClass("queued");
+        
+        factory.SetAlways<ParentClass>(alwaysChild);
+        factory.SetOne<ParentClass>(queuedChild);
+        
+        var result1 = factory.Create<ParentClass>();
+        var result2 = factory.Create<ParentClass>();
+        
+        // First call should return queued child
+        Assert.Same(queuedChild, result1);
+        Assert.Equal("queued", ((ChildClass)result1).ChildProperty);
+        
+        // Second call should return always child (queue is empty)
+        Assert.Same(alwaysChild, result2);
+        Assert.Equal("always", ((ChildClass)result2).ChildProperty);
+    }
+
     // Test helper classes
     public class TestClass
     {
@@ -323,6 +405,32 @@ public class ObjectFactoryTests
 
     public class TestServiceMock : ITestService
     {
+    }
+
+    // Test helper classes for inheritance scenarios
+    public class ParentClass
+    {
+        public string ParentProperty { get; set; } = "parent";
+    }
+
+    public class ChildClass : ParentClass
+    {
+        public string ChildProperty { get; }
+
+        public ChildClass(string childValue)
+        {
+            ChildProperty = childValue;
+        }
+    }
+
+    public class MockChildClass : ParentClass, IConstructorCalledWith
+    {
+        public object[]? LastConstructorArgs { get; private set; }
+
+        public void ConstructorCalledWith(params object[] args)
+        {
+            LastConstructorArgs = args;
+        }
     }
 
 }
