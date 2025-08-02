@@ -219,6 +219,22 @@ public class ObjectFactoryTests
         Assert.NotSame(testObj2, result2);
     }
 
+    [Fact]
+    public void Create_WithConstructorCalledWith_CallsMethodViaDelegation()
+    {
+        var factory = new ObjectFactory();
+        var mockObj = new MockTestImplementation();
+        
+        factory.SetOne<MockTestImplementation>(mockObj);
+        
+        factory.Create<MockTestImplementation>("arg1", 123);
+        
+        Assert.NotNull(mockObj.LastConstructorArgs);
+        Assert.Equal(2, mockObj.LastConstructorArgs.Length);
+        Assert.Equal("arg1", mockObj.LastConstructorArgs[0]);
+        Assert.Equal(123, mockObj.LastConstructorArgs[1]);
+    }
+
     // Test helper classes
     public class TestClass
     {

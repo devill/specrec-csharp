@@ -29,24 +29,9 @@ namespace SpecRec
             return _instance;
         }
 
-        public T Create<T>(params object[] args)
+        public T Create<T>(params object[] args) where T : class
         {
-            var type = typeof(T);
-
-            // Check if we have queued objects from SetOne calls
-            if (_queuedObjects.ContainsKey(type) && _queuedObjects[type].Count > 0)
-            {
-                return (T)_queuedObjects[type].Dequeue();
-            }
-
-            // Check if we have a SetAlways override
-            if (_alwaysObjects.ContainsKey(type))
-            {
-                return (T)_alwaysObjects[type];
-            }
-
-            // Default creation using reflection
-            return (T)Activator.CreateInstance(type, args)!;
+            return Create<T, T>(args);
         }
 
         public I Create<I, T>(params object[] args) where T : class, I
@@ -118,7 +103,7 @@ namespace SpecRec
     // Global convenience functions
     public static class ObjectCreation
     {
-        public static T Create<T>(params object[] args)
+        public static T Create<T>(params object[] args) where T : class
         {
             return ObjectFactory.Instance().Create<T>(args);
         }
