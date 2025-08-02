@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    
+    <!-- Package metadata -->
+    <PackageId>SpecRec</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>SpecRec</Authors>
+    <Description>SpecRec - Automated Legacy Testing Tools for .NET</Description>
+    <PackageTags>testing;legacy;dependency-injection;factory;specrec</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+</Project>
