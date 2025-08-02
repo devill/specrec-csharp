@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace SpecRec
 {
@@ -62,8 +63,94 @@ namespace SpecRec
         {
             if (obj is IConstructorCalledWith constructorLogger)
             {
-                constructorLogger.ConstructorCalledWith(args);
+                var parameterInfos = ExtractParameterInfo<T>(args);
+                constructorLogger.ConstructorCalledWith(parameterInfos);
             }
+        }
+
+        private static ConstructorParameterInfo[] ExtractParameterInfo<T>(object[] args) where T : class
+        {
+            var type = typeof(T);
+            var matchingConstructor = FindMatchingConstructor(type, args);
+            
+            return matchingConstructor == null 
+                ? CreateParameterInfosWithoutConstructor(args) 
+                : CreateParameterInfosFromConstructor(matchingConstructor, args);
+        }
+
+        private static ConstructorInfo? FindMatchingConstructor(Type type, object[] args)
+        {
+            var constructors = type.GetConstructors();
+
+            return constructors.FirstOrDefault(constructor => IsConstructorMatch(constructor, args));
+        }
+
+        private static bool IsConstructorMatch(ConstructorInfo constructor, object[] args)
+        {
+            var ctorParams = constructor.GetParameters();
+            if (ctorParams.Length != args.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < args.Length; i++)
+            {
+                if (args[i] != null && !ctorParams[i].ParameterType.IsAssignableFrom(args[i].GetType()))
+                {
+                    if (!IsPrimitiveCompatible(ctorParams[i].ParameterType, args[i].GetType()))
+                    {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+
+        private static ConstructorParameterInfo[] CreateParameterInfosFromConstructor(ConstructorInfo constructor, object[] args)
+        {
+            var parameters = constructor.GetParameters();
+            var parameterInfos = new ConstructorParameterInfo[parameters.Length];
+            
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                var parameter = parameters[i];
+                var value = i < args.Length ? args[i] : null;
+                parameterInfos[i] = new ConstructorParameterInfo(parameter.Name!, parameter.ParameterType, value);
+            }
+            
+            return parameterInfos;
+        }
+
+        private static ConstructorParameterInfo[] CreateParameterInfosWithoutConstructor(object[] args)
+        {
+            var parameterInfos = new ConstructorParameterInfo[args.Length];
+            
+            for (var i = 0; i < args.Length; i++)
+            {
+                var argType = args[i]?.GetType() ?? typeof(object);
+                parameterInfos[i] = new ConstructorParameterInfo($"arg{i}", argType, args[i]);
+            }
+            
+            return parameterInfos;
+        }
+
+        private static bool IsPrimitiveCompatible(Type parameterType, Type argumentType)
+        {
+            if (parameterType.IsAssignableFrom(argumentType)) return true;
+            
+            // Handle primitive to wrapper conversions
+            if (parameterType == typeof(int) && argumentType == typeof(int)) return true;
+            if (parameterType == typeof(string) && argumentType == typeof(string)) return true;
+            if (parameterType == typeof(bool) && argumentType == typeof(bool)) return true;
+            if (parameterType == typeof(double) && argumentType == typeof(double)) return true;
+            if (parameterType == typeof(float) && argumentType == typeof(float)) return true;
+            if (parameterType == typeof(long) && argumentType == typeof(long)) return true;
+            if (parameterType == typeof(char) && argumentType == typeof(char)) return true;
+            if (parameterType == typeof(byte) && argumentType == typeof(byte)) return true;
+            if (parameterType == typeof(short) && argumentType == typeof(short)) return true;
+            
+            return false;
         }
 
         public void SetOne<T>(T obj)

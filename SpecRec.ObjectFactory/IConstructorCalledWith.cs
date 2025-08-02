@@ -3,15 +3,15 @@ namespace SpecRec
     /// <summary>
     /// Interface for test doubles that need to log constructor arguments to the storybook.
     /// When a fake implements this interface, ObjectFactory will call 
-    /// ConstructorCalledWith with the exact arguments passed to Create.
+    /// ConstructorCalledWith with detailed parameter information including names, types, and values.
     /// </summary>
     public interface IConstructorCalledWith
     {
         /// <summary>
-        /// Called by ObjectFactory with the constructor arguments before object creation.
-        /// Implement this method to log constructor arguments to your storybook for test verification.
+        /// Called by ObjectFactory with detailed constructor parameter information before object creation.
+        /// This provides parameter names, types, and values for each constructor parameter.
         /// </summary>
-        /// <param name="args">The constructor arguments that will be passed to the real implementation</param>
-        void ConstructorCalledWith(params object[] args);
+        /// <param name="parameters">Array of parameter information including names, types, and values</param>
+        void ConstructorCalledWith(ConstructorParameterInfo[] parameters);
     }
 }

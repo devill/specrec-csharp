@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using static SpecRec.GlobalObjectFactory;
 
 namespace SpecRec.Tests;
@@ -346,10 +347,12 @@ public class ObjectFactoryTests
     public class MockTestImplementation : ITestInterface, IConstructorCalledWith
     {
         public object[]? LastConstructorArgs { get; private set; }
+        public ConstructorParameterInfo[]? LastParameterDetails { get; private set; }
 
-        public void ConstructorCalledWith(params object[] args)
+        public void ConstructorCalledWith(ConstructorParameterInfo[] parameters)
         {
-            LastConstructorArgs = args;
+            LastParameterDetails = parameters;
+            LastConstructorArgs = parameters.Select(p => p.Value).ToArray()!;
         }
     }
 
@@ -436,11 +439,98 @@ public class ObjectFactoryTests
     public class MockChildClass : ParentClass, IConstructorCalledWith
     {
         public object[]? LastConstructorArgs { get; private set; }
+        public ConstructorParameterInfo[]? LastParameterDetails { get; private set; }
 
-        public void ConstructorCalledWith(params object[] args)
+        public void ConstructorCalledWith(ConstructorParameterInfo[] parameters)
         {
-            LastConstructorArgs = args;
+            LastParameterDetails = parameters;
+            LastConstructorArgs = parameters.Select(p => p.Value).ToArray()!;
         }
     }
+
+
+    [Fact]
+    public void CreateGeneric_WithMock_CallsConstructorCalledWithParameterDetails()
+    {
+        var factory = new ObjectFactory();
+        var mockObj = new MockTestImplementation();
+        
+        factory.SetOne<ITestInterface>(mockObj);
+        
+        factory.Create<ITestInterface, TestImplementationWithConstructor>("testArg", 42);
+        
+        // Verify parameter details were extracted correctly
+        Assert.NotNull(mockObj.LastParameterDetails);
+        Assert.Equal(2, mockObj.LastParameterDetails.Length);
+        
+        Assert.Equal("name: String = testArg", mockObj.LastParameterDetails[0].ToString());
+        Assert.Equal("value: Int32 = 42", mockObj.LastParameterDetails[1].ToString());
+    }
+    
+    
+    public class TestImplementationWithConstructor : ITestInterface
+    {
+        public string Name { get; }
+        public int Value { get; }
+
+        public TestImplementationWithConstructor(string name, int value)
+        {
+            Name = name;
+            Value = value;
+        }
+    }
+
+    
+    [Fact]
+    public void Create_WithTestClassWithConstructor_ExtractsParameterNames()
+    {
+        var factory = new ObjectFactory();
+        var mockObj = new MockWithConstructor();
+        
+        factory.SetOne<TestClassWithConstructor>(mockObj);
+        
+        factory.Create<TestClassWithConstructor>("paramName", 99);
+        
+        Assert.NotNull(mockObj.LastParameterDetails);
+        Assert.Equal(2, mockObj.LastParameterDetails.Length);
+        
+        Assert.Equal("name: String = paramName", mockObj.LastParameterDetails[0].ToString());
+        Assert.Equal("value: Int32 = 99", mockObj.LastParameterDetails[1].ToString());
+    }
+    
+    [Fact]
+    public void Create_WithNoMatchingConstructor_UsesGenericParameterNames()
+    {
+        var factory = new ObjectFactory();
+        var mockObj = new MockTestImplementation();
+        
+        factory.SetOne<ITestInterface>(mockObj);
+        
+        factory.Create<ITestInterface, TestImplementation>("unexpected", 42);
+        
+        Assert.NotNull(mockObj.LastParameterDetails);
+        Assert.Equal(2, mockObj.LastParameterDetails.Length);
+        
+        Assert.Equal("arg0: String = unexpected", mockObj.LastParameterDetails[0].ToString());
+        Assert.Equal("arg1: Int32 = 42", mockObj.LastParameterDetails[1].ToString());
+    }
+    
+    public class MockWithConstructor : TestClassWithConstructor, IConstructorCalledWith
+    {
+        public object[]? LastConstructorArgs { get; private set; }
+        public ConstructorParameterInfo[]? LastParameterDetails { get; private set; }
+
+        public MockWithConstructor() : base("default", 0)
+        {
+        }
+
+        public void ConstructorCalledWith(ConstructorParameterInfo[] parameters)
+        {
+            LastParameterDetails = parameters;
+            LastConstructorArgs = parameters.Select(p => p.Value).ToArray()!;
+        }
+    }
+
+    
 
 }
