@@ -1,4 +1,5 @@
 using System;
+using static SpecRec.GlobalObjectFactory;
 
 namespace SpecRec.Tests;
 
@@ -356,14 +357,14 @@ public class ObjectFactoryTests
     {
     }
 
-    // Tests for ObjectCreation static convenience class
+    // Tests for GlobalObjectFactory static convenience class
     [Fact]
-    public void ObjectCreation_Create_UsesObjectFactoryInstance()
+    public void GlobalObjectFactory_Create_UsesObjectFactoryInstance()
     {
         var testObj = new TestClass();
         ObjectFactory.Instance().SetOne<TestClass>(testObj);
         
-        var result = ObjectCreation.Create<TestClass>();
+        var result = GlobalObjectFactory.Create<TestClass>();
         
         Assert.Same(testObj, result);
         
@@ -372,12 +373,12 @@ public class ObjectFactoryTests
     }
 
     [Fact]
-    public void ObjectCreation_CreateGeneric_UsesObjectFactoryInstance()
+    public void GlobalObjectFactory_CreateGeneric_UsesObjectFactoryInstance()
     {
         var mockObj = new TestServiceMock();
         ObjectFactory.Instance().SetOne<ITestService>(mockObj);
         
-        var result = ObjectCreation.Create<ITestService, TestServiceImpl>();
+        var result = GlobalObjectFactory.Create<ITestService, TestServiceImpl>();
         
         Assert.Same(mockObj, result);
         
@@ -386,12 +387,21 @@ public class ObjectFactoryTests
     }
 
     [Fact]
-    public void ObjectCreation_Create_PassesConstructorArgs()
+    public void GlobalObjectFactory_Create_PassesConstructorArgs()
     {
-        var result = ObjectCreation.Create<TestClassWithConstructor>("test", 42);
+        var result = GlobalObjectFactory.Create<TestClassWithConstructor>("test", 42);
         
         Assert.Equal("test", result.Name);
         Assert.Equal(42, result.Value);
+    }
+
+    [Fact]
+    public void DirectCreate_WithStaticImport_WorksWithoutClassPrefix()
+    {
+        var result = Create<TestClassWithConstructor>("direct", 99);
+        
+        Assert.Equal("direct", result.Name);
+        Assert.Equal(99, result.Value);
     }
 
     // Additional test helper classes for ObjectCreation tests

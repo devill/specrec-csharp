@@ -97,7 +97,7 @@ namespace SpecRec
     }
 
     // Global convenience functions
-    public static class ObjectCreation
+    public static class GlobalObjectFactory
     {
         public static T Create<T>(params object[] args) where T : class
         {
