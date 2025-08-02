@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpecRec.ObjectFactory", "SpecRec.ObjectFactory\SpecRec.ObjectFactory.csproj", "{7D33471A-9873-4F06-B63F-9E8C10A35823}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpecRec", "SpecRec\SpecRec.csproj", "{7D33471A-9873-4F06-B63F-9E8C10A35823}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpecRec.ObjectFactory.Tests", "SpecRec.ObjectFactory.Tests\SpecRec.ObjectFactory.Tests.csproj", "{349CA12F-C471-497C-9B8D-C8C51EE4AD72}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpecRec.Tests", "SpecRec.Tests\SpecRec.Tests.csproj", "{349CA12F-C471-497C-9B8D-C8C51EE4AD72}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

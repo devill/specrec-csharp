@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SpecRec.ObjectFactory\SpecRec.ObjectFactory.csproj" />
+    <ProjectReference Include="..\SpecRec\SpecRec.csproj" />
   </ItemGroup>
 
 </Project>
