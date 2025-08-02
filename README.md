@@ -20,6 +20,63 @@ SpecRec makes legacy code testable through automated instrumentation and transpa
 
 Replaces `new` keyword with controllable dependency injection for testing.
 
+#### Usage example
+
+Suppose you have an inconvenient `Repository` dependency that implements `IRepository`.
+
+```csharp
+class MyService 
+{
+    public void ComplexOperation() 
+    {
+        // Long and gnarly code
+        var repository = new Repository("rcon://user:pwd@example.com/");
+        // More code using the repository
+    }
+}
+```
+
+In many cases it is easy to break the dependency, but it can prove challenging if the call is several layers in.
+In such situations you can use ObjectFactory to break the dependency with minimal change:
+
+```csharp
+using static SpecRec.GlobalObjectFactory;
+
+class MyService 
+{
+    public void ComplexOperation() 
+    {
+        // Long and gnarly code
+        var repository = Create<IRepository, Repository>("rcon://user:pwd@example.com/");
+        var item = repository.FetchById(id);
+        // More code using the repository
+    }
+}
+```
+
+Now you can easily inject a test double:
+
+```csharp
+public class MyServiceTests
+{
+    private readonly ObjectFactory factory = new();
+    
+    [Fact]
+    public void TestWithTestDouble()
+    {
+        // Arrange
+        var fakeRepo = new FakeRepository();
+        factory.SetOne<IRepository>(fakeRepo);
+        
+        // Act
+        MyService.ComplexOperation();
+        
+        // Assert
+        // ...
+    }
+}
+```
+
 #### Basic Usage
 
 ```csharp
@@ -99,35 +156,6 @@ Or via Package Manager Console:
 
 ```powershell
 Install-Package SpecRec
-```
-
-## Test Integration
-
-Works seamlessly with popular .NET testing frameworks:
-
-### xUnit Example
-
-```csharp
-public class MyServiceTests
-{
-    private readonly ObjectFactory factory = new();
-    
-    [Fact]
-    public void TestWithMockedDependency()
-    {
-        // Arrange
-        var mockRepo = new MockRepository();
-        factory.SetOne<IRepository>(mockRepo);
-        
-        // Act
-        var service = factory.Create<MyService>();
-        var result = service.ProcessData("test");
-        
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal("test", mockRepo.LastQuery);
-    }
-}
 ```
 
 ## Planned Components
