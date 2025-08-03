@@ -326,7 +326,7 @@ namespace SpecRec
         /// <summary>
         /// Gets the StringBuilder containing all logged call information (read-only access).
         /// </summary>
-        public StringBuilder Specbook => _specbook;
+        public StringBuilder SpecBook => _specbook;
 
         public CallLogger(StringBuilder? specbook = null, string emoji = "")
         {

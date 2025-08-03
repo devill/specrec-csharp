@@ -18,7 +18,7 @@ namespace SpecRec.Tests
                     .withReturn("success")
                     .log("ManualMethod");
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -31,24 +31,24 @@ namespace SpecRec.Tests
                     .withReturn("result")
                     .log("TestMethod");
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
-            public async Task CallLogger_WithSharedSpecbook_ShouldAllowExternalWrites()
+            public async Task CallLogger_WithSharedSpecBook_ShouldAllowExternalWrites()
             {
-                var sharedSpecbook = new StringBuilder();
-                var logger = new CallLogger(sharedSpecbook);
+                var sharedSpecBook = new StringBuilder();
+                var logger = new CallLogger(sharedSpecBook);
                 var mockService = new TestService();
                 
-                sharedSpecbook.AppendLine("🧪 Test started");
+                sharedSpecBook.AppendLine("🧪 Test started");
                 
                 var wrappedService = logger.Wrap<ITestService>(mockService, "🔧");
                 wrappedService.Calculate(10, 20);
                 
-                sharedSpecbook.AppendLine("🧪 Test ended");
+                sharedSpecBook.AppendLine("🧪 Test ended");
                 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
         }
 
@@ -65,7 +65,7 @@ namespace SpecRec.Tests
                 wrappedService.Calculate(5, 10);
                 wrappedService.ProcessData("test input");
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -79,7 +79,7 @@ namespace SpecRec.Tests
                 wrappedService.Calculate(5, 10);
                 wrappedService.ProcessData("secret");
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -93,7 +93,7 @@ namespace SpecRec.Tests
                 string output;
                 wrappedService.TryProcess("input", out output);
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
         }
 
@@ -115,7 +115,7 @@ namespace SpecRec.Tests
 
                 wrappedService.ProcessTypes(dateTime, decimalValue, doubleValue, floatValue, array, null);
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -130,7 +130,7 @@ namespace SpecRec.Tests
                 var emptyList = new List<int>();
                 wrappedService.ProcessCollections(list, emptyList);
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
         }
 
@@ -146,7 +146,7 @@ namespace SpecRec.Tests
 
                 wrappedService.TryGetValue("key", out string value);
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -160,7 +160,7 @@ namespace SpecRec.Tests
                 int value = 10;
                 wrappedService.ModifyValue(ref value);
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -173,7 +173,7 @@ namespace SpecRec.Tests
 
                 wrappedService.ProcessNullArguments(null, null);
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -187,7 +187,7 @@ namespace SpecRec.Tests
                 var result = wrappedService.GetNullValue();
 
                 Assert.Null(result);
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -201,7 +201,7 @@ namespace SpecRec.Tests
                 var dict = new Dictionary<string, object> { { "key", "value" } };
                 wrappedService.ComplexMethod(dict, null, new DateTime(2025, 07, 03, 12, 42, 11));
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
         }
 
@@ -215,7 +215,7 @@ namespace SpecRec.Tests
 
                 logger.Wrap<IConstructorTestService>(mockService, "🏗️");
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -228,7 +228,7 @@ namespace SpecRec.Tests
                     .withArgument("param2", "arg2")
                     .log("ConstructorCalledWith");
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -241,7 +241,7 @@ namespace SpecRec.Tests
 
                 wrappedService.DoOperation();
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -257,7 +257,7 @@ namespace SpecRec.Tests
 
                 createdService.DoWork();
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
         }
 
@@ -273,7 +273,7 @@ namespace SpecRec.Tests
 
                 wrappedService.ProcessSecretData("public", "secret", "more public");
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -286,7 +286,7 @@ namespace SpecRec.Tests
 
                 wrappedService.GetSecret();
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -299,7 +299,7 @@ namespace SpecRec.Tests
 
                 wrappedService.DoWork();
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -330,7 +330,7 @@ namespace SpecRec.Tests
 
                 wrappedService.Dispose();
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -343,7 +343,7 @@ namespace SpecRec.Tests
 
                 wrappedService.ComplexMethod();
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -356,7 +356,7 @@ namespace SpecRec.Tests
 
                 wrappedService.Dispose();
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
         }
 
@@ -372,7 +372,7 @@ namespace SpecRec.Tests
 
                 Assert.Throws<TargetInvocationException>(() => wrappedService.ThrowException());
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
 
             [Fact]
@@ -385,7 +385,7 @@ namespace SpecRec.Tests
 
                 Assert.Throws<TargetInvocationException>(() => wrappedService.MethodThatAlwaysThrows());
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
         }
 
@@ -401,7 +401,7 @@ namespace SpecRec.Tests
 
                 wrappedService.DoSomething();
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
         }
 
@@ -420,7 +420,7 @@ namespace SpecRec.Tests
 
                 createdService.DoOperation();
 
-                await Verify(logger.Specbook.ToString());
+                await Verify(logger.SpecBook.ToString());
             }
         }
     }
