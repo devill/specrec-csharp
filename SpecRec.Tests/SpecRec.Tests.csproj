@@ -29,10 +29,85 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="CallLoggerTests.CallLogFormatterContext_IgnoreArgument_ShouldHideSpecificArgument.verified.txt">
+    <None Update="CallLoggerTests.BasicFunctionality.CallLogger_ForInterface_ShouldUseCustomInterfaceName.verified.txt">
       <DependentUpon>CallLoggerTests.cs</DependentUpon>
     </None>
-    <None Update="CallLoggerTests.CallLogger_WithSharedSpecbook_ShouldAllowExternalWrites.received.txt">
+    <None Update="CallLoggerTests.BasicFunctionality.CallLogger_ManualLogging_ShouldFormatCorrectly.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.BasicFunctionality.CallLogger_WithSharedSpecbook_ShouldAllowExternalWrites.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ConstructorLogging.CallLoggerProxy_WithAutoParameterNames_ShouldUseActualParameterNames.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ConstructorLogging.CallLogger_LogConstructorCall_ShouldFormatCorrectly.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ConstructorLogging.ConstructorCalledWith_ShouldLogConstructorCall.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ConstructorLogging.ConstructorCalledWith_WithCustomArgumentNames_ShouldUseProvidedNames.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.EdgeCases.CallLoggerProxy_WithObjectNotImplementingConstructorCalledWith_ShouldHandleGracefully.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ExceptionHandling.CallLoggerProxy_WithExceptionInMethod_ShouldLogExceptionAndRethrow.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ExceptionHandling.CallLogger_WithException_ShouldLogException.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.FormatterContext.CallLogFormatterContext_IgnoreArgument_ShouldHideSpecificArgument.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.FormatterContext.CallLogFormatterContext_IgnoreReturnValue_ShouldHideReturnValue.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.FormatterContext.CallLogFormatterContext_SetConstructorArgumentNames_ShouldUseCustomNames.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.InterfaceDetection.CallLoggerProxy_WithComplexInterfaceHierarchy_ShouldDetectCorrectInterface.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.InterfaceDetection.CallLoggerProxy_WithInterfaceImplementation_ShouldDetectInterface.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.InterfaceDetection.CallLoggerProxy_WithNonInterfaceName_ShouldFallbackToInterfaceDetection.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ObjectFactoryIntegration.CallLoggerProxy_IntegratedWithObjectFactory_ShouldLogConstructorCalls.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ParameterHandling.CallLoggerProxy_WithComplexArgumentTypes_ShouldHandleAllTypes.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ParameterHandling.CallLoggerProxy_WithMethodHavingOutParameters_ShouldLogOutValues.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ParameterHandling.CallLoggerProxy_WithMethodThatReturnsNull_ShouldLogCorrectly.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ParameterHandling.CallLoggerProxy_WithNullArguments_ShouldHandleGracefully.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ParameterHandling.CallLogger_WithRefParameters_ShouldLogRefValues.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ValueFormatting.FormatValue_ShouldHandleCollections.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.ValueFormatting.FormatValue_ShouldHandleDifferentTypes.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.WrappingBehavior.Wrap_ShouldLogAllMethodCalls.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.WrappingBehavior.Wrap_WithCallLogFormatter_ShouldRespectFormattingRules.verified.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerTests.WrappingBehavior.Wrap_WithOutParameter_ShouldLogOutValues.verified.txt">
       <DependentUpon>CallLoggerTests.cs</DependentUpon>
     </None>
   </ItemGroup>
