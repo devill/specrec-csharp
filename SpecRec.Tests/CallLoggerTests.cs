@@ -214,19 +214,6 @@ namespace SpecRec.Tests
         }
 
         [Fact]
-        public async Task CallLoggerProxy_WithNullMethodInfo_ShouldReturnNull()
-        {
-            var logger = new CallLogger();
-            var mockService = new TestService();
-
-            var wrappedService = logger.Wrap<ITestService>(mockService, "🚫");
-
-            // This test verifies the null method handling in Invoke method
-            // The proxy should handle null MethodInfo gracefully
-            Assert.NotNull(wrappedService);
-        }
-
-        [Fact]
         public async Task CallLoggerProxy_WithComplexInterfaceHierarchy_ShouldDetectCorrectInterface()
         {
             var logger = new CallLogger();
