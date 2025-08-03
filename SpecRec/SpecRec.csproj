@@ -7,13 +7,18 @@
     
     <!-- Package metadata -->
     <PackageId>SpecRec</PackageId>
-    <Version>0.0.2</Version>
+    <Version>0.0.4</Version>
     <Authors>SpecRec</Authors>
     <Description>SpecRec - Automated Legacy Testing Tools for .NET</Description>
     <PackageTags>testing;legacy;dependency-injection;factory;specrec</PackageTags>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>
