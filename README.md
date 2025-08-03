@@ -2,11 +2,13 @@
 
 **Automated Legacy Testing Tools for .NET**
 
+![Spec Rec Logo](./SpecRecLogo.png)
+
 ## Overview
 
 SpecRec makes legacy code testable through automated instrumentation and transparent record-replay capabilities. By replacing direct object instantiation with controllable factories and wrapping dependencies with recording proxies, SpecRec eliminates the manual effort required to characterize and test existing systems.
 
-**⚠️ This library is incomplete and under active development. Currently only the ObjectFactory component is implemented.**
+**⚠️ This library is incomplete and under active development. Currently the ObjectFactory and CallLogger components are implemented.**
 
 ## Core Principles
 
@@ -143,6 +145,159 @@ factory.Clear<MyClass>();
 // Clear all registered objects
 factory.ClearAll();
 ```
+
+
+### CallLogger
+
+Records method calls and constructor invocations to generate human-readable specifications for testing and documentation.
+
+#### Usage example
+
+When you have an untested legacy system it can become tedious to manually create tests. Part of that complexity
+comes from setting up mocks/spies manually. 
+
+The CallLogger solves this by creating a SpecBook that contains calls to specific outside collaborators that can
+then be approved using an approval testing framework. 
+
+First wrap the dependencies to automatically log all interactions:
+
+```csharp
+[Fact]
+public async Task MyServiceTest()
+{
+    var logger = new CallLogger();
+    
+    // Create a dummy, fake or stub
+    var fakeMessenger = new FakeMessenger();
+
+    // Wrap it with the logger
+    var loggedMessenger = logger.Wrap<IMessenger>(fakeMessenger, "📩");
+    
+    // Set up factory to return logged objects
+    factory.SetOne<IMessenger>(loggedMessenger);
+    
+    // Execute the operation
+    (new MyService()).Process();
+    
+    // Get human-readable specification
+    var expectedLog = logger.SpecBook.ToString();
+    
+    // Verify the result
+    await Verify(logger.SpecBook.ToString());
+}
+```
+
+The resulting SpecBook will look something like this:
+
+```
+📩 SendMessage:
+  🔸 recipient: user@example.com
+  🔸 subject: Welcome
+  🔸 body: Hello and welcome!
+  🔹 Returns: true
+```
+
+#### Specbook Format
+
+Method call format:
+```
+📩 MethodName:
+  🔸 parameter_name: parameter_value
+  🔸 out_parameter_name: out_parameter_value_before_the_call
+  ♦️ out_parameter_name: out_parameter_value_after_the_call
+  🔹 Returns: return_value
+```
+
+Constructor call format:
+```
+📩 IInterfaceName constructor called with:
+  🔸 parameter_name: parameter_value
+  🔸 parameter_name2: parameter_value2
+```
+
+#### Shared SpecBook
+
+Sometimes you may want to add your own logs to the SpecBook. Just create a string builder and pass it in:
+
+```csharp
+var sharedSpecBook = new StringBuilder();
+var logger = new CallLogger(sharedSpecBook);
+
+sharedSpecBook.AppendLine("🧪 Test: User Authentication Flow");
+
+var wrappedAuth = logger.Wrap<IAuthService>(authService, "🔐");
+var wrappedUser = logger.Wrap<IUserService>(userService, "👤");
+
+// Both services log to the same specification
+wrappedAuth.Login("user", "pass");
+wrappedUser.GetProfile(userId);
+
+sharedSpecBook.AppendLine("✅ Authentication completed");
+```
+
+
+#### Constructor Logging
+
+When used with the ObjectFactory, Objects implementing `IConstructorCalledWith` will have their constructor calls
+logged as well. 
+
+In some cases if a matching constructor is not found then the default `arg0`, `arg1` etc. names are used. 
+If you want you can customize constructor parameter names for such constructor calls:
+
+```csharp
+public class DatabaseService : IDatabaseService, IConstructorCalledWith
+{
+    public DatabaseService(string connectionString, int timeout) { }
+    
+    public void ConstructorCalledWith(ConstructorParameterInfo[] parameters)
+    {
+        CallLogFormatterContext.SetConstructorArgumentNames("dbConnection", "timeoutSeconds");
+    }
+}
+```
+
+
+#### Controlling Log Output
+
+Use `CallLogFormatterContext` within methods to control what gets logged:
+
+```csharp
+public void ProcessSecretData(string publicData, string secretKey)
+{
+    CallLogFormatterContext.IgnoreArgument(1); // Hide secretKey
+    CallLogFormatterContext.AddNote("Processing with security protocols");
+    // Method logic here
+}
+
+public string GetAuthToken()
+{
+    CallLogFormatterContext.IgnoreReturnValue(); // Hide sensitive return value
+    return "secret-token";
+}
+
+public void InternalMethod()
+{
+    CallLogFormatterContext.IgnoreCall(); // Skip logging this call entirely
+}
+```
+
+#### Manual Logging
+
+Although not advised, you have the option to log calls manually. 
+
+```csharp
+var logger = new CallLogger();
+
+// Build detailed call logs manually
+logger.withArgument("user123", "userId")
+    .withArgument(true, "isActive")
+    .withNote("Validates user permissions")
+    .withReturn("authorized")
+    .log("CheckUserAccess");
+
+var spec = logger.SpecBook.ToString();
+```
+
 
 ## NuGet Package
 

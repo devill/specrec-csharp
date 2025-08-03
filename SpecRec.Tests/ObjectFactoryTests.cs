@@ -253,7 +253,7 @@ public class ObjectFactoryTests
         }
 
         [Fact]
-        public void CreateGeneric_WithMock_CallsConstructorCalledWithParameterDetails()
+        public async Task CreateGeneric_WithMock_CallsConstructorCalledWithParameterDetails()
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestImplementation();
@@ -262,16 +262,14 @@ public class ObjectFactoryTests
             
             factory.Create<ITestInterface, TestClassWithConstructor>("testArg", 42);
             
-            // Verify parameter details were extracted correctly
             Assert.NotNull(mockObj.LastParameterDetails);
-            Assert.Equal(2, mockObj.LastParameterDetails.Length);
+            var parameterStrings = string.Join("\n", mockObj.LastParameterDetails.Select(p => p.ToString()));
             
-            Assert.Equal("name: String = testArg", mockObj.LastParameterDetails[0].ToString());
-            Assert.Equal("value: Int32 = 42", mockObj.LastParameterDetails[1].ToString());
+            await Verify(parameterStrings);
         }
         
         [Fact]
-        public void Create_WithTestClassWithConstructor_ExtractsParameterNames()
+        public async Task Create_WithTestClassWithConstructor_ExtractsParameterNames()
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestClassWithConstructor();
@@ -281,14 +279,13 @@ public class ObjectFactoryTests
             factory.Create<TestClassWithConstructor>("paramName", 99);
             
             Assert.NotNull(mockObj.LastParameterDetails);
-            Assert.Equal(2, mockObj.LastParameterDetails.Length);
+            var parameterStrings = string.Join("\n", mockObj.LastParameterDetails.Select(p => p.ToString()));
             
-            Assert.Equal("name: String = paramName", mockObj.LastParameterDetails[0].ToString());
-            Assert.Equal("value: Int32 = 99", mockObj.LastParameterDetails[1].ToString());
+            await Verify(parameterStrings);
         }
         
         [Fact]
-        public void Create_WithNoMatchingConstructor_UsesGenericParameterNames()
+        public async Task Create_WithNoMatchingConstructor_UsesGenericParameterNames()
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestImplementation();
@@ -298,10 +295,9 @@ public class ObjectFactoryTests
             factory.Create<ITestInterface, TestImplementation>("unexpected", 42);
             
             Assert.NotNull(mockObj.LastParameterDetails);
-            Assert.Equal(2, mockObj.LastParameterDetails.Length);
+            var parameterStrings = string.Join("\n", mockObj.LastParameterDetails.Select(p => p.ToString()));
             
-            Assert.Equal("arg0: String = unexpected", mockObj.LastParameterDetails[0].ToString());
-            Assert.Equal("arg1: Int32 = 42", mockObj.LastParameterDetails[1].ToString());
+            await Verify(parameterStrings);
         }
     }
 

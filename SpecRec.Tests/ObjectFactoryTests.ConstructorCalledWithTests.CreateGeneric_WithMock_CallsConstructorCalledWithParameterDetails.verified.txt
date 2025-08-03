@@ -1,0 +1,2 @@
+﻿name: String = testArg
+value: Int32 = 42
