@@ -1,0 +1,6 @@
+﻿🔍 TryProcess:
+  🔸 input: input
+  🔸 output: out
+  ♦️ output: processed_input
+  🔹 Returns: True
+

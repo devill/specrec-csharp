@@ -1,0 +1,4 @@
+﻿⚫ ProcessNullArguments:
+  🔸 first: null
+  🔸 second: null
+

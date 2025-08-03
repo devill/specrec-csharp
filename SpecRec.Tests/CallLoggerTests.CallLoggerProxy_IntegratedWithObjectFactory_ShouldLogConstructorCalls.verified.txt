@@ -1,0 +1,7 @@
+﻿🏭 IDetailedConstructorService constructor called with:
+  🔸 connectionString: factory-param
+  🔸 portNumber: 456
+  🔸 sslEnabled: True
+
+🏭 DoOperation:
+

@@ -1,0 +1,6 @@
+﻿📤 TryGetValue:
+  🔸 key: key
+  🔸 value: out
+  ♦️ value: found-key
+  🔹 Returns: True
+

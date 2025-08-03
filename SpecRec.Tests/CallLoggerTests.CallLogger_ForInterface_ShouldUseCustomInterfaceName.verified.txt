@@ -1,0 +1,4 @@
+﻿ TestMethod:
+  🔸 param1: test
+  🔹 Returns: result
+

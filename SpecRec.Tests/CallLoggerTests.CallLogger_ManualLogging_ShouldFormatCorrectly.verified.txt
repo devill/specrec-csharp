@@ -1,0 +1,6 @@
+﻿ ManualMethod:
+  🔸 firstParam: value1
+  🔸 secondParam: value2
+  🗒️ Manual logging test
+  🔹 Returns: success
+

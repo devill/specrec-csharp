@@ -1,0 +1,8 @@
+﻿🎯 ProcessTypes:
+  🔸 date: 12/25/2023 10:30:45
+  🔸 money: 123.45
+  🔸 precision: 67.89
+  🔸 single: 12.34
+  🔸 numbers: 1,2,3
+  🔸 nullValue: null
+

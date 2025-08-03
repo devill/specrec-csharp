@@ -1,0 +1,6 @@
+﻿🔧 IAutoParameterNamesService constructor called with:
+  🔸 connectionString: dbConnection
+  🔸 port: 5432
+
+🔧 DoWork:
+

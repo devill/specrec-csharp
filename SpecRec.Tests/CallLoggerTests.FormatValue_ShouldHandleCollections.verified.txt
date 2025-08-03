@@ -1,0 +1,4 @@
+﻿📚 ProcessCollections:
+  🔸 stringList: item1,item2,item3
+  🔸 emptyList: 
+
