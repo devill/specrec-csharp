@@ -1,4 +1,4 @@
-🧪 Test started
+﻿🧪 Test started
 🔧 Calculate:
   🔸 a: 10
   🔸 b: 20
