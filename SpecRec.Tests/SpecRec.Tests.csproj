@@ -32,6 +32,9 @@
     <None Update="CallLoggerTests.CallLogFormatterContext_IgnoreArgument_ShouldHideSpecificArgument.verified.txt">
       <DependentUpon>CallLoggerTests.cs</DependentUpon>
     </None>
+    <None Update="CallLoggerTests.CallLogger_WithSharedSpecbook_ShouldAllowExternalWrites.received.txt">
+      <DependentUpon>CallLoggerTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

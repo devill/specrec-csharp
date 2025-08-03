@@ -323,9 +323,14 @@ namespace SpecRec
         internal readonly HashSet<string> _ignoredAllArguments = new();
         internal readonly HashSet<string> _ignoredReturnValues = new();
 
-        public CallLogger(StringBuilder specbook, string emoji = "")
+        /// <summary>
+        /// Gets the StringBuilder containing all logged call information (read-only access).
+        /// </summary>
+        public StringBuilder Specbook => _specbook;
+
+        public CallLogger(StringBuilder? specbook = null, string emoji = "")
         {
-            _specbook = specbook;
+            _specbook = specbook ?? new StringBuilder();
             _emoji = emoji;
         }
 
