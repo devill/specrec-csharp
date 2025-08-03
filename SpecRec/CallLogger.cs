@@ -102,7 +102,7 @@ namespace SpecRec
 
         private void SetupContextForTarget(object?[] args)
         {
-            CallLogFormatterContext.SetCurrentLogger(new CallLogger(_logger._storybook, _emoji));
+            CallLogFormatterContext.SetCurrentLogger(new CallLogger(_logger._specbook, _emoji));
             CallLogFormatterContext.SetCurrentMethodName("ConstructorCalledWith");
         }
 
@@ -139,7 +139,7 @@ namespace SpecRec
 
         private void LogConstructorCall(string interfaceName, ConstructorParameterInfo[] parameters)
         {
-            var callLogger = new CallLogger(_logger._storybook, _emoji);
+            var callLogger = new CallLogger(_logger._specbook, _emoji);
             callLogger.forInterface(interfaceName);
 
             AddConstructorArguments(callLogger, parameters);
@@ -219,7 +219,7 @@ namespace SpecRec
         {
             callLogger.withNote($"Exception: {ex.Message}");
             callLogger.log(methodName);
-            _logger._storybook.Append(callLogger._storybook.ToString());
+            _logger._specbook.Append(callLogger._specbook.ToString());
             CallLogFormatterContext.ClearCurrentLogger();
         }
 
@@ -235,7 +235,7 @@ namespace SpecRec
             LogOutputParameters(callLogger, targetMethod, args);
             
             callLogger.log(methodName);
-            _logger._storybook.Append(callLogger._storybook.ToString());
+            _logger._specbook.Append(callLogger._specbook.ToString());
         }
 
         private void LogInputArguments(CallLogger callLogger, MethodInfo targetMethod, object?[]? args, string methodName)
@@ -309,7 +309,7 @@ namespace SpecRec
 
     public class CallLogger
     {
-        internal readonly StringBuilder _storybook;
+        internal readonly StringBuilder _specbook;
         private readonly string _emoji;
         private object? _returnValue;
         private string? _note;
@@ -323,9 +323,9 @@ namespace SpecRec
         internal readonly HashSet<string> _ignoredAllArguments = new();
         internal readonly HashSet<string> _ignoredReturnValues = new();
 
-        public CallLogger(StringBuilder storybook, string emoji = "")
+        public CallLogger(StringBuilder specbook, string emoji = "")
         {
-            _storybook = storybook;
+            _specbook = specbook;
             _emoji = emoji;
         }
 
@@ -389,39 +389,39 @@ namespace SpecRec
         private void LogConstructorCall()
         {
             var interfaceName = _forcedInterfaceName ?? GetInterfaceName();
-            _storybook.AppendLine($"{_emoji} {interfaceName} constructor called with:");
+            _specbook.AppendLine($"{_emoji} {interfaceName} constructor called with:");
 
             foreach (var (name, value, emoji) in _parameters)
             {
-                _storybook.AppendLine($"  {emoji} {name}: {value}");
+                _specbook.AppendLine($"  {emoji} {name}: {value}");
             }
 
-            _storybook.AppendLine();
+            _specbook.AppendLine();
         }
 
         private void LogMethodCall()
         {
             // Use detailed format for all calls
-            _storybook.AppendLine($"{_emoji} {_methodName}:");
+            _specbook.AppendLine($"{_emoji} {_methodName}:");
 
             foreach (var (name, value, emoji) in _parameters)
             {
                 var formattedValue = FormatValue(value);
-                _storybook.AppendLine($"  {emoji} {name}: {formattedValue}");
+                _specbook.AppendLine($"  {emoji} {name}: {formattedValue}");
             }
 
             if (!string.IsNullOrEmpty(_note))
             {
-                _storybook.AppendLine($"  🗒️ {_note}");
+                _specbook.AppendLine($"  🗒️ {_note}");
             }
 
             if (_returnValue != null)
             {
                 var formattedReturn = FormatValue(_returnValue);
-                _storybook.AppendLine($"  🔹 Returns: {formattedReturn}");
+                _specbook.AppendLine($"  🔹 Returns: {formattedReturn}");
             }
 
-            _storybook.AppendLine();
+            _specbook.AppendLine();
         }
 
 

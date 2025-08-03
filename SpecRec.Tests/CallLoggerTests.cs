@@ -11,8 +11,8 @@ namespace SpecRec.Tests
         [Fact]
         public async Task Wrap_ShouldLogAllMethodCalls()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new TestService();
 
             var wrappedService = logger.Wrap<ITestService>(mockService, "🧪");
@@ -20,14 +20,14 @@ namespace SpecRec.Tests
             var result = wrappedService.Calculate(5, 10);
             wrappedService.ProcessData("test input");
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task Wrap_WithCallLogFormatter_ShouldRespectFormattingRules()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new FormattedTestService();
 
             var wrappedService = logger.Wrap<ITestService>(mockService, "📝");
@@ -35,14 +35,14 @@ namespace SpecRec.Tests
             wrappedService.Calculate(5, 10);
             wrappedService.ProcessData("secret");
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task Wrap_WithOutParameter_ShouldLogOutValues()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new TestService();
 
             var wrappedService = logger.Wrap<ITestService>(mockService, "🔍");
@@ -50,56 +50,56 @@ namespace SpecRec.Tests
             string output;
             var result = wrappedService.TryProcess("input", out output);
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLogFormatterContext_IgnoreArgument_ShouldHideSpecificArgument()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new IgnoreArgumentTestService();
 
             var wrappedService = logger.Wrap<IIgnoreTestService>(mockService, "🔒");
 
             wrappedService.ProcessSecretData("public", "secret", "more public");
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLogFormatterContext_IgnoreReturnValue_ShouldHideReturnValue()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new IgnoreReturnTestService();
 
             var wrappedService = logger.Wrap<IIgnoreTestService>(mockService, "🙈");
 
             var result = wrappedService.GetSecret();
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLogFormatterContext_SetConstructorArgumentNames_ShouldUseCustomNames()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new ConstructorTestService("config", 42);
 
             var wrappedService = logger.Wrap<IConstructorTestService>(mockService, "🏗️");
 
             wrappedService.DoWork();
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task FormatValue_ShouldHandleDifferentTypes()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new TypeTestService();
 
             var wrappedService = logger.Wrap<ITypeTestService>(mockService, "🎯");
@@ -112,28 +112,28 @@ namespace SpecRec.Tests
 
             wrappedService.ProcessTypes(dateTime, decimalValue, doubleValue, floatValue, array, null);
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLogger_ForInterface_ShouldUseCustomInterfaceName()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
 
             logger.forInterface("ICustomService")
                 .withArgument("test", "param1")
                 .withReturn("result")
                 .log("TestMethod");
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLogger_ManualLogging_ShouldFormatCorrectly()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
 
             logger.withArgument("value1", "firstParam")
                 .withArgument("value2", "secondParam")
@@ -141,40 +141,40 @@ namespace SpecRec.Tests
                 .withReturn("success")
                 .log("ManualMethod");
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task ConstructorCalledWith_ShouldLogConstructorCall()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new ConstructorTestService("config", 42);
 
             var wrappedService = logger.Wrap<IConstructorTestService>(mockService, "🏗️");
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLogger_LogConstructorCall_ShouldFormatCorrectly()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
 
             logger.forInterface("ITestService")
                 .withArgument("param1", "arg1")
                 .withArgument("param2", "arg2")
                 .log("ConstructorCalledWith");
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task FormatValue_ShouldHandleCollections()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new CollectionTestService();
 
             var wrappedService = logger.Wrap<ICollectionTestService>(mockService, "📚");
@@ -183,7 +183,7 @@ namespace SpecRec.Tests
             var emptyList = new List<int>();
             wrappedService.ProcessCollections(list, emptyList);
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
@@ -204,22 +204,22 @@ namespace SpecRec.Tests
         [Fact]
         public async Task CallLogger_WithException_ShouldLogException()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new ExceptionTestService();
 
             var wrappedService = logger.Wrap<IExceptionTestService>(mockService, "💥");
 
             Assert.Throws<TargetInvocationException>(() => wrappedService.ThrowException());
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLogger_WithRefParameters_ShouldLogRefValues()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new RefTestService();
 
             var wrappedService = logger.Wrap<IRefTestService>(mockService, "🔄");
@@ -227,14 +227,14 @@ namespace SpecRec.Tests
             int value = 10;
             wrappedService.ModifyValue(ref value);
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithNullMethodInfo_ShouldReturnNull()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new TestService();
 
             var wrappedService = logger.Wrap<ITestService>(mockService, "🚫");
@@ -247,64 +247,64 @@ namespace SpecRec.Tests
         [Fact]
         public async Task CallLoggerProxy_WithComplexInterfaceHierarchy_ShouldDetectCorrectInterface()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new ComplexHierarchyService();
 
             var wrappedService = logger.Wrap<IComplexService>(mockService, "🏗️");
 
             wrappedService.ComplexMethod();
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithNullArguments_ShouldHandleGracefully()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new NullArgumentTestService();
 
             var wrappedService = logger.Wrap<INullArgumentTestService>(mockService, "⚫");
 
             wrappedService.ProcessNullArguments(null, null);
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task ConstructorCalledWith_WithCustomArgumentNames_ShouldUseProvidedNames()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new DetailedConstructorService("database.db", 5432, true);
 
             var wrappedService = logger.Wrap<IDetailedConstructorService>(mockService, "🔧");
 
             wrappedService.DoOperation();
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithInterfaceImplementation_ShouldDetectInterface()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new ConcreteClassWithInterface();
 
             var wrappedService = logger.Wrap<IDisposable>(mockService, "🎯");
 
             wrappedService.Dispose();
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithMethodThatReturnsNull_ShouldLogCorrectly()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new NullReturnService();
 
             var wrappedService = logger.Wrap<INullReturnService>(mockService, "🫥");
@@ -312,70 +312,70 @@ namespace SpecRec.Tests
             var result = wrappedService.GetNullValue();
 
             Assert.Null(result);
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithObjectNotImplementingConstructorCalledWith_ShouldHandleGracefully()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new SimpleServiceWithoutCallback();
 
             var wrappedService = logger.Wrap<ISimpleService>(mockService, "🎯");
 
             wrappedService.DoSomething();
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithNonInterfaceName_ShouldFallbackToInterfaceDetection()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new ConcreteClassWithMultipleInterfaces();
 
             var wrappedService = logger.Wrap<IDisposable>(mockService, "🔍");
 
             wrappedService.Dispose();
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithMethodHavingOutParameters_ShouldLogOutValues()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new OutParameterService();
 
             var wrappedService = logger.Wrap<IOutParameterService>(mockService, "📤");
 
             var success = wrappedService.TryGetValue("key", out string value);
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithExceptionInMethod_ShouldLogExceptionAndRethrow()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new ExceptionDuringExecutionService();
 
             var wrappedService = logger.Wrap<IExceptionDuringExecutionService>(mockService, "💥");
 
             Assert.Throws<TargetInvocationException>(() => wrappedService.MethodThatAlwaysThrows());
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithComplexArgumentTypes_ShouldHandleAllTypes()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var mockService = new ComplexArgumentService();
 
             var wrappedService = logger.Wrap<IComplexArgumentService>(mockService, "🧩");
@@ -383,14 +383,14 @@ namespace SpecRec.Tests
             var dict = new Dictionary<string, object> { { "key", "value" } };
             wrappedService.ComplexMethod(dict, null, new DateTime(2025, 07, 03, 12, 42, 11));
 
-            await Verify(storybook.ToString());
+            await Verify(specbook.ToString());
         }
 
         [Fact]
         public async Task CallLoggerProxy_WithAutoParameterNames_ShouldUseActualParameterNames()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var factory = ObjectFactory.Instance();
 
             try
@@ -405,7 +405,7 @@ namespace SpecRec.Tests
 
                 createdService.DoWork();
 
-                await Verify(storybook.ToString());
+                await Verify(specbook.ToString());
             }
             finally
             {
@@ -416,8 +416,8 @@ namespace SpecRec.Tests
         [Fact]
         public async Task CallLoggerProxy_IntegratedWithObjectFactory_ShouldLogConstructorCalls()
         {
-            var storybook = new StringBuilder();
-            var logger = new CallLogger(storybook);
+            var specbook = new StringBuilder();
+            var logger = new CallLogger(specbook);
             var factory = ObjectFactory.Instance();
 
             try
@@ -434,7 +434,7 @@ namespace SpecRec.Tests
 
                 createdService.DoOperation();
 
-                await Verify(storybook.ToString());
+                await Verify(specbook.ToString());
             }
             finally
             {
