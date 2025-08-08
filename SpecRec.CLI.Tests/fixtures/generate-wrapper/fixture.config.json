@@ -1,0 +1,8 @@
+[
+  {
+    "id": "basic-wrapper",
+    "description": "Generate wrapper and interface for DatabaseService class",
+    "command": "generate-wrapper DatabaseService.cs",
+    "skip": false
+  }
+]
