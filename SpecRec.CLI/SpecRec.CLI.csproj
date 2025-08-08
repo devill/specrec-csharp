@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    
+    <!-- NuGet Tool Configuration -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>specrec</ToolCommandName>
+    
+    <!-- Package metadata -->
+    <PackageId>SpecRec.CLI</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>SpecRec</Authors>
+    <Description>CLI tool for generating C# wrapper classes and interfaces for dependency injection</Description>
+    <PackageTags>testing;legacy;dependency-injection;wrapper-generation;cli;specrec</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.8.0" />
+    <PackageReference Include="System.Reflection.Metadata" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>
