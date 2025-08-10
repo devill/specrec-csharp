@@ -1,2 +1,4 @@
 Generated wrapper class: MixedMethodsServiceWrapper.cs
 Generated interface: IMixedMethodsService.cs
+Generated static wrapper class: MixedMethodsServiceStaticWrapper.cs
+Generated static interface: IMixedMethodsServiceStaticWrapper.cs

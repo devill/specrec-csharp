@@ -6,18 +6,6 @@
     "skip": true
   },
   {
-    "id": "static-only-class",
-    "description": "Try to wrap purely static class",
-    "command": "generate-wrapper MathUtils.cs",
-    "skip": true
-  },
-  {
-    "id": "private-class",
-    "description": "Try to wrap private class",
-    "command": "generate-wrapper PrivateImplementation.cs",
-    "skip": true
-  },
-  {
     "id": "invalid-syntax",
     "description": "Try to wrap from file with syntax errors",
     "command": "generate-wrapper BrokenClass.cs",
