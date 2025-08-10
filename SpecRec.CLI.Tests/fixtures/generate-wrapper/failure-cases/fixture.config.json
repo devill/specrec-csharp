@@ -1,0 +1,38 @@
+[
+  {
+    "id": "nonexistent-class",
+    "description": "Try to wrap class that doesn't exist",
+    "command": "generate-wrapper NonExistentClass.cs",
+    "skip": true
+  },
+  {
+    "id": "static-only-class",
+    "description": "Try to wrap purely static class",
+    "command": "generate-wrapper MathUtils.cs",
+    "skip": true
+  },
+  {
+    "id": "private-class",
+    "description": "Try to wrap private class",
+    "command": "generate-wrapper PrivateImplementation.cs",
+    "skip": true
+  },
+  {
+    "id": "invalid-syntax",
+    "description": "Try to wrap from file with syntax errors",
+    "command": "generate-wrapper BrokenClass.cs",
+    "skip": true
+  },
+  {
+    "id": "empty-file",
+    "description": "Try to wrap from empty C# file",
+    "command": "generate-wrapper EmptyFile.cs",
+    "skip": true
+  },
+  {
+    "id": "invalid-arguments",
+    "description": "Wrong number of arguments",
+    "command": "generate-wrapper",
+    "skip": true
+  }
+]

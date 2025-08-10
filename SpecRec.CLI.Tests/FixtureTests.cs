@@ -64,15 +64,19 @@ public class FixtureTests
         
         foreach (var commandDir in Directory.GetDirectories(fixturesPath))
         {
-            var configPath = Path.Combine(commandDir, "fixture.config.json");
-            if (!File.Exists(configPath)) continue;
-
-            var configJson = File.ReadAllText(configPath);
-            var configs = JsonSerializer.Deserialize<FixtureConfig[]>(configJson) ?? Array.Empty<FixtureConfig>();
-
-            foreach (var config in configs)
+            // Look for subdirectories containing fixture configs
+            foreach (var subDir in Directory.GetDirectories(commandDir))
             {
-                yield return new object[] { commandDir, config };
+                var configPath = Path.Combine(subDir, "fixture.config.json");
+                if (!File.Exists(configPath)) continue;
+
+                var configJson = File.ReadAllText(configPath);
+                var configs = JsonSerializer.Deserialize<FixtureConfig[]>(configJson) ?? Array.Empty<FixtureConfig>();
+
+                foreach (var config in configs)
+                {
+                    yield return new object[] { subDir, config };
+                }
             }
         }
     }

@@ -1,0 +1,54 @@
+using System;
+using System.Collections.Generic;
+
+namespace EdgeCases
+{
+    public class NotificationServiceWrapper : INotificationServiceWrapper
+    {
+        private readonly NotificationService _wrapped;
+
+        public NotificationServiceWrapper(NotificationService wrapped)
+        {
+            _wrapped = wrapped;
+        }
+
+        // From INotificationService
+        public bool IsEnabled
+        {
+            get => _wrapped.IsEnabled;
+            set => _wrapped.IsEnabled = value;
+        }
+
+        public void SendNotification(string message)
+        {
+            _wrapped.SendNotification(message);
+        }
+
+        // From IDisposable
+        public void Dispose()
+        {
+            _wrapped.Dispose();
+        }
+
+        // Additional public methods from NotificationService
+        public string[] GetSentNotifications()
+        {
+            return _wrapped.GetSentNotifications();
+        }
+
+        public void ClearNotifications()
+        {
+            _wrapped.ClearNotifications();
+        }
+
+        public int GetNotificationCount()
+        {
+            return _wrapped.GetNotificationCount();
+        }
+
+        public void SendBulkNotifications(string[] messages)
+        {
+            _wrapped.SendBulkNotifications(messages);
+        }
+    }
+}
