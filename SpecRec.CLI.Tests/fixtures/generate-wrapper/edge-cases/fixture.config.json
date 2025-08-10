@@ -13,7 +13,7 @@
   },
   {
     "id": "static-methods",
-    "description": "Generate wrapper for class with both static and instance methods (should only wrap instance)",
+    "description": "Generate wrapper for class with both static and instance methods (generates both instance and static wrappers)",
     "command": "generate-wrapper MixedMethodsService.cs",
     "skip": true
   },
@@ -57,6 +57,18 @@
     "id": "ref-out-params",
     "description": "Generate wrapper for class with ref/out parameters",
     "command": "generate-wrapper ParserService.cs",
+    "skip": true
+  },
+  {
+    "id": "private-class",
+    "description": "Generate wrapper for private class (generates private wrapper)",
+    "command": "generate-wrapper PrivateImplementation.cs",
+    "skip": true
+  },
+  {
+    "id": "static-only-class-wrapper",
+    "description": "Generate static wrapper for purely static class",
+    "command": "generate-wrapper MathUtils.cs",
     "skip": true
   }
 ]
