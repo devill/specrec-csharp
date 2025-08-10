@@ -1,0 +1,26 @@
+[
+  {
+    "id": "basic-wrapper",
+    "description": "Generate wrapper and interface for simple class with single method",
+    "command": "generate-wrapper DatabaseService.cs",
+    "skip": true
+  },
+  {
+    "id": "multiple-methods",
+    "description": "Generate wrapper for class with multiple method signatures",
+    "command": "generate-wrapper UserService.cs",
+    "skip": true
+  },
+  {
+    "id": "properties-wrapper", 
+    "description": "Generate wrapper for class with properties and auto-properties",
+    "command": "generate-wrapper ConfigService.cs",
+    "skip": true
+  },
+  {
+    "id": "constructor-params",
+    "description": "Generate wrapper for class with constructor parameters",
+    "command": "generate-wrapper LogService.cs",
+    "skip": true
+  }
+]

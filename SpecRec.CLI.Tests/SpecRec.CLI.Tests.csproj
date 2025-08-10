@@ -26,4 +26,9 @@
     <ProjectReference Include="..\SpecRec.CLI\SpecRec.CLI.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="fixtures/**/*.cs" />
+    <None Include="fixtures/**/*" />
+  </ItemGroup>
+
 </Project>

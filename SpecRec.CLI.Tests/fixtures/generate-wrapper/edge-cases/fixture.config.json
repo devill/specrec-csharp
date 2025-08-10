@@ -1,0 +1,62 @@
+[
+  {
+    "id": "generic-class",
+    "description": "Generate wrapper for generic class with type constraints",
+    "command": "generate-wrapper Repository.cs",
+    "skip": true
+  },
+  {
+    "id": "async-methods",
+    "description": "Generate wrapper for class with async/await methods",
+    "command": "generate-wrapper AsyncService.cs",
+    "skip": true
+  },
+  {
+    "id": "static-methods",
+    "description": "Generate wrapper for class with both static and instance methods (should only wrap instance)",
+    "command": "generate-wrapper MixedMethodsService.cs",
+    "skip": true
+  },
+  {
+    "id": "overloaded-methods",
+    "description": "Generate wrapper for class with method overloading",
+    "command": "generate-wrapper CalculatorService.cs",
+    "skip": true
+  },
+  {
+    "id": "nested-class",
+    "description": "Generate wrapper for class with nested public classes",
+    "command": "generate-wrapper DocumentProcessor.cs",
+    "skip": true
+  },
+  {
+    "id": "abstract-class",
+    "description": "Generate wrapper for abstract class",
+    "command": "generate-wrapper BaseProcessor.cs",
+    "skip": true
+  },
+  {
+    "id": "inheritance-single",
+    "description": "Generate wrapper for class that inherits from another class",
+    "command": "generate-wrapper EmailService.cs",
+    "skip": true
+  },
+  {
+    "id": "inheritance-hierarchy",
+    "description": "Generate wrapper for class with multi-level inheritance",
+    "command": "generate-wrapper SqlServerDatabaseService.cs --hierarchy-mode full",
+    "skip": true
+  },
+  {
+    "id": "implements-interface",
+    "description": "Generate wrapper for class that already implements interfaces",
+    "command": "generate-wrapper NotificationService.cs",
+    "skip": true
+  },
+  {
+    "id": "ref-out-params",
+    "description": "Generate wrapper for class with ref/out parameters",
+    "command": "generate-wrapper ParserService.cs",
+    "skip": true
+  }
+]
