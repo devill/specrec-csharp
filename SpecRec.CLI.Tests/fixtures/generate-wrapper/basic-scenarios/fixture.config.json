@@ -3,7 +3,7 @@
     "id": "basic-wrapper",
     "description": "Generate wrapper and interface for simple class with single method",
     "command": "generate-wrapper DatabaseService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "multiple-methods",
