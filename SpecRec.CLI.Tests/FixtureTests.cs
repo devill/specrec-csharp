@@ -103,18 +103,19 @@ public class FixtureTests
         if (string.IsNullOrWhiteSpace(command))
             throw new ArgumentException("Command cannot be empty", nameof(command));
             
-        var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0)
-            throw new ArgumentException("No executable found in command", nameof(command));
-            
-        var executable = parts[0];
-        var arguments = parts.Length > 1 ? string.Join(' ', parts.Skip(1)) : "";
+        // Get the CLI DLL path - assumes it's built in the same solution
+        var testDir = Path.GetDirectoryName(typeof(FixtureTests).Assembly.Location)!;
+        var solutionDir = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(testDir))))!;
+        var cliDllPath = Path.Combine(solutionDir, "SpecRec.CLI", "bin", "Debug", "net9.0", "SpecRec.CLI.dll");
+        
+        if (!File.Exists(cliDllPath))
+            throw new FileNotFoundException($"CLI DLL not found at: {cliDllPath}");
 
         using var process = new Process();
         process.StartInfo = new ProcessStartInfo
         {
-            FileName = executable,
-            Arguments = arguments,
+            FileName = "dotnet",
+            Arguments = $"{cliDllPath} {command}",
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -153,6 +154,10 @@ public class FixtureTests
         {
             var relativePath = Path.GetRelativePath(expectedPath, expectedFile);
             
+            // Skip IDE and OS artifacts
+            if (IsIgnoredFile(relativePath))
+                continue;
+                
             if (relativePath.EndsWith(".removed"))
             {
                 // File should NOT exist in received
@@ -189,5 +194,27 @@ public class FixtureTests
                 }
             }
         }
+    }
+    
+    private static bool IsIgnoredFile(string relativePath)
+    {
+        // Ignore IDE and OS artifacts
+        var ignoredPatterns = new[]
+        {
+            ".idea/",
+            ".vscode/",
+            ".vs/",
+            "bin/",
+            "obj/",
+            ".DS_Store",
+            "Thumbs.db",
+            "desktop.ini"
+        };
+        
+        return ignoredPatterns.Any(pattern => 
+            relativePath.StartsWith(pattern) || 
+            relativePath.Contains($"/{pattern}") ||
+            relativePath.Contains($"\\{pattern}")
+        );
     }
 }
