@@ -8,15 +8,15 @@ namespace SpecRec.CLI.Services;
 
 public class WrapperGenerationService : IWrapperGenerationService
 {
-    public WrapperGenerationResult GenerateWrapper(ClassDeclarationSyntax classDeclaration, string namespaceName)
+    public WrapperGenerationResult GenerateWrapper(ClassDeclarationSyntax classDeclaration, string namespaceName, IList<string> usingStatements)
     {
         var className = classDeclaration.Identifier.ValueText;
         var interfaceName = $"I{className}";
         var wrapperName = $"{className}Wrapper";
 
         // Generate interface and wrapper
-        var interfaceCode = GenerateInterface(classDeclaration, interfaceName, namespaceName);
-        var wrapperCode = GenerateWrapperClass(classDeclaration, interfaceName, wrapperName, namespaceName);
+        var interfaceCode = GenerateInterface(classDeclaration, interfaceName, namespaceName, usingStatements);
+        var wrapperCode = GenerateWrapperClass(classDeclaration, interfaceName, wrapperName, namespaceName, usingStatements);
 
         // Generate static wrapper if needed
         string? staticInterfaceCode = null;
@@ -27,14 +27,14 @@ public class WrapperGenerationService : IWrapperGenerationService
             var staticInterfaceName = $"{interfaceName}StaticWrapper";
             var staticWrapperName = $"{className}StaticWrapper";
             
-            staticInterfaceCode = GenerateStaticInterface(classDeclaration, staticInterfaceName, namespaceName);
-            staticWrapperCode = GenerateStaticWrapperClass(classDeclaration, staticInterfaceName, staticWrapperName, namespaceName, className);
+            staticInterfaceCode = GenerateStaticInterface(classDeclaration, staticInterfaceName, namespaceName, usingStatements);
+            staticWrapperCode = GenerateStaticWrapperClass(classDeclaration, staticInterfaceName, staticWrapperName, namespaceName, className, usingStatements);
         }
 
         return new WrapperGenerationResult(interfaceCode, wrapperCode, staticInterfaceCode, staticWrapperCode);
     }
 
-    private static string GenerateInterface(ClassDeclarationSyntax classDeclaration, string interfaceName, string namespaceName)
+    private static string GenerateInterface(ClassDeclarationSyntax classDeclaration, string interfaceName, string namespaceName, IList<string> usingStatements)
     {
         var namespaceDecl = NamespaceDeclaration(IdentifierName(namespaceName));
         
@@ -84,16 +84,22 @@ public class WrapperGenerationService : IWrapperGenerationService
         
         interfaceDecl = interfaceDecl.AddMembers(members.ToArray());
         
-        // Create compilation unit
-        var compilationUnit = CompilationUnit()
-            .AddUsings(UsingDirective(IdentifierName("System")))
-            .AddMembers(namespaceDecl.AddMembers(interfaceDecl))
-            .NormalizeWhitespace();
+        // Create compilation unit with proper using statements
+        var compilation = CompilationUnit()
+            .AddMembers(namespaceDecl.AddMembers(interfaceDecl));
+        
+        // Add using statements from the original file
+        foreach (var usingStatement in usingStatements)
+        {
+            compilation = compilation.AddUsings(UsingDirective(IdentifierName(usingStatement)));
+        }
+        
+        var compilationUnit = compilation.NormalizeWhitespace();
 
         return compilationUnit.ToFullString().Replace("\r\n", "\n").TrimEnd();
     }
 
-    private static string GenerateWrapperClass(ClassDeclarationSyntax classDeclaration, string interfaceName, string wrapperName, string namespaceName)
+    private static string GenerateWrapperClass(ClassDeclarationSyntax classDeclaration, string interfaceName, string wrapperName, string namespaceName, IList<string> usingStatements)
     {
         var className = classDeclaration.Identifier.ValueText;
         var fieldName = "_wrapped";
@@ -153,11 +159,17 @@ public class WrapperGenerationService : IWrapperGenerationService
         
         classDecl = classDecl.AddMembers(members.ToArray());
         
-        // Create compilation unit
-        var compilationUnit = CompilationUnit()
-            .AddUsings(UsingDirective(IdentifierName("System")))
-            .AddMembers(namespaceDecl.AddMembers(classDecl))
-            .NormalizeWhitespace();
+        // Create compilation unit with proper using statements
+        var compilation = CompilationUnit()
+            .AddMembers(namespaceDecl.AddMembers(classDecl));
+        
+        // Add using statements from the original file
+        foreach (var usingStatement in usingStatements)
+        {
+            compilation = compilation.AddUsings(UsingDirective(IdentifierName(usingStatement)));
+        }
+        
+        var compilationUnit = compilation.NormalizeWhitespace();
 
         var code = compilationUnit.ToFullString().Replace("\r\n", "\n").TrimEnd();
         
@@ -232,7 +244,7 @@ public class WrapperGenerationService : IWrapperGenerationService
             .WithAccessorList(AccessorList(List(accessors)));
     }
 
-    private static string GenerateStaticInterface(ClassDeclarationSyntax classDeclaration, string interfaceName, string namespaceName)
+    private static string GenerateStaticInterface(ClassDeclarationSyntax classDeclaration, string interfaceName, string namespaceName, IList<string> usingStatements)
     {
         var namespaceDecl = NamespaceDeclaration(IdentifierName(namespaceName));
         
@@ -282,16 +294,22 @@ public class WrapperGenerationService : IWrapperGenerationService
         
         interfaceDecl = interfaceDecl.AddMembers(members.ToArray());
         
-        // Create compilation unit
-        var compilationUnit = CompilationUnit()
-            .AddUsings(UsingDirective(IdentifierName("System")))
-            .AddMembers(namespaceDecl.AddMembers(interfaceDecl))
-            .NormalizeWhitespace();
+        // Create compilation unit with proper using statements
+        var compilation = CompilationUnit()
+            .AddMembers(namespaceDecl.AddMembers(interfaceDecl));
+        
+        // Add using statements from the original file
+        foreach (var usingStatement in usingStatements)
+        {
+            compilation = compilation.AddUsings(UsingDirective(IdentifierName(usingStatement)));
+        }
+        
+        var compilationUnit = compilation.NormalizeWhitespace();
 
         return compilationUnit.ToFullString().Replace("\r\n", "\n").TrimEnd();
     }
 
-    private static string GenerateStaticWrapperClass(ClassDeclarationSyntax classDeclaration, string interfaceName, string wrapperName, string namespaceName, string originalClassName)
+    private static string GenerateStaticWrapperClass(ClassDeclarationSyntax classDeclaration, string interfaceName, string wrapperName, string namespaceName, string originalClassName, IList<string> usingStatements)
     {
         var namespaceDecl = NamespaceDeclaration(IdentifierName(namespaceName));
         
@@ -323,11 +341,17 @@ public class WrapperGenerationService : IWrapperGenerationService
         
         classDecl = classDecl.AddMembers(members.ToArray());
         
-        // Create compilation unit
-        var compilationUnit = CompilationUnit()
-            .AddUsings(UsingDirective(IdentifierName("System")))
-            .AddMembers(namespaceDecl.AddMembers(classDecl))
-            .NormalizeWhitespace();
+        // Create compilation unit with proper using statements
+        var compilation = CompilationUnit()
+            .AddMembers(namespaceDecl.AddMembers(classDecl));
+        
+        // Add using statements from the original file
+        foreach (var usingStatement in usingStatements)
+        {
+            compilation = compilation.AddUsings(UsingDirective(IdentifierName(usingStatement)));
+        }
+        
+        var compilationUnit = compilation.NormalizeWhitespace();
 
         return compilationUnit.ToFullString().Replace("\r\n", "\n").TrimEnd();
     }

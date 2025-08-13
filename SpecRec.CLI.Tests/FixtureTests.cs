@@ -41,6 +41,7 @@ public class FixtureTests
         var expectedOutPath = Path.Combine(fixturePath, $"{config.Id}.expected.out");
         var expectedErrPath = Path.Combine(fixturePath, $"{config.Id}.expected.err");
 
+        var testPassed = false;
         try
         {
             // Setup: Copy input to received
@@ -57,11 +58,13 @@ public class FixtureTests
 
             // Validate files
             ValidateFiles(inputPath, receivedPath, expectedPath);
+            
+            testPassed = true;
         }
         finally
         {
             // Cleanup on success, preserve on failure for debugging
-            if (Directory.Exists(receivedPath))
+            if (testPassed && Directory.Exists(receivedPath))
                 Directory.Delete(receivedPath, true);
         }
     }
