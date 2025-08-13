@@ -20,6 +20,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Verify.Xunit" Version="24.2.0" />
+    <PackageReference Include="Xunit.SkippableFact" Version="1.5.23" />
   </ItemGroup>
 
   <ItemGroup>

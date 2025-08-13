@@ -1,11 +1,19 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SpecRec.CLI.Tests;
 
 public class FixtureTests
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public FixtureTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
     public class FixtureConfig
     {
         public string id { get; set; } = "";
@@ -21,10 +29,12 @@ public class FixtureTests
         public override string ToString() => description;
     }
 
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(GetFixtureTestData))]
     public async Task RunFixture(string fixturePath, FixtureConfig config)
     {
+        Skip.If(config.skip, "Skipped fixture");
+        
         var inputPath = Path.Combine(fixturePath, "input");
         var receivedPath = Path.Combine(fixturePath, $"{config.Id}.received");
         var expectedPath = Path.Combine(fixturePath, $"{config.Id}.expected");
@@ -73,47 +83,7 @@ public class FixtureTests
 
                 foreach (var config in configs)
                 {
-                    // Only include non-skipped tests
-                    if (!config.Skip)
-                    {
                         yield return new object[] { subDir, config };
-                    }
-                }
-            }
-        }
-    }
-
-    [Theory(Skip = "Tests marked as skipped in configuration")]
-    [MemberData(nameof(GetSkippedFixtureTestData))]
-    public void SkippedFixture(string fixturePath, FixtureConfig config)
-    {
-        // This method body never runs - it's skipped at the theory level
-        // Parameters are required for xUnit to discover the individual test cases
-        throw new NotImplementedException("This test is skipped");
-    }
-
-    public static IEnumerable<object[]> GetSkippedFixtureTestData()
-    {
-        var fixturesPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "fixtures");
-        
-        foreach (var commandDir in Directory.GetDirectories(fixturesPath))
-        {
-            // Look for subdirectories containing fixture configs
-            foreach (var subDir in Directory.GetDirectories(commandDir))
-            {
-                var configPath = Path.Combine(subDir, "fixture.config.json");
-                if (!File.Exists(configPath)) continue;
-
-                var configJson = File.ReadAllText(configPath);
-                var configs = JsonSerializer.Deserialize<FixtureConfig[]>(configJson) ?? Array.Empty<FixtureConfig>();
-
-                foreach (var config in configs)
-                {
-                    // Only include skipped tests
-                    if (config.Skip)
-                    {
-                        yield return new object[] { subDir, config };
-                    }
                 }
             }
         }
