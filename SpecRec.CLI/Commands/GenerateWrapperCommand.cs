@@ -47,7 +47,8 @@ public static class GenerateWrapperCommand
             // Generate wrapper code
             var generationResult = wrapperGenerationService.GenerateWrapper(
                 analysisResult.ClassDeclaration, 
-                analysisResult.NamespaceName);
+                analysisResult.NamespaceName,
+                analysisResult.UsingStatements);
 
             // Generate file names
             var classNameOnly = analysisResult.ClassDeclaration.Identifier.ValueText;
@@ -59,9 +60,8 @@ public static class GenerateWrapperCommand
             await fileService.WriteAllTextAsync($"{wrapperName}.cs", generationResult.WrapperCode);
 
             // Output results
-            Console.WriteLine($"Generated wrapper for {classNameOnly}:");
-            Console.WriteLine($"- {interfaceName}.cs");
-            Console.WriteLine($"- {wrapperName}.cs");
+            Console.WriteLine($"Generated wrapper class: {wrapperName}.cs");
+            Console.WriteLine($"Generated interface: {interfaceName}.cs");
 
             // Write static wrapper files if they exist
             if (generationResult.StaticInterfaceCode != null && generationResult.StaticWrapperCode != null)

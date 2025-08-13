@@ -1,3 +1,2 @@
-Generated wrapper for DatabaseService:
-- IDatabaseService.cs
-- DatabaseServiceWrapper.cs
+Generated wrapper class: DatabaseServiceWrapper.cs
+Generated interface: IDatabaseService.cs

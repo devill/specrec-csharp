@@ -34,14 +34,25 @@ public class CodeAnalysisService : ICodeAnalysisService
         var targetClass = classDeclarations.First();
         var namespaceName = GetNamespace(root);
         var hasStaticMethods = HasStaticMethods(targetClass);
+        var usingStatements = GetUsingStatements(root);
 
-        return new ClassAnalysisResult(targetClass, namespaceName, hasStaticMethods);
+        return new ClassAnalysisResult(targetClass, namespaceName, hasStaticMethods, usingStatements);
     }
 
     private static string GetNamespace(SyntaxNode root)
     {
         var namespaceDeclaration = root.DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault();
         return namespaceDeclaration?.Name.ToString() ?? "TestProject";
+    }
+
+    private static IList<string> GetUsingStatements(SyntaxNode root)
+    {
+        return root.DescendantNodes()
+            .OfType<UsingDirectiveSyntax>()
+            .Select(u => u.Name?.ToString())
+            .Where(name => name != null)
+            .Cast<string>()
+            .ToList();
     }
 
     private static bool HasStaticMethods(ClassDeclarationSyntax classDeclaration)

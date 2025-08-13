@@ -9,7 +9,7 @@
     "id": "multiple-methods",
     "description": "Generate wrapper for class with multiple method signatures",
     "command": "generate-wrapper UserService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "properties-wrapper", 

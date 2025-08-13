@@ -10,5 +10,6 @@ public interface ICodeAnalysisService
 public record ClassAnalysisResult(
     ClassDeclarationSyntax ClassDeclaration,
     string NamespaceName,
-    bool HasStaticMethods
+    bool HasStaticMethods,
+    IList<string> UsingStatements
 );
