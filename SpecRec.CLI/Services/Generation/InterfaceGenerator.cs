@@ -36,8 +36,8 @@ public class InterfaceGenerator : CodeGenerator
             ? MemberExtractor.GetPublicStaticProperties(Context.SourceClass) 
             : MemberExtractor.GetPublicInstanceProperties(Context.SourceClass);
 
-        members.AddRange(methods.Select(CreateInterfaceMethod));
         members.AddRange(properties.Select(CreateInterfaceProperty));
+        members.AddRange(methods.Select(CreateInterfaceMethod));
 
         return interfaceDecl.AddMembers(members.ToArray());
     }
@@ -55,12 +55,26 @@ public class InterfaceGenerator : CodeGenerator
 
         if (property.AccessorList != null)
         {
-            var accessors = property.AccessorList.Accessors
-                .Select(accessor => AccessorDeclaration(accessor.Kind())
-                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)))
-                .ToList();
+            var accessors = new List<AccessorDeclarationSyntax>();
+            
+            foreach (var accessor in property.AccessorList.Accessors)
+            {
+                // Only include public accessors in the interface
+                if (!accessor.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PrivateKeyword)))
+                {
+                    accessors.Add(AccessorDeclaration(accessor.Kind())
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
+                }
+            }
 
             propertyDecl = propertyDecl.WithAccessorList(AccessorList(List(accessors)));
+        }
+        else if (property.ExpressionBody != null)
+        {
+            // Expression-bodied property (get-only)
+            var getter = AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+            propertyDecl = propertyDecl.WithAccessorList(AccessorList(List([getter])));
         }
 
         return propertyDecl;

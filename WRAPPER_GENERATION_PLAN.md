@@ -21,6 +21,15 @@ Create an automated refactoring tool using Roslyn syntax trees to:
 2. Replace direct instantiation with ObjectFactory.Create calls throughout the codebase
 3. Support complex scenarios including inheritance hierarchies and external dependencies
 
+## **CRITICAL Requirements**
+
+### Code Formatting
+- **NEVER implement custom formatting logic**
+- **ALWAYS** rely on Roslyn's `NormalizeWhitespace()` for all code formatting
+- Test fixtures must match exactly what Roslyn produces by default
+- Custom formatting leads to maintenance burden and inconsistencies
+- Let the established .NET tooling handle formatting concerns
+
 ## Architecture
 
 ### CLI Tool Structure
