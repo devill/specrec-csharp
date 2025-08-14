@@ -1,1 +1,1 @@
-Error: No class definitions found in 'EmptyFile.cs'
+Error generating wrapper: No class found in 'EmptyFile.cs'.

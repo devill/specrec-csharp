@@ -3,7 +3,7 @@
     "id": "nonexistent-class",
     "description": "Try to wrap class that doesn't exist",
     "command": "generate-wrapper NonExistentClass.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "invalid-syntax",
@@ -15,7 +15,7 @@
     "id": "empty-file",
     "description": "Try to wrap from empty C# file",
     "command": "generate-wrapper EmptyFile.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "invalid-arguments",
