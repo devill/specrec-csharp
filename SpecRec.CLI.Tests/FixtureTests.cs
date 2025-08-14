@@ -183,7 +183,11 @@ public class FixtureTests
                 
                 var expectedContent = File.ReadAllText(expectedFile);
                 var receivedContent = File.ReadAllText(receivedFile);
-                Assert.Equal(expectedContent, receivedContent);
+                
+                if (expectedContent != receivedContent)
+                {
+                    throw new Exception($"File content mismatch:\nExpected: {expectedFile}\nReceived: {receivedFile}\n\nUse a diff tool to compare the files.");
+                }
             }
         }
 

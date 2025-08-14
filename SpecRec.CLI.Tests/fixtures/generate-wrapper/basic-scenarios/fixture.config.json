@@ -15,7 +15,7 @@
     "id": "properties-wrapper", 
     "description": "Generate wrapper for class with properties and auto-properties",
     "command": "generate-wrapper ConfigService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "constructor-params",

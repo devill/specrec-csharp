@@ -29,6 +29,7 @@ public class CompilationUnitBuilder
         }
 
         var compilationUnit = compilation.NormalizeWhitespace();
+
         return compilationUnit.ToFullString().Replace("\r\n", "\n").TrimEnd();
     }
 }

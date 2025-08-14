@@ -11,14 +11,8 @@ namespace TestProject
             _wrapped = wrapped;
         }
 
-        public string ConnectionString
-        {
-            get => _wrapped.ConnectionString;
-            set => _wrapped.ConnectionString = value;
-        }
-
+        public string ConnectionString { get => _wrapped.ConnectionString; set => _wrapped.ConnectionString = value; }
         public int MaxRetries => _wrapped.MaxRetries;
-
         public bool IsEnabled => _wrapped.IsEnabled;
 
         public void UpdateConnectionString(string connectionString)

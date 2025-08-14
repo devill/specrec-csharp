@@ -52,8 +52,8 @@ public class WrapperClassGenerator : CodeGenerator
             ? MemberExtractor.GetPublicStaticProperties(Context.SourceClass) 
             : MemberExtractor.GetPublicInstanceProperties(Context.SourceClass);
 
-        members.AddRange(methods.Select(CreateWrapperMethod));
         members.AddRange(properties.Select(CreateWrapperProperty));
+        members.AddRange(methods.Select(CreateWrapperMethod));
 
         return classDecl.AddMembers(members.ToArray());
     }
@@ -125,20 +125,42 @@ public class WrapperClassGenerator : CodeGenerator
                 if (accessor.IsKind(SyntaxKind.GetAccessorDeclaration))
                 {
                     var getAccessor = AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                        .WithBody(Block(ReturnStatement(propertyAccess)));
+                        .WithExpressionBody(ArrowExpressionClause(propertyAccess))
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
                     accessors.Add(getAccessor);
                 }
                 else if (accessor.IsKind(SyntaxKind.SetAccessorDeclaration))
                 {
-                    var setAccessor = AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                        .WithBody(Block(
-                            ExpressionStatement(
+                    // Only include setter if it's public
+                    if (!accessor.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PrivateKeyword)))
+                    {
+                        var setAccessor = AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                            .WithExpressionBody(ArrowExpressionClause(
                                 AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                     propertyAccess,
-                                    IdentifierName("value")))));
-                    accessors.Add(setAccessor);
+                                    IdentifierName("value"))))
+                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+                        accessors.Add(setAccessor);
+                    }
                 }
             }
+        }
+        else if (originalProperty.ExpressionBody != null)
+        {
+            // Expression-bodied property (get-only)
+            var getAccessor = AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                .WithExpressionBody(ArrowExpressionClause(propertyAccess))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+            accessors.Add(getAccessor);
+        }
+
+        // If only getter, use expression-bodied syntax
+        if (accessors.Count == 1 && accessors[0].IsKind(SyntaxKind.GetAccessorDeclaration))
+        {
+            return PropertyDeclaration(originalProperty.Type, originalProperty.Identifier)
+                .AddModifiers(Token(SyntaxKind.PublicKeyword))
+                .WithExpressionBody(ArrowExpressionClause(propertyAccess))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
         }
 
         return PropertyDeclaration(originalProperty.Type, originalProperty.Identifier)
