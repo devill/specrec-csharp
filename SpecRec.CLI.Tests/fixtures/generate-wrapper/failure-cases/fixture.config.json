@@ -21,6 +21,6 @@
     "id": "invalid-arguments",
     "description": "Wrong number of arguments",
     "command": "generate-wrapper",
-    "skip": true
+    "skip": false
   }
 ]

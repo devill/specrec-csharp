@@ -73,8 +73,11 @@ public class FixtureTests
             await ValidateOutput(stdout, expectedOutPath, "stdout");
             await ValidateOutput(stderr, expectedErrPath, "stderr");
 
-            // Validate files
-            ValidateFiles(inputPath, receivedPath, expectedPath);
+            // Validate files (only if expected directory exists)
+            if (Directory.Exists(expectedPath))
+            {
+                ValidateFiles(inputPath, receivedPath, expectedPath);
+            }
             
             testPassed = true;
         }

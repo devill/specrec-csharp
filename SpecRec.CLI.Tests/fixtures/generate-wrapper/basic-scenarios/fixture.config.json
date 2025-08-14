@@ -21,6 +21,6 @@
     "id": "constructor-params",
     "description": "Generate wrapper for class with constructor parameters",
     "command": "generate-wrapper LogService.cs",
-    "skip": true
+    "skip": false
   }
 ]
