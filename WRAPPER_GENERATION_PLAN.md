@@ -30,6 +30,19 @@ Create an automated refactoring tool using Roslyn syntax trees to:
 - Custom formatting leads to maintenance burden and inconsistencies
 - Let the established .NET tooling handle formatting concerns
 
+### Approval Test Strategy
+- **Expected files may be incorrect** - They are best guesses and can contain mistakes
+- **When tests fail, analyze intelligently**:
+  - Compare the expected vs received behavior
+  - Determine which behavior is actually preferable
+  - Update expected files if the received behavior is better
+  - Only change implementation if the expected behavior is clearly correct
+- **Examples of when to update expected files**:
+  - CLI error messages that are clearer or more standard
+  - Output formatting that follows .NET conventions better
+  - Generated code that is more idiomatic or readable
+- **Think critically** - Don't blindly implement whatever the expected file says
+
 ## Architecture
 
 ### CLI Tool Structure
