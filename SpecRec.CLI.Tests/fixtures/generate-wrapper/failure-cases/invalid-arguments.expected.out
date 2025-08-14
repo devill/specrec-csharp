@@ -1,0 +1,12 @@
+Description:
+  Generate wrapper class and interface for a given class
+
+Usage:
+  SpecRec.CLI generate-wrapper <className> [options]
+
+Arguments:
+  <className>  The name of the class to wrap
+
+Options:
+  -h, --hierarchy-mode <hierarchy-mode>  How to handle inheritance hierarchy: 'single' or 'full' [default: prompt]
+  -?, -h, --help                         Show help and usage information
