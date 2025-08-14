@@ -28,12 +28,29 @@ public class FixtureTests
         
         public override string ToString() => description;
     }
+    
+    public class FixtureTestData
+    {
+        public string FixturePath { get; }
+        public FixtureConfig Config { get; }
+        
+        public FixtureTestData(string fixturePath, FixtureConfig config)
+        {
+            FixturePath = fixturePath;
+            Config = config;
+        }
+        
+        public override string ToString() => Config.Description;
+    }
 
     [SkippableTheory]
     [MemberData(nameof(GetFixtureTestData))]
-    public async Task RunFixture(string fixturePath, FixtureConfig config)
+    public async Task RunFixture(FixtureTestData testData)
     {
-        Skip.If(config.skip, "Skipped fixture");
+        var fixturePath = testData.FixturePath;
+        var config = testData.Config;
+        
+        Skip.If(config.Skip, "Skipped fixture");
         
         var inputPath = Path.Combine(fixturePath, "input");
         var receivedPath = Path.Combine(fixturePath, $"{config.Id}.received");
@@ -86,7 +103,7 @@ public class FixtureTests
 
                 foreach (var config in configs)
                 {
-                        yield return new object[] { subDir, config };
+                    yield return new object[] { new FixtureTestData(subDir, config) };
                 }
             }
         }
