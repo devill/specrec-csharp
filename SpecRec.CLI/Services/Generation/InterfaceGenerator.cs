@@ -46,6 +46,8 @@ public class InterfaceGenerator : CodeGenerator
     {
         return MethodDeclaration(method.ReturnType, method.Identifier)
             .WithParameterList(method.ParameterList)
+            .WithTypeParameterList(method.TypeParameterList)
+            .WithConstraintClauses(method.ConstraintClauses)
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
     }
 
