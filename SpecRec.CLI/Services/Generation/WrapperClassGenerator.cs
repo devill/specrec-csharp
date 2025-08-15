@@ -103,6 +103,8 @@ public class WrapperClassGenerator : CodeGenerator
         return MethodDeclaration(originalMethod.ReturnType, originalMethod.Identifier)
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .WithParameterList(originalMethod.ParameterList)
+            .WithTypeParameterList(originalMethod.TypeParameterList)
+            .WithConstraintClauses(originalMethod.ConstraintClauses)
             .WithBody(Block(body));
     }
 

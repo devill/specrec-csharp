@@ -21,7 +21,7 @@
     "id": "overloaded-methods",
     "description": "Generate wrapper for class with method overloading",
     "command": "generate-wrapper CalculatorService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "nested-class",
