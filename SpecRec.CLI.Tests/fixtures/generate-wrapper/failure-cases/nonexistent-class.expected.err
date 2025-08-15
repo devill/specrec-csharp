@@ -1,1 +1,1 @@
-Error generating wrapper: File 'NonExistentClass.cs' not found.
+Error: File 'NonExistentClass.cs' not found.
