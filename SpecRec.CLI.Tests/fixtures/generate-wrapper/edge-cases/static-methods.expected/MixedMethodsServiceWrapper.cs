@@ -11,7 +11,6 @@ namespace EdgeCases
             _wrapped = wrapped;
         }
 
-        // Only instance members are wrapped - static members are not included
         public bool IsInitialized => _wrapped.IsInitialized;
 
         public void SetData(string data)
