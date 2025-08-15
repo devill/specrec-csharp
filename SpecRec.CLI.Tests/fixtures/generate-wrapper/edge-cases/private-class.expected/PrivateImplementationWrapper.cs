@@ -1,13 +1,12 @@
 using System;
 
-namespace EdgeCases
+namespace FailureCases
 {
-    // Private wrapper generated alongside the original private class
     private class PrivateImplementationWrapper : IPrivateImplementation
     {
-        private readonly ContainerClass.PrivateImplementation _wrapped;
+        private readonly PrivateImplementation _wrapped;
 
-        internal PrivateImplementationWrapper(ContainerClass.PrivateImplementation wrapped)
+        public PrivateImplementationWrapper(PrivateImplementation wrapped)
         {
             _wrapped = wrapped;
         }

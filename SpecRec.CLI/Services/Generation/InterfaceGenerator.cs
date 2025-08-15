@@ -23,8 +23,9 @@ public class InterfaceGenerator : CodeGenerator
 
     protected override MemberDeclarationSyntax CreateTypeDeclaration()
     {
+        var interfaceVisibility = GetInterfaceVisibility();
         var interfaceDecl = InterfaceDeclaration(Context.InterfaceName)
-            .AddModifiers(Token(SyntaxKind.PublicKeyword));
+            .AddModifiers(Token(interfaceVisibility));
 
         var members = new List<MemberDeclarationSyntax>();
         
@@ -80,5 +81,16 @@ public class InterfaceGenerator : CodeGenerator
         }
 
         return propertyDecl;
+    }
+
+    private SyntaxKind GetInterfaceVisibility()
+    {
+        if (Context.SourceClass.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PublicKeyword)))
+            return SyntaxKind.PublicKeyword;
+        if (Context.SourceClass.Modifiers.Any(mod => mod.IsKind(SyntaxKind.InternalKeyword)))
+            return SyntaxKind.InternalKeyword;
+        if (Context.SourceClass.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PrivateKeyword)))
+            return SyntaxKind.PrivateKeyword;
+        return SyntaxKind.InternalKeyword; // Default visibility
     }
 }

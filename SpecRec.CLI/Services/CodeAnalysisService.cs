@@ -31,7 +31,9 @@ public class CodeAnalysisService : ICodeAnalysisService
             throw new InvalidOperationException($"No class found in '{filePath}'.");
         }
 
-        var targetClass = classDeclarations.First();
+        // Try to find a class with a name matching the filename (without .cs extension)
+        var fileName = Path.GetFileNameWithoutExtension(filePath);
+        var targetClass = classDeclarations.FirstOrDefault(c => c.Identifier.ValueText == fileName) ?? classDeclarations.First();
         var namespaceName = GetNamespace(root);
         var hasStaticMethods = HasStaticMethods(targetClass);
         var usingStatements = GetUsingStatements(root);

@@ -1,8 +1,7 @@
 using System;
 
-namespace EdgeCases
+namespace FailureCases
 {
-    // Private interface generated alongside the private wrapper
     private interface IPrivateImplementation
     {
         void DoSomething();
