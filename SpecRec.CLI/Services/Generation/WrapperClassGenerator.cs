@@ -140,12 +140,28 @@ public class WrapperClassGenerator : CodeGenerator
             modifiers.Add(Token(SyntaxKind.AsyncKeyword));
         }
 
-        return MethodDeclaration(originalMethod.ReturnType, originalMethod.Identifier)
+        var returnType = TypeReferenceTransformer.QualifyNestedTypes(
+            originalMethod.ReturnType, Context.ClassName, Context.NestedTypeNames);
+        var parameterList = QualifyNestedTypesInParameterList(originalMethod.ParameterList);
+        
+        return MethodDeclaration(returnType, originalMethod.Identifier)
             .AddModifiers(modifiers.ToArray())
-            .WithParameterList(originalMethod.ParameterList)
+            .WithParameterList(parameterList)
             .WithTypeParameterList(originalMethod.TypeParameterList)
             .WithConstraintClauses(originalMethod.ConstraintClauses)
             .WithBody(Block(body));
+    }
+
+    private ParameterListSyntax QualifyNestedTypesInParameterList(ParameterListSyntax parameterList)
+    {
+        var parameters = parameterList.Parameters.Select(param =>
+        {
+            var qualifiedType = TypeReferenceTransformer.QualifyNestedTypes(
+                param.Type!, Context.ClassName, Context.NestedTypeNames);
+            return param.WithType(qualifiedType);
+        });
+        
+        return parameterList.WithParameters(SeparatedList(parameters));
     }
 
     private PropertyDeclarationSyntax CreateWrapperProperty(PropertyDeclarationSyntax originalProperty)
@@ -157,6 +173,9 @@ public class WrapperClassGenerator : CodeGenerator
         var propertyAccess = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
             targetObject,
             IdentifierName(originalProperty.Identifier.ValueText));
+        
+        var qualifiedType = TypeReferenceTransformer.QualifyNestedTypes(
+            originalProperty.Type, Context.ClassName, Context.NestedTypeNames);
 
         var accessors = new List<AccessorDeclarationSyntax>();
 
@@ -199,13 +218,13 @@ public class WrapperClassGenerator : CodeGenerator
         // If only getter, use expression-bodied syntax
         if (accessors.Count == 1 && accessors[0].IsKind(SyntaxKind.GetAccessorDeclaration))
         {
-            return PropertyDeclaration(originalProperty.Type, originalProperty.Identifier)
+            return PropertyDeclaration(qualifiedType, originalProperty.Identifier)
                 .AddModifiers(Token(SyntaxKind.PublicKeyword))
                 .WithExpressionBody(ArrowExpressionClause(propertyAccess))
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
         }
 
-        return PropertyDeclaration(originalProperty.Type, originalProperty.Identifier)
+        return PropertyDeclaration(qualifiedType, originalProperty.Identifier)
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .WithAccessorList(AccessorList(List(accessors)));
     }
