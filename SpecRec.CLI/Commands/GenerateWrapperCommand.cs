@@ -55,13 +55,16 @@ public static class GenerateWrapperCommand
             var interfaceName = $"I{classNameOnly}";
             var wrapperName = $"{classNameOnly}Wrapper";
             
-            // Write interface and wrapper files
-            await fileService.WriteAllTextAsync($"{interfaceName}.cs", generationResult.InterfaceCode);
-            await fileService.WriteAllTextAsync($"{wrapperName}.cs", generationResult.WrapperCode);
+            // Write interface and wrapper files if they exist
+            if (generationResult.InterfaceCode != null && generationResult.WrapperCode != null)
+            {
+                await fileService.WriteAllTextAsync($"{interfaceName}.cs", generationResult.InterfaceCode);
+                await fileService.WriteAllTextAsync($"{wrapperName}.cs", generationResult.WrapperCode);
 
-            // Output results
-            Console.WriteLine($"Generated wrapper class: {wrapperName}.cs");
-            Console.WriteLine($"Generated interface: {interfaceName}.cs");
+                // Output results
+                Console.WriteLine($"Generated wrapper class: {wrapperName}.cs");
+                Console.WriteLine($"Generated interface: {interfaceName}.cs");
+            }
 
             // Write static wrapper files if they exist
             if (generationResult.StaticInterfaceCode != null && generationResult.StaticWrapperCode != null)
@@ -73,7 +76,7 @@ public static class GenerateWrapperCommand
                 await fileService.WriteAllTextAsync($"{staticWrapperName}.cs", generationResult.StaticWrapperCode);
                 
                 Console.WriteLine($"Generated static wrapper class: {staticWrapperName}.cs");
-                Console.WriteLine($"Generated static interface: {staticInterfaceName}.cs");
+                Console.WriteLine($"Generated interface: {staticInterfaceName}.cs");
             }
         }
         catch (Exception ex)

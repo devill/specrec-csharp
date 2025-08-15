@@ -8,8 +8,8 @@ public interface IWrapperGenerationService
 }
 
 public record WrapperGenerationResult(
-    string InterfaceCode,
-    string WrapperCode,
+    string? InterfaceCode,
+    string? WrapperCode,
     string? StaticInterfaceCode = null,
     string? StaticWrapperCode = null
 );

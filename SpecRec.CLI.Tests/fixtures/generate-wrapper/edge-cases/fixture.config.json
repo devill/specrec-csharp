@@ -69,6 +69,6 @@
     "id": "static-only-class-wrapper",
     "description": "Generate static wrapper for purely static class",
     "command": "generate-wrapper MathUtils.cs",
-    "skip": true
+    "skip": false
   }
 ]

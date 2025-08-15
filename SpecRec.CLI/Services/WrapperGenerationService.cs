@@ -10,12 +10,18 @@ public class WrapperGenerationService : IWrapperGenerationService
         var context = WrapperGenerationContext.Create(classDeclaration, namespaceName, usingStatements);
         var memberExtractor = new MemberExtractor();
 
-        // Generate interface and wrapper
-        var interfaceGenerator = new InterfaceGenerator(context);
-        var wrapperGenerator = new WrapperClassGenerator(context);
-        
-        var interfaceCode = interfaceGenerator.Generate();
-        var wrapperCode = wrapperGenerator.Generate();
+        // Generate instance interface and wrapper only if class has instance members
+        string? interfaceCode = null;
+        string? wrapperCode = null;
+
+        if (memberExtractor.HasInstanceMembers(classDeclaration))
+        {
+            var interfaceGenerator = new InterfaceGenerator(context);
+            var wrapperGenerator = new WrapperClassGenerator(context);
+            
+            interfaceCode = interfaceGenerator.Generate();
+            wrapperCode = wrapperGenerator.Generate();
+        }
 
         // Generate static wrapper if needed
         string? staticInterfaceCode = null;
