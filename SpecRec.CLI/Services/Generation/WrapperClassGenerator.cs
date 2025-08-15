@@ -82,8 +82,20 @@ public class WrapperClassGenerator : CodeGenerator
 
     private MethodDeclarationSyntax CreateWrapperMethod(MethodDeclarationSyntax originalMethod)
     {
-        var parameterNames = originalMethod.ParameterList.Parameters
-            .Select(p => IdentifierName(p.Identifier.ValueText))
+        var arguments = originalMethod.ParameterList.Parameters
+            .Select(p => {
+                var arg = Argument(IdentifierName(p.Identifier.ValueText));
+                
+                // Preserve parameter modifiers (ref, out, in)
+                if (p.Modifiers.Any(m => m.IsKind(SyntaxKind.RefKeyword)))
+                    arg = arg.WithRefKindKeyword(Token(SyntaxKind.RefKeyword));
+                else if (p.Modifiers.Any(m => m.IsKind(SyntaxKind.OutKeyword)))
+                    arg = arg.WithRefKindKeyword(Token(SyntaxKind.OutKeyword));
+                else if (p.Modifiers.Any(m => m.IsKind(SyntaxKind.InKeyword)))
+                    arg = arg.WithRefKindKeyword(Token(SyntaxKind.InKeyword));
+                
+                return arg;
+            })
             .ToArray();
 
         var targetObject = _isForStaticMembers 
@@ -94,7 +106,7 @@ public class WrapperClassGenerator : CodeGenerator
             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                 targetObject,
                 IdentifierName(originalMethod.Identifier.ValueText)))
-            .AddArgumentListArguments(parameterNames.Select(Argument).ToArray());
+            .AddArgumentListArguments(arguments);
 
         StatementSyntax body = originalMethod.ReturnType.ToString() == "void"
             ? ExpressionStatement(invocation)
