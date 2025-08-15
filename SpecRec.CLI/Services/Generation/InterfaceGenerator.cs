@@ -47,16 +47,34 @@ public class InterfaceGenerator : CodeGenerator
 
     private MethodDeclarationSyntax CreateInterfaceMethod(MethodDeclarationSyntax method)
     {
-        return MethodDeclaration(method.ReturnType, method.Identifier)
-            .WithParameterList(method.ParameterList)
+        var returnType = TypeReferenceTransformer.QualifyNestedTypes(
+            method.ReturnType, Context.ClassName, Context.NestedTypeNames);
+        var parameterList = QualifyNestedTypesInParameterList(method.ParameterList);
+        
+        return MethodDeclaration(returnType, method.Identifier)
+            .WithParameterList(parameterList)
             .WithTypeParameterList(method.TypeParameterList)
             .WithConstraintClauses(method.ConstraintClauses)
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
     }
 
+    private ParameterListSyntax QualifyNestedTypesInParameterList(ParameterListSyntax parameterList)
+    {
+        var parameters = parameterList.Parameters.Select(param =>
+        {
+            var qualifiedType = TypeReferenceTransformer.QualifyNestedTypes(
+                param.Type!, Context.ClassName, Context.NestedTypeNames);
+            return param.WithType(qualifiedType);
+        });
+        
+        return parameterList.WithParameters(SeparatedList(parameters));
+    }
+
     private PropertyDeclarationSyntax CreateInterfaceProperty(PropertyDeclarationSyntax property)
     {
-        var propertyDecl = PropertyDeclaration(property.Type, property.Identifier);
+        var qualifiedType = TypeReferenceTransformer.QualifyNestedTypes(
+            property.Type, Context.ClassName, Context.NestedTypeNames);
+        var propertyDecl = PropertyDeclaration(qualifiedType, property.Identifier);
 
         if (property.AccessorList != null)
         {

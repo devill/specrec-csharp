@@ -27,7 +27,7 @@
     "id": "nested-class",
     "description": "Generate wrapper for class with nested public classes",
     "command": "generate-wrapper DocumentProcessor.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "abstract-class",
