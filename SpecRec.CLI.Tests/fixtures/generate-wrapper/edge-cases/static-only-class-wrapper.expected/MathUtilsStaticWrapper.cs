@@ -1,6 +1,6 @@
 using System;
 
-namespace EdgeCases
+namespace FailureCases
 {
     public class MathUtilsStaticWrapper : IMathUtilsStaticWrapper
     {
@@ -14,7 +14,8 @@ namespace EdgeCases
             return MathUtils.Multiply(a, b);
         }
 
-        public T Max<T>(T a, T b) where T : IComparable<T>
+        public T Max<T>(T a, T b)
+            where T : IComparable<T>
         {
             return MathUtils.Max(a, b);
         }

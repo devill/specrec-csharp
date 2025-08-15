@@ -42,4 +42,16 @@ public class MemberExtractor
     {
         return GetPublicStaticMethods(classDeclaration).Any();
     }
+
+    public bool HasInstanceMembers(ClassDeclarationSyntax classDeclaration)
+    {
+        return GetPublicInstanceMethods(classDeclaration).Any() || 
+               GetPublicInstanceProperties(classDeclaration).Any();
+    }
+
+    public bool IsStaticOnlyClass(ClassDeclarationSyntax classDeclaration)
+    {
+        return classDeclaration.Modifiers.Any(mod => mod.IsKind(SyntaxKind.StaticKeyword)) ||
+               (!HasInstanceMembers(classDeclaration) && HasStaticMethods(classDeclaration));
+    }
 }
