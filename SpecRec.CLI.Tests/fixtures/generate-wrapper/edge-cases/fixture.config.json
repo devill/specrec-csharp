@@ -63,7 +63,7 @@
     "id": "private-class",
     "description": "Generate wrapper for private class (generates private wrapper)",
     "command": "generate-wrapper PrivateImplementation.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "static-only-class-wrapper",
