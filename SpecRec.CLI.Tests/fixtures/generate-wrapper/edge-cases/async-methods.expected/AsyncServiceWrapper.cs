@@ -40,7 +40,7 @@ namespace EdgeCases
 
         public async void FireAndForgetAsync(string message)
         {
-            _wrapped.FireAndForgetAsync(message);
+            await _wrapped.FireAndForgetAsync(message);
         }
 
         public string SynchronousMethod()
