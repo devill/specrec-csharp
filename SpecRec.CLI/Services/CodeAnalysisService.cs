@@ -23,6 +23,14 @@ public class CodeAnalysisService : ICodeAnalysisService
         var sourceCode = await _fileService.ReadAllTextAsync(filePath);
         var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
         var root = syntaxTree.GetRoot();
+        
+        // Check for syntax errors
+        var diagnostics = syntaxTree.GetDiagnostics();
+        var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
+        if (errors.Any())
+        {
+            throw new InvalidOperationException($"Syntax errors found in '{filePath}'. Cannot generate wrapper for invalid code.");
+        }
 
         var classDeclarations = root.DescendantNodes().OfType<ClassDeclarationSyntax>().ToList();
         

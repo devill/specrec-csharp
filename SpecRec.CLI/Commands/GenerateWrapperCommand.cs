@@ -84,7 +84,7 @@ public static class GenerateWrapperCommand
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error generating wrapper: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
             Environment.Exit(1);
         }
     }
