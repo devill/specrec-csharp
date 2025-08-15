@@ -3,13 +3,13 @@
     "id": "generic-class",
     "description": "Generate wrapper for generic class with type constraints",
     "command": "generate-wrapper Repository.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "async-methods",
     "description": "Generate wrapper for class with async/await methods",
     "command": "generate-wrapper AsyncService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "static-methods",

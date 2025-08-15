@@ -32,9 +32,12 @@ public class WrapperClassGenerator : CodeGenerator
     protected override MemberDeclarationSyntax CreateTypeDeclaration()
     {
         var classVisibility = GetClassVisibility();
+        var interfaceType = CreateInterfaceType();
         var classDecl = ClassDeclaration(Context.WrapperName)
             .AddModifiers(Token(classVisibility))
-            .AddBaseListTypes(SimpleBaseType(IdentifierName(Context.InterfaceName)));
+            .WithTypeParameterList(Context.SourceClass.TypeParameterList)
+            .WithConstraintClauses(Context.SourceClass.ConstraintClauses)
+            .AddBaseListTypes(SimpleBaseType(interfaceType));
 
         var members = new List<MemberDeclarationSyntax>();
 
@@ -60,19 +63,21 @@ public class WrapperClassGenerator : CodeGenerator
 
     private FieldDeclarationSyntax CreateWrappedField()
     {
+        var wrappedType = CreateWrappedType();
         return FieldDeclaration(
-                VariableDeclaration(IdentifierName(Context.ClassName))
+                VariableDeclaration(wrappedType)
                     .AddVariables(VariableDeclarator("_wrapped")))
             .AddModifiers(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.ReadOnlyKeyword));
     }
 
     private ConstructorDeclarationSyntax CreateConstructor()
     {
+        var wrappedType = CreateWrappedType();
         return ConstructorDeclaration(Context.WrapperName)
             .AddModifiers(Token(SyntaxKind.PublicKeyword))
             .AddParameterListParameters(
                 Parameter(Identifier("wrapped"))
-                    .WithType(IdentifierName(Context.ClassName)))
+                    .WithType(wrappedType))
             .WithBody(Block(
                 ExpressionStatement(
                     AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
@@ -108,12 +113,35 @@ public class WrapperClassGenerator : CodeGenerator
                 IdentifierName(originalMethod.Identifier.ValueText)))
             .AddArgumentListArguments(arguments);
 
-        StatementSyntax body = originalMethod.ReturnType.ToString() == "void"
-            ? ExpressionStatement(invocation)
-            : ReturnStatement(invocation);
+        var isAsync = originalMethod.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword));
+        var isVoidReturn = originalMethod.ReturnType.ToString() == "void";
+        
+        StatementSyntax body;
+        if (isAsync && isVoidReturn)
+        {
+            // For async void methods, use await expression statement
+            body = ExpressionStatement(AwaitExpression(invocation));
+        }
+        else if (isVoidReturn)
+        {
+            // For non-async void methods, use expression statement
+            body = ExpressionStatement(invocation);
+        }
+        else
+        {
+            // For non-void methods, use return statement
+            body = ReturnStatement(invocation);
+        }
+
+        var modifiers = new List<SyntaxToken> { Token(SyntaxKind.PublicKeyword) };
+        if (isAsync && isVoidReturn)
+        {
+            // Only add async modifier for async void methods
+            modifiers.Add(Token(SyntaxKind.AsyncKeyword));
+        }
 
         return MethodDeclaration(originalMethod.ReturnType, originalMethod.Identifier)
-            .AddModifiers(Token(SyntaxKind.PublicKeyword))
+            .AddModifiers(modifiers.ToArray())
             .WithParameterList(originalMethod.ParameterList)
             .WithTypeParameterList(originalMethod.TypeParameterList)
             .WithConstraintClauses(originalMethod.ConstraintClauses)
@@ -191,6 +219,40 @@ public class WrapperClassGenerator : CodeGenerator
         if (Context.SourceClass.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PrivateKeyword)))
             return SyntaxKind.PrivateKeyword;
         return SyntaxKind.InternalKeyword; // Default visibility
+    }
+
+    private TypeSyntax CreateInterfaceType()
+    {
+        var interfaceName = IdentifierName(Context.InterfaceName);
+        
+        // If the source class has type parameters, add them to the interface type
+        if (Context.SourceClass.TypeParameterList != null)
+        {
+            var typeArguments = Context.SourceClass.TypeParameterList.Parameters
+                .Select(p => IdentifierName(p.Identifier.ValueText))
+                .ToArray();
+            return GenericName(Context.InterfaceName)
+                .WithTypeArgumentList(TypeArgumentList(SeparatedList<TypeSyntax>(typeArguments)));
+        }
+        
+        return interfaceName;
+    }
+
+    private TypeSyntax CreateWrappedType()
+    {
+        var className = IdentifierName(Context.ClassName);
+        
+        // If the source class has type parameters, add them to the wrapped type
+        if (Context.SourceClass.TypeParameterList != null)
+        {
+            var typeArguments = Context.SourceClass.TypeParameterList.Parameters
+                .Select(p => IdentifierName(p.Identifier.ValueText))
+                .ToArray();
+            return GenericName(Context.ClassName)
+                .WithTypeArgumentList(TypeArgumentList(SeparatedList<TypeSyntax>(typeArguments)));
+        }
+        
+        return className;
     }
 
     private string AddBlankLineAfterField(string code)
