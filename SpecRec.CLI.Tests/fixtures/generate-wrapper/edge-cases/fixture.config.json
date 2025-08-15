@@ -57,7 +57,7 @@
     "id": "ref-out-params",
     "description": "Generate wrapper for class with ref/out parameters",
     "command": "generate-wrapper ParserService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "private-class",
