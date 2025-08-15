@@ -9,7 +9,7 @@
     "id": "invalid-syntax",
     "description": "Try to wrap from file with syntax errors",
     "command": "generate-wrapper BrokenClass.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "empty-file",
