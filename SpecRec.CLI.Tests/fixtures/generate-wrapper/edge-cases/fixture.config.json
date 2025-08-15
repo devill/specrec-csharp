@@ -33,7 +33,7 @@
     "id": "abstract-class",
     "description": "Generate wrapper for abstract class",
     "command": "generate-wrapper BaseProcessor.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "inheritance-single",
