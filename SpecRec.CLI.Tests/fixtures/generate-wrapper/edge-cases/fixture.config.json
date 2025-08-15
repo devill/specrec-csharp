@@ -15,7 +15,7 @@
     "id": "static-methods",
     "description": "Generate wrapper for class with both static and instance methods (generates both instance and static wrappers)",
     "command": "generate-wrapper MixedMethodsService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "overloaded-methods",

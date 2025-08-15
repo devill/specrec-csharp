@@ -76,7 +76,10 @@ public static class GenerateWrapperCommand
                 await fileService.WriteAllTextAsync($"{staticWrapperName}.cs", generationResult.StaticWrapperCode);
                 
                 Console.WriteLine($"Generated static wrapper class: {staticWrapperName}.cs");
-                Console.WriteLine($"Generated interface: {staticInterfaceName}.cs");
+                
+                // Use "static interface" label only when both instance and static wrappers exist
+                var interfaceLabel = generationResult.InterfaceCode != null ? "static interface" : "interface";
+                Console.WriteLine($"Generated {interfaceLabel}: {staticInterfaceName}.cs");
             }
         }
         catch (Exception ex)

@@ -4,10 +4,11 @@ namespace EdgeCases
 {
     public interface IMixedMethodsServiceStaticWrapper
     {
-        // Static methods wrapped as instance methods
+        string Version { get; }
+
         string FormatValue(string value);
         int Calculate(int a, int b);
-        T CreateDefault<T>() where T : new();
-        string Version { get; }
+        T CreateDefault<T>()
+            where T : new();
     }
 }

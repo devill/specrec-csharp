@@ -4,7 +4,8 @@ namespace EdgeCases
 {
     public class MixedMethodsServiceStaticWrapper : IMixedMethodsServiceStaticWrapper
     {
-        // Static methods wrapped as instance methods calling the original static methods
+        public string Version => MixedMethodsService.Version;
+
         public string FormatValue(string value)
         {
             return MixedMethodsService.FormatValue(value);
@@ -15,11 +16,10 @@ namespace EdgeCases
             return MixedMethodsService.Calculate(a, b);
         }
 
-        public T CreateDefault<T>() where T : new()
+        public T CreateDefault<T>()
+            where T : new()
         {
-            return MixedMethodsService.CreateDefault<T>();
+            return MixedMethodsService.CreateDefault();
         }
-
-        public string Version => MixedMethodsService.Version;
     }
 }
