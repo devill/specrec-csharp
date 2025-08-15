@@ -25,7 +25,9 @@ public class InterfaceGenerator : CodeGenerator
     {
         var interfaceVisibility = GetInterfaceVisibility();
         var interfaceDecl = InterfaceDeclaration(Context.InterfaceName)
-            .AddModifiers(Token(interfaceVisibility));
+            .AddModifiers(Token(interfaceVisibility))
+            .WithTypeParameterList(Context.SourceClass.TypeParameterList)
+            .WithConstraintClauses(Context.SourceClass.ConstraintClauses);
 
         var members = new List<MemberDeclarationSyntax>();
         

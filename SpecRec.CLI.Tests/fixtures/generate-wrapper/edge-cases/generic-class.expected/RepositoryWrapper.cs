@@ -7,7 +7,6 @@ namespace EdgeCases
     public class RepositoryWrapper<T> : IRepository<T> where T : class, new()
     {
         private readonly Repository<T> _wrapped;
-
         public RepositoryWrapper(Repository<T> wrapped)
         {
             _wrapped = wrapped;
@@ -20,7 +19,8 @@ namespace EdgeCases
             _wrapped.Add(item);
         }
 
-        public T GetById<TKey>(TKey id) where TKey : IComparable<TKey>
+        public T GetById<TKey>(TKey id)
+            where TKey : IComparable<TKey>
         {
             return _wrapped.GetById(id);
         }
