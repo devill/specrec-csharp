@@ -36,15 +36,21 @@
     "skip": false
   },
   {
-    "id": "inheritance-single",
-    "description": "Generate wrapper for class that inherits from another class",
-    "command": "generate-wrapper EmailService.cs",
+    "id": "inheritance-hierarchy",
+    "description": "Generate wrapper for class with multi-level inheritance",
+    "command": "generate-wrapper SqlServerDatabaseService.cs",
     "skip": true
   },
   {
-    "id": "inheritance-hierarchy",
-    "description": "Generate wrapper for class with multi-level inheritance",
-    "command": "generate-wrapper SqlServerDatabaseService.cs --hierarchy-mode full",
+    "id": "inheritance-base-exists",
+    "description": "Generate wrapper for child class when base wrapper already exists",
+    "command": "generate-wrapper SqlServerDatabaseService.cs",
+    "skip": true
+  },
+  {
+    "id": "inheritance-interface-mismatch",
+    "description": "Generate wrapper fails when parent wrapper exists but interfaces don't match",
+    "command": "generate-wrapper SqlServerDatabaseService.cs",
     "skip": true
   },
   {

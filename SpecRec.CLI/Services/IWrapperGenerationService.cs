@@ -4,7 +4,7 @@ namespace SpecRec.CLI.Services;
 
 public interface IWrapperGenerationService
 {
-    WrapperGenerationResult GenerateWrapper(ClassDeclarationSyntax classDeclaration, string namespaceName, IList<string> usingStatements);
+    WrapperGenerationResult GenerateWrapper(ClassAnalysisResult analysisResult);
 }
 
 public record WrapperGenerationResult(

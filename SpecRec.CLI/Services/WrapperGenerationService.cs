@@ -5,16 +5,16 @@ namespace SpecRec.CLI.Services;
 
 public class WrapperGenerationService : IWrapperGenerationService
 {
-    public WrapperGenerationResult GenerateWrapper(ClassDeclarationSyntax classDeclaration, string namespaceName, IList<string> usingStatements)
+    public WrapperGenerationResult GenerateWrapper(ClassAnalysisResult analysisResult)
     {
-        var context = WrapperGenerationContext.Create(classDeclaration, namespaceName, usingStatements);
+        var context = WrapperGenerationContext.Create(analysisResult);
         var memberExtractor = new MemberExtractor();
 
         // Generate instance interface and wrapper only if class has instance members
         string? interfaceCode = null;
         string? wrapperCode = null;
 
-        if (memberExtractor.HasInstanceMembers(classDeclaration))
+        if (memberExtractor.HasInstanceMembers(context))
         {
             var interfaceGenerator = new InterfaceGenerator(context);
             var wrapperGenerator = new WrapperClassGenerator(context);
@@ -27,7 +27,7 @@ public class WrapperGenerationService : IWrapperGenerationService
         string? staticInterfaceCode = null;
         string? staticWrapperCode = null;
 
-        if (memberExtractor.HasStaticMethods(classDeclaration))
+        if (memberExtractor.HasStaticMethods(analysisResult.ClassDeclaration))
         {
             var staticContext = context.WithStaticWrapperNames();
             var staticInterfaceGenerator = new InterfaceGenerator(staticContext, isForStaticMembers: true);

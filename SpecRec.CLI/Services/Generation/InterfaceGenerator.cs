@@ -31,16 +31,24 @@ public class InterfaceGenerator : CodeGenerator
 
         var members = new List<MemberDeclarationSyntax>();
         
-        var methods = _isForStaticMembers 
-            ? MemberExtractor.GetPublicStaticMethods(Context.SourceClass)
-            : MemberExtractor.GetPublicInstanceMethods(Context.SourceClass);
+        if (_isForStaticMembers)
+        {
+            // Static members - use syntax-only analysis
+            var methods = MemberExtractor.GetPublicStaticMethods(Context.SourceClass);
+            var properties = MemberExtractor.GetPublicStaticProperties(Context.SourceClass);
             
-        var properties = _isForStaticMembers
-            ? MemberExtractor.GetPublicStaticProperties(Context.SourceClass) 
-            : MemberExtractor.GetPublicInstanceProperties(Context.SourceClass);
-
-        members.AddRange(properties.Select(CreateInterfaceProperty));
-        members.AddRange(methods.Select(CreateInterfaceMethod));
+            members.AddRange(properties.Select(CreateInterfaceProperty));
+            members.AddRange(methods.Select(CreateInterfaceMethod));
+        }
+        else
+        {
+            // Instance members - use inheritance-aware analysis
+            var methods = MemberExtractor.GetPublicInstanceMethods(Context);
+            var properties = MemberExtractor.GetPublicInstanceProperties(Context);
+            
+            members.AddRange(properties.Select(CreateInterfaceProperty));
+            members.AddRange(methods.Select(CreateInterfaceMethod));
+        }
 
         return interfaceDecl.AddMembers(members.ToArray());
     }

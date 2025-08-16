@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Reflection;
 
 namespace SpecRec.CLI.Services;
 
@@ -46,7 +47,11 @@ public class CodeAnalysisService : ICodeAnalysisService
         var hasStaticMethods = HasStaticMethods(targetClass);
         var usingStatements = GetUsingStatements(root);
 
-        return new ClassAnalysisResult(targetClass, namespaceName, hasStaticMethods, usingStatements);
+        // Create compilation for semantic analysis
+        var compilation = CreateCompilation(syntaxTree);
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+
+        return new ClassAnalysisResult(targetClass, namespaceName, hasStaticMethods, usingStatements, semanticModel, compilation);
     }
 
     private static string GetNamespace(SyntaxNode root)
@@ -71,5 +76,62 @@ public class CodeAnalysisService : ICodeAnalysisService
             .OfType<MethodDeclarationSyntax>()
             .Any(m => m.Modifiers.Any(mod => mod.IsKind(SyntaxKind.StaticKeyword)) && 
                      m.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PublicKeyword)));
+    }
+
+    private static Compilation CreateCompilation(SyntaxTree syntaxTree)
+    {
+        // Get references to essential .NET assemblies for semantic analysis
+        var references = new List<MetadataReference>
+        {
+            MetadataReference.CreateFromFile(typeof(object).Assembly.Location), // mscorlib/System.Private.CoreLib
+            MetadataReference.CreateFromFile(typeof(Console).Assembly.Location), // System.Console
+            MetadataReference.CreateFromFile(typeof(IEnumerable<>).Assembly.Location), // System.Collections
+            MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location), // System.Runtime
+        };
+
+        // Add reference to netstandard if available
+        try
+        {
+            references.Add(MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location));
+        }
+        catch
+        {
+            // netstandard not available, continue without it
+        }
+
+        // Include all C# files in the current directory for comprehensive semantic analysis
+        var syntaxTrees = new List<SyntaxTree> { syntaxTree };
+        var filePath = syntaxTree.FilePath;
+        
+        // Only include additional files if the main file has a valid path
+        if (!string.IsNullOrEmpty(filePath))
+        {
+            var currentDirectory = Path.GetDirectoryName(filePath) ?? Directory.GetCurrentDirectory();
+            
+            foreach (var csFile in Directory.GetFiles(currentDirectory, "*.cs"))
+            {
+                // Skip the main file since it's already included
+                if (Path.GetFullPath(csFile) == Path.GetFullPath(filePath))
+                    continue;
+                    
+                try
+                {
+                    var code = File.ReadAllText(csFile);
+                    var additionalTree = CSharpSyntaxTree.ParseText(code, path: csFile);
+                    syntaxTrees.Add(additionalTree);
+                }
+                catch
+                {
+                    // Skip files that can't be parsed
+                }
+            }
+        }
+
+        // Create compilation with all syntax trees
+        return CSharpCompilation.Create(
+            assemblyName: "TempAssembly",
+            syntaxTrees: syntaxTrees,
+            references: references,
+            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
 }
