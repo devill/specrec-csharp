@@ -37,6 +37,14 @@ public class WrapperGenerationService : IWrapperGenerationService
             staticWrapperCode = staticWrapperGenerator.Generate();
         }
 
-        return new WrapperGenerationResult(interfaceCode, wrapperCode, staticInterfaceCode, staticWrapperCode);
+        return new WrapperGenerationResult(
+            interfaceCode, 
+            wrapperCode, 
+            staticInterfaceCode, 
+            staticWrapperCode,
+            interfaceCode != null ? context.InterfaceName : null,
+            wrapperCode != null ? context.WrapperName : null,
+            staticInterfaceCode != null ? context.WithStaticWrapperNames().InterfaceName : null,
+            staticWrapperCode != null ? context.WithStaticWrapperNames().WrapperName : null);
     }
 }

@@ -42,8 +42,17 @@ public class InterfaceGenerator : CodeGenerator
         }
         else
         {
-            // Instance members - use inheritance-aware analysis with organized comments
-            var memberGroups = MemberExtractor.GetMembersByDeclaringType(Context);
+            // Check if class implements existing interfaces
+            if (Context.ExistingInterfaces.Any())
+            {
+                // Handle classes that implement existing interfaces
+                AddMembersFromExistingInterfaces(members);
+                AddAdditionalPublicMembers(members);
+            }
+            else
+            {
+                // Instance members - use inheritance-aware analysis with organized comments
+                var memberGroups = MemberExtractor.GetMembersByDeclaringType(Context);
             
             foreach (var group in memberGroups.MemberGroups)
             {
@@ -116,6 +125,7 @@ public class InterfaceGenerator : CodeGenerator
                             lastMember.GetTrailingTrivia().Add(newLine));
                     }
                 }
+            }
             }
         }
 
@@ -197,5 +207,107 @@ public class InterfaceGenerator : CodeGenerator
         if (Context.SourceClass.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PrivateKeyword)))
             return SyntaxKind.PrivateKeyword;
         return SyntaxKind.InternalKeyword; // Default visibility
+    }
+
+    private void AddMembersFromExistingInterfaces(List<MemberDeclarationSyntax> members)
+    {
+        foreach (var interfaceSymbol in Context.ExistingInterfaces)
+        {
+            var interfaceMembers = new List<MemberDeclarationSyntax>();
+            
+            // Get all members of this interface
+            foreach (var member in interfaceSymbol.GetMembers())
+            {
+                switch (member)
+                {
+                    case IMethodSymbol method when !method.IsStatic:
+                        var methodSyntax = MemberExtractor.GetMethodSyntax(method, Context.SemanticModel);
+                        if (methodSyntax != null)
+                        {
+                            interfaceMembers.Add(CreateInterfaceMethod(methodSyntax));
+                        }
+                        break;
+                        
+                    case IPropertySymbol property when !property.IsStatic:
+                        var propertySyntax = MemberExtractor.GetPropertySyntax(property, Context.SemanticModel);
+                        if (propertySyntax != null)
+                        {
+                            interfaceMembers.Add(CreateInterfaceProperty(propertySyntax));
+                        }
+                        break;
+                }
+            }
+
+            // Add comment and members for this interface
+            if (interfaceMembers.Any())
+            {
+                var commentText = $"// From {interfaceSymbol.Name}";
+                var firstMember = interfaceMembers.First();
+                var commentTrivia = SyntaxFactory.Comment(commentText);
+                var newLine = SyntaxFactory.ElasticCarriageReturnLineFeed;
+                
+                // Add blank line before comment if there are already members
+                var leadingTrivia = members.Any() 
+                    ? SyntaxFactory.TriviaList(newLine, commentTrivia, newLine)
+                    : SyntaxFactory.TriviaList(commentTrivia, newLine);
+                
+                interfaceMembers[0] = firstMember.WithLeadingTrivia(leadingTrivia.AddRange(firstMember.GetLeadingTrivia()));
+                members.AddRange(interfaceMembers);
+            }
+        }
+    }
+
+    private void AddAdditionalPublicMembers(List<MemberDeclarationSyntax> members)
+    {
+        var additionalMembers = new List<MemberDeclarationSyntax>();
+        
+        // Get all public members from the class
+        var classMethods = MemberExtractor.GetPublicInstanceMethods(Context.SourceClass);
+        var classProperties = MemberExtractor.GetPublicInstanceProperties(Context.SourceClass);
+        
+        // Filter out members that are already part of implemented interfaces
+        var interfaceMemberNames = new HashSet<string>();
+        foreach (var interfaceSymbol in Context.ExistingInterfaces)
+        {
+            foreach (var member in interfaceSymbol.GetMembers())
+            {
+                interfaceMemberNames.Add(member.Name);
+            }
+        }
+        
+        // Add properties that aren't in existing interfaces
+        foreach (var property in classProperties)
+        {
+            if (!interfaceMemberNames.Contains(property.Identifier.ValueText))
+            {
+                additionalMembers.Add(CreateInterfaceProperty(property));
+            }
+        }
+        
+        // Add methods that aren't in existing interfaces
+        foreach (var method in classMethods)
+        {
+            if (!interfaceMemberNames.Contains(method.Identifier.ValueText))
+            {
+                additionalMembers.Add(CreateInterfaceMethod(method));
+            }
+        }
+
+        // Add comment for additional members
+        if (additionalMembers.Any())
+        {
+            var commentText = $"// Additional public methods from {Context.ClassName}";
+            var firstMember = additionalMembers.First();
+            var commentTrivia = SyntaxFactory.Comment(commentText);
+            var newLine = SyntaxFactory.ElasticCarriageReturnLineFeed;
+            
+            // Add blank line before comment if there are already members
+            var leadingTrivia = members.Any() 
+                ? SyntaxFactory.TriviaList(newLine, commentTrivia, newLine)
+                : SyntaxFactory.TriviaList(commentTrivia, newLine);
+            
+            additionalMembers[0] = firstMember.WithLeadingTrivia(leadingTrivia.AddRange(firstMember.GetLeadingTrivia()));
+            members.AddRange(additionalMembers);
+        }
     }
 }
