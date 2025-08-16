@@ -42,12 +42,81 @@ public class InterfaceGenerator : CodeGenerator
         }
         else
         {
-            // Instance members - use inheritance-aware analysis
-            var methods = MemberExtractor.GetPublicInstanceMethods(Context);
-            var properties = MemberExtractor.GetPublicInstanceProperties(Context);
+            // Instance members - use inheritance-aware analysis with organized comments
+            var memberGroups = MemberExtractor.GetMembersByDeclaringType(Context);
             
-            members.AddRange(properties.Select(CreateInterfaceProperty));
-            members.AddRange(methods.Select(CreateInterfaceMethod));
+            foreach (var group in memberGroups.MemberGroups)
+            {
+                var groupMembers = new List<MemberDeclarationSyntax>();
+                
+                // Add properties first, then methods (to match expected order)
+                foreach (var property in group.Properties)
+                {
+                    var propertySyntax = MemberExtractor.GetPropertySyntax(property, Context.SemanticModel);
+                    if (propertySyntax != null)
+                    {
+                        groupMembers.Add(CreateInterfaceProperty(propertySyntax));
+                    }
+                }
+                
+                foreach (var method in group.Methods)
+                {
+                    var methodSyntax = MemberExtractor.GetMethodSyntax(method, Context.SemanticModel);
+                    if (methodSyntax != null)
+                    {
+                        groupMembers.Add(CreateInterfaceMethod(methodSyntax));
+                    }
+                }
+
+                // Add organizing comment for inherited members as leading trivia to the first member
+                if (groupMembers.Any())
+                {
+                    if (!group.IsCurrentClass)
+                    {
+                        var commentText = $"// Inherited from {group.DeclaringType.Name}";
+                        var commentTrivia = SyntaxFactory.Comment(commentText);
+                        var newLine = SyntaxFactory.ElasticCarriageReturnLineFeed;
+                        
+                        // Add comment as leading trivia to the first member of this group
+                        var firstMember = groupMembers.First();
+                        var existingTrivia = firstMember.GetLeadingTrivia();
+                        
+                        // If there are already other members, add a blank line before the comment
+                        var leadingTrivia = members.Any() 
+                            ? SyntaxFactory.TriviaList(newLine, commentTrivia, newLine).AddRange(existingTrivia)
+                            : SyntaxFactory.TriviaList(commentTrivia, newLine).AddRange(existingTrivia);
+                        
+                        groupMembers[0] = firstMember.WithLeadingTrivia(leadingTrivia);
+                    }
+                    else if (members.Any())
+                    {
+                        // For the current class members, add some spacing if not the first group
+                        var firstMember = groupMembers.First();
+                        var existingTrivia = firstMember.GetLeadingTrivia();
+                        var newLine = SyntaxFactory.ElasticCarriageReturnLineFeed;
+                        
+                        // Add class-specific comment
+                        var commentText = $"// {group.DeclaringType.Name} specific methods";
+                        var commentTrivia = SyntaxFactory.Comment(commentText);
+                        var leadingTrivia = SyntaxFactory.TriviaList(newLine, commentTrivia, newLine).AddRange(existingTrivia);
+                        
+                        groupMembers[0] = firstMember.WithLeadingTrivia(leadingTrivia);
+                    }
+                    
+                    members.AddRange(groupMembers);
+                    
+                    // Add empty line after this group (except for the last group)
+                    if (group != memberGroups.MemberGroups.Last() && groupMembers.Any())
+                    {
+                        var lastMemberIndex = members.Count - 1;
+                        var lastMember = members[lastMemberIndex];
+                        var newLine = SyntaxFactory.ElasticCarriageReturnLineFeed;
+                        
+                        members[lastMemberIndex] = lastMember.WithTrailingTrivia(
+                            lastMember.GetTrailingTrivia().Add(newLine));
+                    }
+                }
+            }
         }
 
         return interfaceDecl.AddMembers(members.ToArray());
@@ -59,11 +128,18 @@ public class InterfaceGenerator : CodeGenerator
             method.ReturnType, Context.ClassName, Context.NestedTypeNames);
         var parameterList = QualifyNestedTypesInParameterList(method.ParameterList);
         
-        return MethodDeclaration(returnType, method.Identifier)
+        var interfaceMethod = MethodDeclaration(returnType, method.Identifier)
             .WithParameterList(parameterList)
             .WithTypeParameterList(method.TypeParameterList)
-            .WithConstraintClauses(method.ConstraintClauses)
             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+
+        // Add constraint clauses as-is for now
+        if (method.ConstraintClauses.Any())
+        {
+            interfaceMethod = interfaceMethod.WithConstraintClauses(method.ConstraintClauses);
+        }
+        
+        return interfaceMethod;
     }
 
     private ParameterListSyntax QualifyNestedTypesInParameterList(ParameterListSyntax parameterList)
@@ -110,6 +186,7 @@ public class InterfaceGenerator : CodeGenerator
 
         return propertyDecl;
     }
+
 
     private SyntaxKind GetInterfaceVisibility()
     {

@@ -29,9 +29,10 @@ namespace EdgeCases
             _wrapped.Connect();
         }
 
-        public T ExecuteQuery<T>(string sql) where T : new()
+        public T ExecuteQuery<T>(string sql)
+            where T : new()
         {
-            return _wrapped.ExecuteQuery<T>(sql);
+            return _wrapped.ExecuteQuery(sql);
         }
 
         public void ClearCache()
