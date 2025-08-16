@@ -22,7 +22,7 @@ public class CodeAnalysisService : ICodeAnalysisService
         }
 
         var sourceCode = await _fileService.ReadAllTextAsync(filePath);
-        var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
+        var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode, path: filePath);
         var root = syntaxTree.GetRoot();
         
         // Check for syntax errors
@@ -107,6 +107,12 @@ public class CodeAnalysisService : ICodeAnalysisService
         if (!string.IsNullOrEmpty(filePath))
         {
             var currentDirectory = Path.GetDirectoryName(filePath) ?? Directory.GetCurrentDirectory();
+            
+            // If directory name is empty, use current working directory
+            if (string.IsNullOrEmpty(currentDirectory))
+            {
+                currentDirectory = Directory.GetCurrentDirectory();
+            }
             
             foreach (var csFile in Directory.GetFiles(currentDirectory, "*.cs"))
             {

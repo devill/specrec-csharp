@@ -30,8 +30,9 @@ public class InheritanceAnalyzer
         // Process from base to derived to handle overrides correctly
         foreach (var type in inheritanceChain.AsEnumerable().Reverse())
         {
-            var publicMethods = type.GetMembers()
-                .OfType<IMethodSymbol>()
+            var allMethods = type.GetMembers()
+                .OfType<IMethodSymbol>();
+            var publicMethods = allMethods
                 .Where(m => m.DeclaredAccessibility == Accessibility.Public && 
                            !m.IsStatic && 
                            m.MethodKind == MethodKind.Ordinary &&
@@ -80,6 +81,7 @@ public class InheritanceAnalyzer
     /// <summary>
     /// Groups members by their declaring type to enable organized code generation
     /// with "Inherited from BaseClass" comments.
+    /// Returns groups ordered from most base class to most derived class.
     /// </summary>
     public InheritanceMemberGroup GetMembersByDeclaringType(ClassDeclarationSyntax classDeclaration)
     {
@@ -90,13 +92,13 @@ public class InheritanceAnalyzer
         var inheritanceChain = GetInheritanceChain(typeSymbol);
         var processedSignatures = new HashSet<string>();
 
-        // Start from most derived and work backwards to handle overrides
+        // First, collect all unique members from the entire hierarchy
+        var allMethods = new Dictionary<string, IMethodSymbol>();
+        var allProperties = new Dictionary<string, IPropertySymbol>();
+
+        // Process from most derived to most base to handle overrides correctly
         foreach (var type in inheritanceChain)
         {
-            var groupMethods = new List<IMethodSymbol>();
-            var groupProperties = new List<IPropertySymbol>();
-
-            // Collect methods for this type
             var methods = type.GetMembers()
                 .OfType<IMethodSymbol>()
                 .Where(m => m.DeclaredAccessibility == Accessibility.Public && 
@@ -107,14 +109,12 @@ public class InheritanceAnalyzer
             foreach (var method in methods)
             {
                 var signature = GetMethodSignature(method);
-                if (!processedSignatures.Contains(signature))
+                if (!allMethods.ContainsKey(signature))
                 {
-                    groupMethods.Add(method);
-                    processedSignatures.Add(signature);
+                    allMethods[signature] = method;
                 }
             }
 
-            // Collect properties for this type
             var properties = type.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public && 
@@ -123,23 +123,64 @@ public class InheritanceAnalyzer
 
             foreach (var property in properties)
             {
-                if (!processedSignatures.Contains(property.Name))
+                if (!allProperties.ContainsKey(property.Name))
                 {
-                    groupProperties.Add(property);
-                    processedSignatures.Add(property.Name);
+                    allProperties[property.Name] = property;
                 }
             }
+        }
 
-            // Add group if it has members
-            if (groupMethods.Any() || groupProperties.Any())
+        // Now group members by their original declaring type
+        var typeToGroup = new Dictionary<INamedTypeSymbol, TypeMemberGroup>(SymbolEqualityComparer.Default);
+
+        foreach (var method in allMethods.Values)
+        {
+            // Find the original declaring type (base-most type that declares this method)
+            var originalDeclaringType = GetOriginalDeclaringType(method, inheritanceChain);
+            
+            if (!typeToGroup.ContainsKey(originalDeclaringType))
             {
-                result.MemberGroups.Add(new TypeMemberGroup
+                typeToGroup[originalDeclaringType] = new TypeMemberGroup
                 {
-                    DeclaringType = type,
-                    Methods = groupMethods,
-                    Properties = groupProperties,
-                    IsCurrentClass = SymbolEqualityComparer.Default.Equals(type, typeSymbol)
-                });
+                    DeclaringType = originalDeclaringType,
+                    Methods = new List<IMethodSymbol>(),
+                    Properties = new List<IPropertySymbol>(),
+                    IsCurrentClass = SymbolEqualityComparer.Default.Equals(originalDeclaringType, typeSymbol)
+                };
+            }
+            
+            typeToGroup[originalDeclaringType].Methods.Add(method);
+        }
+
+        foreach (var property in allProperties.Values)
+        {
+            // Find the original declaring type (base-most type that declares this property)
+            var originalDeclaringType = GetOriginalDeclaringType(property, inheritanceChain);
+            
+            if (!typeToGroup.ContainsKey(originalDeclaringType))
+            {
+                typeToGroup[originalDeclaringType] = new TypeMemberGroup
+                {
+                    DeclaringType = originalDeclaringType,
+                    Methods = new List<IMethodSymbol>(),
+                    Properties = new List<IPropertySymbol>(),
+                    IsCurrentClass = SymbolEqualityComparer.Default.Equals(originalDeclaringType, typeSymbol)
+                };
+            }
+            
+            typeToGroup[originalDeclaringType].Properties.Add(property);
+        }
+
+        // Order groups from base to derived and add only groups that have members
+        foreach (var type in inheritanceChain.AsEnumerable().Reverse())
+        {
+            if (typeToGroup.ContainsKey(type))
+            {
+                var group = typeToGroup[type];
+                if (group.Methods.Any() || group.Properties.Any())
+                {
+                    result.MemberGroups.Add(group);
+                }
             }
         }
 
@@ -179,6 +220,38 @@ public class InheritanceAnalyzer
     {
         var parameters = string.Join(",", method.Parameters.Select(p => p.Type.ToString()));
         return $"{method.Name}({parameters})";
+    }
+
+    /// <summary>
+    /// Finds the original declaring type for a method symbol (base-most type that declares this method).
+    /// </summary>
+    private INamedTypeSymbol GetOriginalDeclaringType(IMethodSymbol method, List<INamedTypeSymbol> inheritanceChain)
+    {
+        // Follow the OverriddenMethod chain to find the original declaration
+        var current = method;
+        while (current.OverriddenMethod != null)
+        {
+            current = current.OverriddenMethod;
+        }
+        
+        // Return the containing type of the original method
+        return current.ContainingType;
+    }
+
+    /// <summary>
+    /// Finds the original declaring type for a property symbol (base-most type that declares this property).
+    /// </summary>
+    private INamedTypeSymbol GetOriginalDeclaringType(IPropertySymbol property, List<INamedTypeSymbol> inheritanceChain)
+    {
+        // Follow the OverriddenProperty chain to find the original declaration
+        var current = property;
+        while (current.OverriddenProperty != null)
+        {
+            current = current.OverriddenProperty;
+        }
+        
+        // Return the containing type of the original property
+        return current.ContainingType;
     }
 }
 

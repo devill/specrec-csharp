@@ -12,14 +12,32 @@ namespace EdgeCases
             _wrapped = wrapped;
         }
 
+        public bool IsConnected => _wrapped.IsConnected;
+
         public void Initialize(string connectionString)
         {
             _wrapped.Initialize(connectionString);
         }
 
+        public void Dispose()
+        {
+            _wrapped.Dispose();
+        }
+
         public void Connect()
         {
             _wrapped.Connect();
+        }
+
+        public T ExecuteQuery<T>(string sql)
+            where T : new()
+        {
+            return _wrapped.ExecuteQuery(sql);
+        }
+
+        public void ClearCache()
+        {
+            _wrapped.ClearCache();
         }
 
         public void ExecuteStoredProcedure(string procName, params object[] parameters)

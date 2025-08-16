@@ -39,13 +39,13 @@
     "id": "inheritance-hierarchy",
     "description": "Generate wrapper for class with multi-level inheritance",
     "command": "generate-wrapper SqlServerDatabaseService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "inheritance-base-exists",
     "description": "Generate wrapper for child class when base wrapper already exists",
     "command": "generate-wrapper SqlServerDatabaseService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "inheritance-interface-mismatch",
