@@ -32,7 +32,59 @@ public static class GenerateWrapperCommand
         return command;
     }
 
-    private static async Task HandleGenerateWrapper(
+    public static async Task<(string output, string error)> HandleGenerateWrapperWithOutput(
+        string className, 
+        string hierarchyMode,
+        ICodeAnalysisService codeAnalysisService,
+        IWrapperGenerationService wrapperGenerationService,
+        IFileService fileService)
+    {
+        try
+        {
+            var outputs = new List<string>();
+            
+            // Analyze the class
+            var analysisResult = await codeAnalysisService.AnalyzeClassAsync(className);
+            
+            // Generate wrapper code
+            var generationResult = wrapperGenerationService.GenerateWrapper(analysisResult);
+
+            // Write interface and wrapper files if they exist
+            if (generationResult.InterfaceCode != null && generationResult.WrapperCode != null)
+            {
+                var interfaceFile = $"{generationResult.InterfaceName}.cs";
+                var wrapperFile = $"{generationResult.WrapperName}.cs";
+                
+                await fileService.WriteAllTextAsync(interfaceFile, generationResult.InterfaceCode);
+                await fileService.WriteAllTextAsync(wrapperFile, generationResult.WrapperCode);
+
+                // Collect output
+                outputs.Add($"Generated wrapper class: {generationResult.WrapperName}.cs");
+                outputs.Add($"Generated interface: {generationResult.InterfaceName}.cs");
+            }
+
+            // Write static wrapper files if they exist
+            if (generationResult.StaticInterfaceCode != null && generationResult.StaticWrapperCode != null)
+            {
+                await fileService.WriteAllTextAsync($"{generationResult.StaticInterfaceName}.cs", generationResult.StaticInterfaceCode);
+                await fileService.WriteAllTextAsync($"{generationResult.StaticWrapperName}.cs", generationResult.StaticWrapperCode);
+                
+                outputs.Add($"Generated static wrapper class: {generationResult.StaticWrapperName}.cs");
+                
+                // Use "static interface" label only when both instance and static wrappers exist
+                var interfaceLabel = generationResult.InterfaceCode != null ? "static interface" : "interface";
+                outputs.Add($"Generated {interfaceLabel}: {generationResult.StaticInterfaceName}.cs");
+            }
+            
+            return (string.Join(Environment.NewLine, outputs), "");
+        }
+        catch (Exception ex)
+        {
+            return ("", $"Error: {ex.Message}");
+        }
+    }
+
+    public static async Task HandleGenerateWrapper(
         string className, 
         string hierarchyMode,
         ICodeAnalysisService codeAnalysisService,
