@@ -12,25 +12,13 @@ namespace EdgeCases
             _wrapped = wrapped;
         }
 
-        // From INotificationService
-        public bool IsEnabled
-        {
-            get => _wrapped.IsEnabled;
-            set => _wrapped.IsEnabled = value;
-        }
+        public bool IsEnabled { get => _wrapped.IsEnabled; set => _wrapped.IsEnabled = value; }
 
         public void SendNotification(string message)
         {
             _wrapped.SendNotification(message);
         }
 
-        // From IDisposable
-        public void Dispose()
-        {
-            _wrapped.Dispose();
-        }
-
-        // Additional public methods from NotificationService
         public string[] GetSentNotifications()
         {
             return _wrapped.GetSentNotifications();
@@ -49,6 +37,11 @@ namespace EdgeCases
         public void SendBulkNotifications(string[] messages)
         {
             _wrapped.SendBulkNotifications(messages);
+        }
+
+        public void Dispose()
+        {
+            _wrapped.Dispose();
         }
     }
 }

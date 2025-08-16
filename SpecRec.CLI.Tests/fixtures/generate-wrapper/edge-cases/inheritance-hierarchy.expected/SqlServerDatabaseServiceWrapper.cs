@@ -3,7 +3,7 @@ using System.Data.SqlClient;
 
 namespace EdgeCases
 {
-    public class SqlServerDatabaseServiceWrapper : ISqlServerDatabaseService
+    public class SqlServerDatabaseServiceWrapper : ISqlServerDatabaseServiceWrapper
     {
         private readonly SqlServerDatabaseService _wrapped;
 

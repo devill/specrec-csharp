@@ -6,12 +6,11 @@ namespace EdgeCases
     public interface INotificationServiceWrapper
     {
         // From INotificationService
-        bool IsEnabled { get; set; }
         void SendNotification(string message);
+        bool IsEnabled { get; set; }
 
         // From IDisposable
         void Dispose();
-
         // Additional public methods from NotificationService
         string[] GetSentNotifications();
         void ClearNotifications();

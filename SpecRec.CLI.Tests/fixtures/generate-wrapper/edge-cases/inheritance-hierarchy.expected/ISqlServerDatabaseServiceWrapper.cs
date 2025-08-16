@@ -3,7 +3,7 @@ using System.Data.SqlClient;
 
 namespace EdgeCases
 {
-    public interface ISqlServerDatabaseService
+    public interface ISqlServerDatabaseServiceWrapper
     {
         // Inherited from BaseService
         bool IsConnected { get; }
