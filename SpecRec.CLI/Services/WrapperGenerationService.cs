@@ -42,9 +42,9 @@ public class WrapperGenerationService : IWrapperGenerationService
             wrapperCode, 
             staticInterfaceCode, 
             staticWrapperCode,
-            interfaceCode != null ? context.InterfaceName : null,
-            wrapperCode != null ? context.WrapperName : null,
-            staticInterfaceCode != null ? context.WithStaticWrapperNames().InterfaceName : null,
-            staticWrapperCode != null ? context.WithStaticWrapperNames().WrapperName : null);
+            context.InterfaceName,
+            context.WrapperName,
+            context.WithStaticWrapperNames().InterfaceName,
+            context.WithStaticWrapperNames().WrapperName);
     }
 }
