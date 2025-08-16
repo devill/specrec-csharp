@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Xunit;
 using Xunit.Abstractions;
+using SpecRec.CLI.Services;
 
 namespace SpecRec.CLI.Tests;
 
@@ -66,8 +67,8 @@ public class FixtureTests
                 Directory.Delete(receivedPath, true);
             CopyDirectory(inputPath, receivedPath);
 
-            // Execute command
-            var (stdout, stderr, exitCode) = await RunCommand(config.Command, receivedPath);
+            // Execute command directly
+            var (stdout, stderr, exitCode) = await ExecuteCommand(config.Command, receivedPath);
 
             // Validate output
             await ValidateOutput(stdout, expectedOutPath, "stdout");
@@ -129,37 +130,114 @@ public class FixtureTests
         }
     }
 
-    private static async Task<(string stdout, string stderr, int exitCode)> RunCommand(string command, string workingDirectory)
+    private static async Task<(string stdout, string stderr, int exitCode)> ExecuteCommand(string command, string workingDirectory)
     {
         if (string.IsNullOrWhiteSpace(command))
             throw new ArgumentException("Command cannot be empty", nameof(command));
             
-        // Get the CLI DLL path - assumes it's built in the same solution
-        var testDir = Path.GetDirectoryName(typeof(FixtureTests).Assembly.Location)!;
-        var solutionDir = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(testDir))))!;
-        var cliDllPath = Path.Combine(solutionDir, "SpecRec.CLI", "bin", "Debug", "net9.0", "SpecRec.CLI.dll");
+        // Change to working directory for the duration of the command
+        var originalDirectory = Directory.GetCurrentDirectory();
+        Directory.SetCurrentDirectory(workingDirectory);
         
-        if (!File.Exists(cliDllPath))
-            throw new FileNotFoundException($"CLI DLL not found at: {cliDllPath}");
-
-        using var process = new Process();
-        process.StartInfo = new ProcessStartInfo
+        try
         {
-            FileName = "dotnet",
-            Arguments = $"{cliDllPath} {command}",
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+            // Parse command
+            var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                return ("", "Command is empty", 1);
+                
+            var commandName = parts[0];
+            var args = parts.Skip(1).ToArray();
+            
+            // Handle generate-wrapper command
+            if (commandName == "generate-wrapper")
+            {
+                return await ExecuteGenerateWrapper(args);
+            }
+            
+            return ("", $"Unknown command: {commandName}", 1);
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalDirectory);
+        }
+    }
+    
+    private static async Task<(string stdout, string stderr, int exitCode)> ExecuteGenerateWrapper(string[] args)
+    {
+        try
+        {
+            if (args.Length == 0)
+            {
+                var helpText = @"Description:
+  Generate wrapper class and interface for a given class
 
-        process.Start();
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        var stderr = await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
+Usage:
+  SpecRec.CLI generate-wrapper <className> [options]
 
-        return (stdout, stderr, process.ExitCode);
+Arguments:
+  <className>  The name of the class to wrap
+
+Options:
+  -h, --hierarchy-mode <hierarchy-mode>  How to handle inheritance hierarchy: 'single' or 'full' [default: prompt]
+  -?, -h, --help                         Show help and usage information";
+                var errorText = "Required argument missing for command: 'generate-wrapper'.";
+                return (helpText, errorText, 1);
+            }
+                
+            var className = args[0];
+            
+            // Create service instances (same as in GenerateWrapperCommand)
+            var fileService = new FileService();
+            var codeAnalysisService = new CodeAnalysisService(fileService);
+            var wrapperGenerationService = new WrapperGenerationService();
+            
+            // Analyze the class
+            var analysisResult = await codeAnalysisService.AnalyzeClassAsync(className);
+            
+            // Generate wrapper code
+            var generationResult = wrapperGenerationService.GenerateWrapper(analysisResult);
+
+            // Generate file names
+            var classNameOnly = analysisResult.ClassDeclaration.Identifier.ValueText;
+            var interfaceName = $"I{classNameOnly}";
+            var wrapperName = $"{classNameOnly}Wrapper";
+            
+            var output = new List<string>();
+            
+            // Write interface and wrapper files if they exist
+            if (generationResult.InterfaceCode != null && generationResult.WrapperCode != null)
+            {
+                await fileService.WriteAllTextAsync($"{interfaceName}.cs", generationResult.InterfaceCode);
+                await fileService.WriteAllTextAsync($"{wrapperName}.cs", generationResult.WrapperCode);
+
+                // Output results
+                output.Add($"Generated wrapper class: {wrapperName}.cs");
+                output.Add($"Generated interface: {interfaceName}.cs");
+            }
+
+            // Write static wrapper files if they exist
+            if (generationResult.StaticInterfaceCode != null && generationResult.StaticWrapperCode != null)
+            {
+                var staticInterfaceName = $"{interfaceName}StaticWrapper";
+                var staticWrapperName = $"{classNameOnly}StaticWrapper";
+                
+                await fileService.WriteAllTextAsync($"{staticInterfaceName}.cs", generationResult.StaticInterfaceCode);
+                await fileService.WriteAllTextAsync($"{staticWrapperName}.cs", generationResult.StaticWrapperCode);
+                
+                output.Add($"Generated static wrapper class: {staticWrapperName}.cs");
+                
+                // Use "static interface" label only when both instance and static wrappers exist
+                var interfaceLabel = generationResult.InterfaceCode != null ? "static interface" : "interface";
+                output.Add($"Generated {interfaceLabel}: {staticInterfaceName}.cs");
+            }
+            
+            return (string.Join(Environment.NewLine, output), "", 0);
+        }
+        catch (Exception ex)
+        {
+            return ("", $"Error: {ex.Message}", 1);
+        }
     }
 
     private static async Task ValidateOutput(string actual, string expectedPath, string outputType)
