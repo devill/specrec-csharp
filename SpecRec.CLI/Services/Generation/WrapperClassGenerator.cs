@@ -49,11 +49,11 @@ public class WrapperClassGenerator : CodeGenerator
 
         var methods = _isForStaticMembers 
             ? MemberExtractor.GetPublicStaticMethods(Context.SourceClass)
-            : MemberExtractor.GetPublicInstanceMethods(Context.SourceClass);
+            : MemberExtractor.GetPublicInstanceMethods(Context);
             
         var properties = _isForStaticMembers
             ? MemberExtractor.GetPublicStaticProperties(Context.SourceClass) 
-            : MemberExtractor.GetPublicInstanceProperties(Context.SourceClass);
+            : MemberExtractor.GetPublicInstanceProperties(Context);
 
         members.AddRange(properties.Select(CreateWrapperProperty));
         members.AddRange(methods.Select(CreateWrapperMethod));

@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SpecRec.CLI.Services;
@@ -11,5 +12,7 @@ public record ClassAnalysisResult(
     ClassDeclarationSyntax ClassDeclaration,
     string NamespaceName,
     bool HasStaticMethods,
-    IList<string> UsingStatements
+    IList<string> UsingStatements,
+    SemanticModel SemanticModel,
+    Compilation Compilation
 );

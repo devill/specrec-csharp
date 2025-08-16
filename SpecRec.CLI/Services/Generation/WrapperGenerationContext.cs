@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -10,24 +11,25 @@ public record WrapperGenerationContext(
     string ClassName,
     string InterfaceName,
     string WrapperName,
-    HashSet<string> NestedTypeNames)
+    HashSet<string> NestedTypeNames,
+    SemanticModel SemanticModel,
+    Compilation Compilation)
 {
-    public static WrapperGenerationContext Create(
-        ClassDeclarationSyntax sourceClass, 
-        string namespaceName, 
-        IList<string> usingStatements)
+    public static WrapperGenerationContext Create(ClassAnalysisResult analysisResult)
     {
-        var className = sourceClass.Identifier.ValueText;
-        var nestedTypeNames = ExtractNestedTypeNames(sourceClass);
+        var className = analysisResult.ClassDeclaration.Identifier.ValueText;
+        var nestedTypeNames = ExtractNestedTypeNames(analysisResult.ClassDeclaration);
         
         return new WrapperGenerationContext(
-            sourceClass,
-            namespaceName,
-            usingStatements.ToList().AsReadOnly(),
+            analysisResult.ClassDeclaration,
+            analysisResult.NamespaceName,
+            analysisResult.UsingStatements.ToList().AsReadOnly(),
             className,
             $"I{className}",
             $"{className}Wrapper",
-            nestedTypeNames);
+            nestedTypeNames,
+            analysisResult.SemanticModel,
+            analysisResult.Compilation);
     }
 
     private static HashSet<string> ExtractNestedTypeNames(ClassDeclarationSyntax sourceClass)

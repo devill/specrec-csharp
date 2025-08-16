@@ -45,10 +45,7 @@ public static class GenerateWrapperCommand
             var analysisResult = await codeAnalysisService.AnalyzeClassAsync(className);
             
             // Generate wrapper code
-            var generationResult = wrapperGenerationService.GenerateWrapper(
-                analysisResult.ClassDeclaration, 
-                analysisResult.NamespaceName,
-                analysisResult.UsingStatements);
+            var generationResult = wrapperGenerationService.GenerateWrapper(analysisResult);
 
             // Generate file names
             var classNameOnly = analysisResult.ClassDeclaration.Identifier.ValueText;
