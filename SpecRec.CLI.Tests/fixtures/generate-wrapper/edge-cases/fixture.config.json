@@ -51,13 +51,13 @@
     "id": "inheritance-interface-mismatch",
     "description": "Generate wrapper fails when parent wrapper exists but interfaces don't match",
     "command": "generate-wrapper SqlServerDatabaseService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "implements-interface",
     "description": "Generate wrapper for class that already implements interfaces",
     "command": "generate-wrapper NotificationService.cs",
-    "skip": true
+    "skip": false
   },
   {
     "id": "ref-out-params",

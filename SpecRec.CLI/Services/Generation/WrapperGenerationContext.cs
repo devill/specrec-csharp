@@ -13,23 +13,29 @@ public record WrapperGenerationContext(
     string WrapperName,
     HashSet<string> NestedTypeNames,
     SemanticModel SemanticModel,
-    Compilation Compilation)
+    Compilation Compilation,
+    IReadOnlyList<INamedTypeSymbol> ExistingInterfaces)
 {
     public static WrapperGenerationContext Create(ClassAnalysisResult analysisResult)
     {
         var className = analysisResult.ClassDeclaration.Identifier.ValueText;
         var nestedTypeNames = ExtractNestedTypeNames(analysisResult.ClassDeclaration);
+        var existingInterfaces = ExtractExistingInterfaces(analysisResult.ClassDeclaration, analysisResult.SemanticModel);
+        
+        // If class implements interfaces, use IClassNameWrapper, otherwise IClassName
+        var interfaceName = $"I{className}Wrapper";
         
         return new WrapperGenerationContext(
             analysisResult.ClassDeclaration,
             analysisResult.NamespaceName,
             analysisResult.UsingStatements.ToList().AsReadOnly(),
             className,
-            $"I{className}",
+            interfaceName,
             $"{className}Wrapper",
             nestedTypeNames,
             analysisResult.SemanticModel,
-            analysisResult.Compilation);
+            analysisResult.Compilation,
+            existingInterfaces);
     }
 
     private static HashSet<string> ExtractNestedTypeNames(ClassDeclarationSyntax sourceClass)
@@ -71,6 +77,25 @@ public record WrapperGenerationContext(
         }
         
         return nestedTypeNames;
+    }
+
+    private static IReadOnlyList<INamedTypeSymbol> ExtractExistingInterfaces(ClassDeclarationSyntax sourceClass, SemanticModel semanticModel)
+    {
+        var interfaces = new List<INamedTypeSymbol>();
+        
+        if (sourceClass.BaseList == null)
+            return interfaces.AsReadOnly();
+            
+        foreach (var baseType in sourceClass.BaseList.Types)
+        {
+            var symbol = semanticModel.GetSymbolInfo(baseType.Type).Symbol as INamedTypeSymbol;
+            if (symbol?.TypeKind == TypeKind.Interface)
+            {
+                interfaces.Add(symbol);
+            }
+        }
+        
+        return interfaces.AsReadOnly();
     }
 
     public WrapperGenerationContext WithStaticWrapperNames()

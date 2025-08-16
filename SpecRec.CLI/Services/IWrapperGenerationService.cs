@@ -11,5 +11,9 @@ public record WrapperGenerationResult(
     string? InterfaceCode,
     string? WrapperCode,
     string? StaticInterfaceCode = null,
-    string? StaticWrapperCode = null
+    string? StaticWrapperCode = null,
+    string? InterfaceName = null,
+    string? WrapperName = null,
+    string? StaticInterfaceName = null,
+    string? StaticWrapperName = null
 );
