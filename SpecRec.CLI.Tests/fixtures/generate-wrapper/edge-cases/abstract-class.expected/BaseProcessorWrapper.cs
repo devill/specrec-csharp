@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace EdgeCases
 {
-    public class BaseProcessorWrapper : IBaseProcessor
+    public class BaseProcessorWrapper : IBaseProcessorWrapper
     {
         private readonly BaseProcessor _wrapped;
 

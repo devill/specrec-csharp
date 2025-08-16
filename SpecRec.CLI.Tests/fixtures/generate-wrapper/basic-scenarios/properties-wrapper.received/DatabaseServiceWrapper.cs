@@ -2,7 +2,7 @@ using System;
 
 namespace TestProject
 {
-    public class DatabaseServiceWrapper : IDatabaseService
+    public class DatabaseServiceWrapper : IDatabaseServiceWrapper
     {
         private readonly DatabaseService _wrapped;
 

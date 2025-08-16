@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace EdgeCases
 {
-    public class DocumentProcessorWrapper : IDocumentProcessor
+    public class DocumentProcessorWrapper : IDocumentProcessorWrapper
     {
         private readonly DocumentProcessor _wrapped;
 

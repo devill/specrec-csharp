@@ -2,7 +2,7 @@ using System;
 
 namespace EdgeCases
 {
-    public class MixedMethodsServiceWrapper : IMixedMethodsService
+    public class MixedMethodsServiceWrapper : IMixedMethodsServiceWrapper
     {
         private readonly MixedMethodsService _wrapped;
 

@@ -2,7 +2,7 @@ using System;
 
 namespace EdgeCases
 {
-    public class ParserServiceWrapper : IParserService
+    public class ParserServiceWrapper : IParserServiceWrapper
     {
         private readonly ParserService _wrapped;
 

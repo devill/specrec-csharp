@@ -2,7 +2,7 @@ using System;
 
 namespace EdgeCases
 {
-    public class CalculatorServiceWrapper : ICalculatorService
+    public class CalculatorServiceWrapper : ICalculatorServiceWrapper
     {
         private readonly CalculatorService _wrapped;
 

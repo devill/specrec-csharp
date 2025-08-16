@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace TestProject
 {
-    public class LogServiceWrapper : ILogService
+    public class LogServiceWrapper : ILogServiceWrapper
     {
         private readonly LogService _wrapped;
 

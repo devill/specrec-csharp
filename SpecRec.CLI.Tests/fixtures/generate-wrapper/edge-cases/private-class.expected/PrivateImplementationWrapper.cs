@@ -2,7 +2,7 @@ using System;
 
 namespace FailureCases
 {
-    private class PrivateImplementationWrapper : IPrivateImplementation
+    private class PrivateImplementationWrapper : IPrivateImplementationWrapper
     {
         private readonly PrivateImplementation _wrapped;
 

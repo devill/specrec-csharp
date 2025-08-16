@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace EdgeCases
 {
-    public class AsyncServiceWrapper : IAsyncService
+    public class AsyncServiceWrapper : IAsyncServiceWrapper
     {
         private readonly AsyncService _wrapped;
 

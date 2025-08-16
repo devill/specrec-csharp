@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace EdgeCases
 {
-    public class RepositoryWrapper<T> : IRepository<T> where T : class, new()
+    public class RepositoryWrapper<T> : IRepositoryWrapper<T> where T : class, new()
     {
         private readonly Repository<T> _wrapped;
         public RepositoryWrapper(Repository<T> wrapped)

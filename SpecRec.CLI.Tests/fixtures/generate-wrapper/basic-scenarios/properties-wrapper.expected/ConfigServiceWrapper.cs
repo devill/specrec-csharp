@@ -2,7 +2,7 @@ using System;
 
 namespace TestProject
 {
-    public class ConfigServiceWrapper : IConfigService
+    public class ConfigServiceWrapper : IConfigServiceWrapper
     {
         private readonly ConfigService _wrapped;
 
