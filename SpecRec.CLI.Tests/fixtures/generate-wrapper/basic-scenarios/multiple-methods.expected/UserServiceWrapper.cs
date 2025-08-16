@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace TestProject
 {
-    public class UserServiceWrapper : IUserService
+    public class UserServiceWrapper : IUserServiceWrapper
     {
         private readonly UserService _wrapped;
 
