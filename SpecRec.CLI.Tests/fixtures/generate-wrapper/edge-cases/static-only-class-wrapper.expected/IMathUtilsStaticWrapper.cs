@@ -2,7 +2,7 @@ using System;
 
 namespace FailureCases
 {
-    public interface IMathUtilsWrapperStaticWrapper
+    public interface IMathUtilsStaticWrapper
     {
         int Add(int a, int b);
         double Multiply(double a, double b);

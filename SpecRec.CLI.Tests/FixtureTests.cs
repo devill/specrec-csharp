@@ -3,6 +3,7 @@ using System.Text.Json;
 using Xunit;
 using Xunit.Abstractions;
 using SpecRec.CLI.Services;
+using SpecRec.CLI.Commands;
 
 namespace SpecRec.CLI.Tests;
 
@@ -187,52 +188,17 @@ Options:
                 
             var className = args[0];
             
-            // Create service instances (same as in GenerateWrapperCommand)
+            // Create service instances and call the actual command
             var fileService = new FileService();
             var codeAnalysisService = new CodeAnalysisService(fileService);
             var wrapperGenerationService = new WrapperGenerationService();
             
-            // Analyze the class
-            var analysisResult = await codeAnalysisService.AnalyzeClassAsync(className);
-            
-            // Generate wrapper code
-            var generationResult = wrapperGenerationService.GenerateWrapper(analysisResult);
-
-            // Generate file names
-            var classNameOnly = analysisResult.ClassDeclaration.Identifier.ValueText;
-            var interfaceName = $"I{classNameOnly}";
-            var wrapperName = $"{classNameOnly}Wrapper";
-            
-            var output = new List<string>();
-            
-            // Write interface and wrapper files if they exist
-            if (generationResult.InterfaceCode != null && generationResult.WrapperCode != null)
-            {
-                await fileService.WriteAllTextAsync($"{interfaceName}.cs", generationResult.InterfaceCode);
-                await fileService.WriteAllTextAsync($"{wrapperName}.cs", generationResult.WrapperCode);
-
-                // Output results
-                output.Add($"Generated wrapper class: {wrapperName}.cs");
-                output.Add($"Generated interface: {interfaceName}.cs");
-            }
-
-            // Write static wrapper files if they exist
-            if (generationResult.StaticInterfaceCode != null && generationResult.StaticWrapperCode != null)
-            {
-                var staticInterfaceName = $"{interfaceName}StaticWrapper";
-                var staticWrapperName = $"{classNameOnly}StaticWrapper";
+            // Call the command method that returns output
+            var (output, error) = await GenerateWrapperCommand.HandleGenerateWrapperWithOutput(
+                className, "single", codeAnalysisService, wrapperGenerationService, fileService);
                 
-                await fileService.WriteAllTextAsync($"{staticInterfaceName}.cs", generationResult.StaticInterfaceCode);
-                await fileService.WriteAllTextAsync($"{staticWrapperName}.cs", generationResult.StaticWrapperCode);
-                
-                output.Add($"Generated static wrapper class: {staticWrapperName}.cs");
-                
-                // Use "static interface" label only when both instance and static wrappers exist
-                var interfaceLabel = generationResult.InterfaceCode != null ? "static interface" : "interface";
-                output.Add($"Generated {interfaceLabel}: {staticInterfaceName}.cs");
-            }
-            
-            return (string.Join(Environment.NewLine, output), "", 0);
+            var exitCode = string.IsNullOrEmpty(error) ? 0 : 1;
+            return (output, error, exitCode);
         }
         catch (Exception ex)
         {

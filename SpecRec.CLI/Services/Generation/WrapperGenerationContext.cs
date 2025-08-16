@@ -102,7 +102,7 @@ public record WrapperGenerationContext(
     {
         return this with
         {
-            InterfaceName = $"{InterfaceName}StaticWrapper",
+            InterfaceName = $"I{ClassName}StaticWrapper",
             WrapperName = $"{ClassName}StaticWrapper"
         };
     }
