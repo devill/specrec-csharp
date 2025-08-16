@@ -55,3 +55,5 @@ artifacts/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+fixtures/**/*.received
