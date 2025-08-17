@@ -156,22 +156,6 @@ namespace SpecRec
             return value.ToString() ?? "<null>";
         }
 
-        public bool HasMoreCalls()
-        {
-            return _currentCallIndex < _parsedCalls.Count;
-        }
-
-        public void VerifyAllCallsWereMade()
-        {
-            if (_currentCallIndex < _parsedCalls.Count)
-            {
-                var missedCalls = _parsedCalls.Skip(_currentCallIndex).Select(c => 
-                    FormatCallSignature(c.MethodName, c.Arguments)).ToList();
-                throw new InvalidOperationException(
-                    $"Not all expected calls were made. Missed calls:\n{string.Join("\n", missedCalls)}");
-            }
-        }
-
         private void ParseVerifiedContent(string content)
         {
             var lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);

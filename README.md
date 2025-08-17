@@ -8,7 +8,7 @@
 
 SpecRec makes legacy code testable through automated instrumentation and transparent record-replay capabilities. By replacing direct object instantiation with controllable factories and wrapping dependencies with recording proxies, SpecRec eliminates the manual effort required to characterize and test existing systems.
 
-**⚠️ This library is incomplete and under active development. Currently the ObjectFactory and CallLogger components are implemented.**
+**⚠️ This library is incomplete and under active development. Currently the ObjectFactory, CallLogger, and Parrot components are implemented.**
 
 ## Core Principles
 
@@ -299,6 +299,173 @@ var spec = logger.SpecBook.ToString();
 ```
 
 
+### Parrot Test Double
+
+Provides intelligent test doubles that replay method calls and return values from verified specification files. Parrot combines the advanced logging capabilities of CallLogger with a Stub to further simplify creating gold master tests.
+
+#### Usage example
+
+When testing complex integrations, manually creating test doubles with all expected return values becomes tedious. Parrot automates this by reading verified specification files and replaying the exact return values.
+
+First, create your test and run it to generate the specification:
+
+```csharp
+[Fact]
+public async Task ComplexIntegration_ShouldHandleMultipleCalls()
+{
+    var callLog = CallLog.FromVerifiedFile(); // Loads from verified file
+    var service = Parrot.Create<IExternalService>(callLog, "🦜");
+    
+    try 
+    {
+        // Make calls - first run will throw exceptions for missing return values
+        var message = service.GetMessage(200);
+        Assert.Equal("Success", message);
+        
+        service.SendMessage("test");
+        
+        
+        var optionalValue = service.GetOptionalValue("missing");
+        Assert.Null(optionalValue);
+    }
+    finally 
+    {
+        await Verify(callLog.ToString());
+    }
+}
+```
+
+On the first run, Parrot throws `ParrotMissingReturnValueException` and generates a `.received.txt` file:
+
+```
+🦜 GetMessage:
+  🔸 code: 200
+  🔹 Returns: <missing_value>
+```
+
+Replace `<missing_value>` with the expected return values and rename to `.verified.txt`.
+
+```
+🦜 GetMessage:
+  🔸 code: 200
+  🔹 Returns: Success
+```
+
+This time the test will continue running until the next missing return value:
+
+```
+🦜 GetMessage:
+  🔸 code: 200
+  🔹 Returns: Success
+
+🦜 SendMessage:
+  🔸 input: test
+
+🦜 GetOptionalValue:
+  🔸 key: missing
+  🔹 Returns: <missing_value>
+```
+
+Let's specify this return value as well:
+
+```
+🦜 GetMessage:
+  🔸 code: 200
+  🔹 Returns: Success
+
+🦜 SendMessage:
+  🔸 input: test
+
+🦜 GetOptionalValue:
+  🔸 key: missing
+  🔹 Returns: <null>
+```
+
+Now the test passes! Parrot replays the exact return values from the verified file.
+
+#### Creating Parrot Test Doubles
+
+```csharp
+// Basic usage with default parrot emoji
+var parrot = Parrot.Create<IMyService>(callLog);
+
+// Custom emoji for better visual distinction
+var parrot = Parrot.Create<IMyService>(callLog, "🎭");
+
+// Load from specific verified file
+var callLog = CallLog.FromFile("path/to/verified.txt");
+var parrot = Parrot.Create<IMyService>(callLog, "🔧");
+```
+
+#### Automatic Verified File Discovery
+
+Parrot automatically discovers verified files based on test method names:
+
+```csharp
+[Fact]
+public async Task MyComplexTest()
+{
+    // Automatically looks for: MyComplexTest.verified.txt
+    var callLog = CallLog.FromVerifiedFile();
+    var service = Parrot.Create<IExternalService>(callLog);
+    
+    // Test implementation
+}
+```
+
+#### Exception Handling
+
+Parrot provides specific exceptions for different failure scenarios:
+
+```csharp
+try
+{
+    var result = service.ProcessData("input");
+}
+catch (ParrotMissingReturnValueException ex)
+{
+    // No return value specified in verified file
+    // Update .verified.txt with expected return value
+}
+catch (ParrotCallMismatchException ex)
+{
+    // Method called with different arguments than expected
+    // Check test logic or update verified file
+}
+catch (ParrotTypeConversionException ex)
+{
+    // Return value cannot be converted to expected type
+    // Fix return value format in verified file
+}
+```
+
+#### Workflow Integration
+
+Use Parrot with approval testing frameworks for a complete testing workflow:
+
+```csharp
+[Fact]
+public async Task EndToEndWorkflow()
+{
+    var callLog = CallLog.FromVerifiedFile();
+    
+    // Set up multiple services with different emojis
+    var authService = Parrot.Create<IAuthService>(callLog, "🔐");
+    var userService = Parrot.Create<IUserService>(callLog, "👤");
+    var emailService = Parrot.Create<IEmailService>(callLog, "📧");
+    
+    factory.SetOne<IAuthService>(authService);
+    factory.SetOne<IUserService>(userService);
+    factory.SetOne<IEmailService>(emailService);
+    
+    // Execute complex business logic
+    await businessLogic.ProcessNewUser("john@example.com");
+    
+    // Verify complete interaction log
+    await Verify(callLog.ToString());
+}
+```
+
 ## NuGet Package
 
 Add to your project:
@@ -315,7 +482,6 @@ Install-Package SpecRec
 
 ## Planned Components
 
-- **Parrot**: Test Double similar to CallLogger, but parses return values from the verified call log
 - **Automated test discovery**: Generates call logs automatically to create 100% branch coverage of SUT
 - **Instrumentation Interface**: Refactoring tools to break inconvenient dependencies 
 

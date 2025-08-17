@@ -67,11 +67,6 @@ namespace SpecRec
                     $"Update the verified file with a value that can be converted to {targetType.Name}.", ex);
             }
         }
-
-        public void VerifyAllCallsWereMade()
-        {
-            _callLog.VerifyAllCallsWereMade();
-        }
     }
 
     public static class Parrot
