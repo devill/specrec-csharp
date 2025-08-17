@@ -315,10 +315,9 @@ Install-Package SpecRec
 
 ## Planned Components
 
-- **Surveyor**: Transparent spy/mock that logs all interactions
-- **SpecReplay**: Replay recorded specifications  
-- **SpecBook**: Human-readable test recording format
-- **Instrumentation Interface**: Language-specific automation tools
+- **Parrot**: Test Double similar to CallLogger, but parses return values from the verified call log
+- **Automated test discovery**: Generates call logs automatically to create 100% branch coverage of SUT
+- **Instrumentation Interface**: Refactoring tools to break inconvenient dependencies 
 
 ## Requirements
 
