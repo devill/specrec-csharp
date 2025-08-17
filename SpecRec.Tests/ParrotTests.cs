@@ -14,7 +14,7 @@ namespace SpecRec.Tests
                 
                 calculator.Reset();
 
-                String expected = "🦜 Reset:\n\n";
+                String expected = "🦜 Reset:\n";
                 Assert.Equal(expected, callLog.ToString());
             }
             
@@ -38,9 +38,7 @@ namespace SpecRec.Tests
                                         🔸 arg0: 5
                                         🔸 arg1: 3
                                         🔹 Returns: <missing_value>
-
-
-                                      """;
+                                      """ + "\n";
                     Assert.Equal(expected, callLog.ToString());
                     return;
                 }
@@ -145,6 +143,7 @@ namespace SpecRec.Tests
                                         🔸 arg0: 5
                                         🔸 arg1: 3
                                         🔹 Returns: 8
+                                        
                                       """;
                 var callLog = new CallLog(verifiedContent);
                 var calculator = Parrot<ITestCalculator>.Create(callLog);
@@ -169,6 +168,7 @@ namespace SpecRec.Tests
                                         🔸 arg0: 5
                                         🔸 arg1: 3
                                         🔹 Returns: 15
+                                        
                                       """;
                 var callLog = new CallLog(verifiedContent);
                 var calculator = Parrot<ITestCalculator>.Create(callLog);

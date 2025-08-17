@@ -70,7 +70,8 @@ namespace SpecRec
 
         public override string ToString()
         {
-            return _content.ToString();
+            var result = _content.ToString();
+            return result.TrimEnd('\r', '\n') + (result.Length > 0 ? "\n" : "");
         }
 
         public object? GetNextReturnValue(string methodName, object?[] args, bool hasReturnValue)
