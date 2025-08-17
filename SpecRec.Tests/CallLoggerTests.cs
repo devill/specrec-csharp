@@ -370,7 +370,7 @@ namespace SpecRec.Tests
 
                 var wrappedService = logger.Wrap<IExceptionTestService>(mockService, "💥");
 
-                Assert.Throws<TargetInvocationException>(() => wrappedService.ThrowException());
+                Assert.Throws<InvalidOperationException>(() => wrappedService.ThrowException());
 
                 await Verify(logger.SpecBook.ToString());
             }
@@ -383,7 +383,7 @@ namespace SpecRec.Tests
 
                 var wrappedService = logger.Wrap<IExceptionDuringExecutionService>(mockService, "💥");
 
-                Assert.Throws<TargetInvocationException>(() => wrappedService.MethodThatAlwaysThrows());
+                Assert.Throws<InvalidOperationException>(() => wrappedService.MethodThatAlwaysThrows());
 
                 await Verify(logger.SpecBook.ToString());
             }

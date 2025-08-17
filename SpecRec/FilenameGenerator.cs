@@ -6,19 +6,15 @@ namespace SpecRec
     {
         public static string GetVerifiedFileName(Type testClass, string methodName, params object[]? parameters)
         {
-            var className = GetFullClassName(testClass);
-            var baseFileName = $"{className}.{methodName}";
-            
-            if (parameters != null && parameters.Length > 0)
-            {
-                var paramString = string.Join("_", parameters.Select(p => FormatParameter(p)));
-                baseFileName += $"_{paramString}";
-            }
-            
-            return $"{baseFileName}.verified.txt";
+            return $"{BuildBaseFileName(testClass, methodName, parameters)}.verified.txt";
         }
 
         public static string GetBaseFileName(Type testClass, string methodName, params object[]? parameters)
+        {
+            return BuildBaseFileName(testClass, methodName, parameters);
+        }
+
+        private static string BuildBaseFileName(Type testClass, string methodName, params object[]? parameters)
         {
             var className = GetFullClassName(testClass);
             var baseFileName = $"{className}.{methodName}";
@@ -34,28 +30,22 @@ namespace SpecRec
         
         public static string GetVerifiedFileName([CallerMemberName] string? methodName = null, [CallerFilePath] string? sourceFilePath = null, params object[]? parameters)
         {
-            if (string.IsNullOrEmpty(methodName) || string.IsNullOrEmpty(sourceFilePath))
-                throw new ArgumentException("Could not determine test name or source file path");
-
-            // For CallerMemberName, we need to find the actual test class that contains this method
-            var testClass = GetTestClassContainingMethod(methodName, sourceFilePath);
-            return GetVerifiedFileName(testClass, methodName, parameters);
+            var testClass = GetTestClassFromContext(methodName, sourceFilePath);
+            return GetVerifiedFileName(testClass, methodName!, parameters);
         }
 
         public static string GetBaseFileName([CallerMemberName] string? methodName = null, [CallerFilePath] string? sourceFilePath = null, params object[]? parameters)
         {
+            var testClass = GetTestClassFromContext(methodName, sourceFilePath);
+            return GetBaseFileName(testClass, methodName!, parameters);
+        }
+
+        private static Type GetTestClassFromContext(string? methodName, string? sourceFilePath)
+        {
             if (string.IsNullOrEmpty(methodName) || string.IsNullOrEmpty(sourceFilePath))
                 throw new ArgumentException("Could not determine test name or source file path");
 
-            // For CallerMemberName, we need to find the actual test class that contains this method
-            var testClass = GetTestClassContainingMethod(methodName, sourceFilePath);
-            return GetBaseFileName(testClass, methodName, parameters);
-        }
-
-        public static string GetVerifiedFilePath(string testDirectory, Type testClass, string methodName, params object[]? parameters)
-        {
-            var fileName = GetVerifiedFileName(testClass, methodName, parameters);
-            return Path.Combine(testDirectory, fileName);
+            return GetTestClassContainingMethod(methodName!, sourceFilePath!);
         }
 
         public static string GetVerifiedFilePath(string testDirectory, [CallerMemberName] string? methodName = null, [CallerFilePath] string? sourceFilePath = null, params object[]? parameters)
@@ -135,35 +125,6 @@ namespace SpecRec
             return null;
         }
 
-        private static Type GetTestClassFromFilePath(string sourceFilePath)
-        {
-            // Extract the test class name from the file path
-            var fileName = Path.GetFileNameWithoutExtension(sourceFilePath);
-            
-            // Look through all loaded assemblies to find the test type
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            
-            foreach (var assembly in assemblies)
-            {
-                try
-                {
-                    var testType = assembly.GetTypes()
-                        .FirstOrDefault(t => t.Name == fileName || t.FullName?.EndsWith($".{fileName}") == true);
-                    
-                    if (testType != null)
-                    {
-                        return testType;
-                    }
-                }
-                catch (System.Reflection.ReflectionTypeLoadException)
-                {
-                    // Skip assemblies that can't be loaded
-                    continue;
-                }
-            }
-            
-            throw new InvalidOperationException($"Could not find test class for file: {sourceFilePath}");
-        }
 
         private static string FormatParameter(object? parameter)
         {
