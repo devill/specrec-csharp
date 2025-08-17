@@ -133,14 +133,18 @@ namespace SpecRec.Tests
             }
 
             [Fact]
-            public void CallMismatch_ShouldThrowParrotCallMismatchException()
+            public async Task CallMismatch_ShouldThrowParrotCallMismatchException()
             {
                 var verifiedContent = """
+                                      🦜 Multiply:
+                                        🔸 arg0: 5
+                                        🔸 arg1: 3
+                                        🔹 Returns: 15
+
                                       🦜 Add:
                                         🔸 arg0: 5
                                         🔸 arg1: 3
                                         🔹 Returns: 8
-
                                       """;
                 var callLog = new CallLog(verifiedContent);
                 var calculator = Parrot<ITestCalculator>.Create(callLog);
@@ -148,6 +152,31 @@ namespace SpecRec.Tests
                 var ex = Assert.Throws<ParrotCallMismatchException>(() =>
                     calculator.Add(10, 20)); // Different arguments than expected
                 
+                await Verify(callLog.ToString());
+                Assert.Contains("Call mismatch", ex.Message);
+            }
+
+            [Fact]
+            public async Task ArgumentMismatch_ShouldThrowParrotCallMismatchException()
+            {
+                var verifiedContent = """
+                                      🦜 Add:
+                                        🔸 arg0: 5
+                                        🔸 arg1: 3
+                                        🔹 Returns: 8
+
+                                      🦜 Multiply:
+                                        🔸 arg0: 5
+                                        🔸 arg1: 3
+                                        🔹 Returns: 15
+                                      """;
+                var callLog = new CallLog(verifiedContent);
+                var calculator = Parrot<ITestCalculator>.Create(callLog);
+                
+                var ex = Assert.Throws<ParrotCallMismatchException>(() =>
+                    calculator.Add(10, 20)); // Different arguments than expected
+                
+                await Verify(callLog.ToString());
                 Assert.Contains("Call mismatch", ex.Message);
             }
         }

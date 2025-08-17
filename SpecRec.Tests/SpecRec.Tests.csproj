@@ -119,6 +119,9 @@
     <None Update="ObjectFactoryTests.ConstructorCalledWithTests.Create_WithTestClassWithConstructor_ExtractsParameterNames.verified.txt">
       <DependentUpon>ObjectFactoryTests.cs</DependentUpon>
     </None>
+    <None Update="ParrotTests.BasicWorkflow.CorrectVerifiedFile_ShouldPassAsExpectedWhenReturnValueIsPresent.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>
