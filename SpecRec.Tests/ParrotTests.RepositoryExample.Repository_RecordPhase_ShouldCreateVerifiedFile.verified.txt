@@ -1,0 +1,8 @@
+﻿🏪 GetById:
+  🔸 id: 123
+  🔹 Returns: User123
+
+🏪 Save:
+  🔸 entity: UpdatedUser
+  🔹 Returns: True
+
