@@ -1,4 +1,4 @@
 ﻿🦜 Add:
-  🔸 arg0: 10
-  🔸 arg1: 20
+  🔸 a: 10
+  🔸 b: 20
   🔹 Returns: <missing_value>

@@ -10,7 +10,7 @@ namespace SpecRec.Tests
             public void NoVerifiedFile_ShouldLogVoidEvenIfNoVerifiedFileExists()
             {
                 var callLog = CallLog.FromVerifiedFile();
-                var calculator = Parrot<ITestCalculator>.Create(callLog);
+                var calculator = Parrot.Create<ITestCalculator>(callLog);
                 
                 calculator.Reset();
 
@@ -22,7 +22,7 @@ namespace SpecRec.Tests
             public void NoVerifiedFile_ShouldStopAtFirstUnknownReturn()
             {
                 var callLog = CallLog.FromVerifiedFile();
-                var calculator = Parrot<ITestCalculator>.Create(callLog);
+                var calculator = Parrot.Create<ITestCalculator>(callLog);
                 
                 try
                 {
@@ -35,8 +35,8 @@ namespace SpecRec.Tests
                                       🦜 Reset:
 
                                       🦜 Add:
-                                        🔸 arg0: 5
-                                        🔸 arg1: 3
+                                        🔸 a: 5
+                                        🔸 b: 3
                                         🔹 Returns: <missing_value>
                                       """ + "\n";
                     Assert.Equal(expected, callLog.ToString());
@@ -49,7 +49,7 @@ namespace SpecRec.Tests
             public async Task VerifiedFileWithNoReturnValue_ShouldStopAtFirstUnknownReturn()
             {
                 var callLog = CallLog.FromVerifiedFile();
-                var calculator = Parrot<ITestCalculator>.Create(callLog);
+                var calculator = Parrot.Create<ITestCalculator>(callLog);
                 
                 try
                 {
@@ -73,7 +73,7 @@ namespace SpecRec.Tests
             public async Task CorrectVerifiedFile_ShouldPassAsExpectedWhenReturnValueIsPresent()
             {
                 var callLog = CallLog.FromVerifiedFile();
-                var calculator = Parrot<ITestCalculator>.Create(callLog);
+                var calculator = Parrot.Create<ITestCalculator>(callLog);
 
                 calculator.Reset();
                 var result = calculator.Add(5, 3);
@@ -92,7 +92,7 @@ namespace SpecRec.Tests
                 try
                 {
                     
-                    var service = Parrot<IParrotTestService>.Create(callLog);
+                    var service = Parrot.Create<IParrotTestService>(callLog);
 
                     var message = service.GetMessage(200);
                     Assert.Equal("Success", message);
@@ -118,7 +118,7 @@ namespace SpecRec.Tests
             public void ParrotMissingReturnValue_ShouldThrowSpecificException()
             {
                 var callLog = new CallLog(); // No verified content
-                var calculator = Parrot<ITestCalculator>.Create(callLog);
+                var calculator = Parrot.Create<ITestCalculator>(callLog);
                 
                 // Void methods should work fine
                 calculator.Reset();
@@ -146,7 +146,7 @@ namespace SpecRec.Tests
                                         
                                       """;
                 var callLog = new CallLog(verifiedContent);
-                var calculator = Parrot<ITestCalculator>.Create(callLog);
+                var calculator = Parrot.Create<ITestCalculator>(callLog);
                 
                 var ex = Assert.Throws<ParrotCallMismatchException>(() =>
                     calculator.Add(10, 20)); // Different arguments than expected
@@ -171,7 +171,7 @@ namespace SpecRec.Tests
                                         
                                       """;
                 var callLog = new CallLog(verifiedContent);
-                var calculator = Parrot<ITestCalculator>.Create(callLog);
+                var calculator = Parrot.Create<ITestCalculator>(callLog);
                 
                 var ex = Assert.Throws<ParrotCallMismatchException>(() =>
                     calculator.Add(10, 20)); // Different arguments than expected

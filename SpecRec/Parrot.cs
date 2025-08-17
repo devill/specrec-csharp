@@ -2,13 +2,13 @@ using System.Reflection;
 
 namespace SpecRec
 {
-    public class Parrot<T> : DispatchProxy where T : class
+    public class ParrotStub<T> : DispatchProxy where T : class
     {
         private CallLog _callLog = null!;
 
         public static T Create(CallLog callLog)
         {
-            var proxy = Create<T, Parrot<T>>() as Parrot<T>;
+            var proxy = Create<T, ParrotStub<T>>() as ParrotStub<T>;
             proxy!._callLog = callLog;
             return (proxy as T)!;
         }
@@ -34,15 +34,10 @@ namespace SpecRec
 
                 return ConvertReturnValue(returnValue, targetMethod.ReturnType);
             }
-            catch (ParrotMissingReturnValueException)
-            {
-                // Let this exception bubble up unchanged - it's the expected workflow
-                throw;
-            }
             catch (InvalidOperationException ex)
             {
                 throw new ParrotCallMismatchException(
-                    $"Parrot<{typeof(T).Name}> call failed: {ex.Message}", ex);
+                    $"ParrotStub<{typeof(T).Name}> call failed: {ex.Message}", ex);
             }
         }
 
@@ -76,6 +71,16 @@ namespace SpecRec
         public void VerifyAllCallsWereMade()
         {
             _callLog.VerifyAllCallsWereMade();
+        }
+    }
+
+    public static class Parrot
+    {
+        public static T Create<T>(CallLog callLog, string emoji = "🦜") where T : class
+        {
+            var stub = ParrotStub<T>.Create(callLog);
+            var callLogger = new CallLogger(callLog.SpecBook, emoji);
+            return callLogger.Wrap<T>(stub, emoji);
         }
     }
 

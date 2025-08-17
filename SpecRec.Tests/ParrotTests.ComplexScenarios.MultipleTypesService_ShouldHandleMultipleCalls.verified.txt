@@ -1,11 +1,10 @@
 🦜 GetMessage:
-  🔸 arg0: 200
+  🔸 code: 200
   🔹 Returns: Success
 
 🦜 IsValid:
-  🔸 arg0: test
-  🔹 Returns: true
+  🔸 input: test
+  🔹 Returns: True
 
 🦜 GetOptionalValue:
-  🔸 arg0: missing
-  🔹 Returns: <null>
+  🔸 key: missing

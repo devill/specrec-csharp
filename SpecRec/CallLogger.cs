@@ -176,18 +176,41 @@ namespace SpecRec
             
             SetupLoggingContext(callLogger, methodName);
 
-            var result = InvokeTargetMethod(targetMethod, args, callLogger, methodName);
-
-            if (ShouldIgnoreCall(callLogger, methodName))
+            try
             {
+                var result = InvokeTargetMethod(targetMethod, args, callLogger, methodName);
+
+                if (ShouldIgnoreCall(callLogger, methodName))
+                {
+                    CallLogFormatterContext.ClearCurrentLogger();
+                    return result;
+                }
+
+                LogMethodCall(callLogger, targetMethod, args, result, methodName);
+                
                 CallLogFormatterContext.ClearCurrentLogger();
                 return result;
             }
-
-            LogMethodCall(callLogger, targetMethod, args, result, methodName);
-            
-            CallLogFormatterContext.ClearCurrentLogger();
-            return result;
+            catch (ParrotCallMismatchException)
+            {
+                // For call mismatch exceptions, log the call normally with actual arguments
+                if (!ShouldIgnoreCall(callLogger, methodName))
+                {
+                    LogMethodCall(callLogger, targetMethod, args, "<missing_value>", methodName);
+                }
+                CallLogFormatterContext.ClearCurrentLogger();
+                throw;
+            }
+            catch (ParrotMissingReturnValueException)
+            {
+                // For missing return value exceptions, log the call normally with actual arguments
+                if (!ShouldIgnoreCall(callLogger, methodName))
+                {
+                    LogMethodCall(callLogger, targetMethod, args, "<missing_value>", methodName);
+                }
+                CallLogFormatterContext.ClearCurrentLogger();
+                throw;
+            }
         }
 
         private CallLogger CreateCallLogger()
@@ -208,6 +231,11 @@ namespace SpecRec
             {
                 return targetMethod.Invoke(_target, args);
             }
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
+            {
+                HandleMethodException(callLogger, ex.InnerException, methodName);
+                throw ex.InnerException;
+            }
             catch (Exception ex)
             {
                 HandleMethodException(callLogger, ex, methodName);
@@ -217,6 +245,12 @@ namespace SpecRec
 
         private void HandleMethodException(CallLogger callLogger, Exception ex, string methodName)
         {
+            if (ex is ParrotCallMismatchException || ex is ParrotMissingReturnValueException)
+            {
+                // For parrot exceptions, don't log as an exception - this will be handled by the normal logging flow
+                return;
+            }
+            
             callLogger.withNote($"Exception: {ex.Message}");
             callLogger.log(methodName);
             _logger._specbook.Append(callLogger._specbook.ToString());

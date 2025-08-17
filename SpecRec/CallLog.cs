@@ -12,6 +12,8 @@ namespace SpecRec
         private int _currentCallIndex;
         private readonly List<(string methodName, object?[] args, object? returnValue)> _loggedCalls;
 
+        public StringBuilder SpecBook => _content;
+
         public CallLog(string? verifiedContent = null)
         {
             _content = new StringBuilder();
@@ -76,19 +78,15 @@ namespace SpecRec
 
         public object? GetNextReturnValue(string methodName, object?[] args, bool hasReturnValue)
         {
-            // Always log the call, regardless of whether we have verified calls
             if (_currentCallIndex >= _parsedCalls.Count)
             {
-                // Log first, then throw if needed
                 if (hasReturnValue)
                 {
-                    LogCallWithHasReturnValue(methodName, args, "<missing_value>", hasReturnValue);
                     throw new ParrotMissingReturnValueException(
                         $"No return value available for call to {methodName}({string.Join(", ", args?.Select(a => a?.ToString() ?? "null") ?? new string[0])}).");
                 }
                 else
                 {
-                    LogCallWithHasReturnValue(methodName, args, null, hasReturnValue);
                     return null; // Void methods don't need return values
                 }
             }
@@ -97,7 +95,6 @@ namespace SpecRec
             
             if (!IsCallMatch(expectedCall, methodName, args))
             {
-                LogCallWithHasReturnValue(methodName, args, hasReturnValue ? "<missing_value>" : null, hasReturnValue);
                 var expectedSignature = FormatCallSignature(expectedCall.MethodName, expectedCall.Arguments);
                 var actualSignature = FormatCallSignature(methodName, args);
                 throw new InvalidOperationException(
@@ -111,13 +108,10 @@ namespace SpecRec
             // Check if the return value is the special <missing_value> placeholder
             if (expectedCall.ReturnValue?.ToString() == "<missing_value>")
             {
-                LogCallWithHasReturnValue(methodName, args, "<missing_value>", hasReturnValue);
                 throw new ParrotMissingReturnValueException(
-                    $"No return value available for call to {methodName}({string.Join(", ", args?.Select(a => a?.ToString() ?? "null") ?? new string[0])}). " +
-                    $"This is expected on first run. Check the generated .received.txt file and update return values as needed.");
+                    $"No return value available for call to {methodName}({string.Join(", ", args?.Select(a => a?.ToString() ?? "null") ?? new string[0])}). ");
             }
             
-            LogCallWithHasReturnValue(methodName, args, expectedCall.ReturnValue, hasReturnValue);
             return expectedCall.ReturnValue;
         }
 
