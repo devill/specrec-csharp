@@ -21,16 +21,23 @@ namespace SpecRec
             var methodName = targetMethod.Name;
             var methodArgs = args ?? new object[0];
 
+            var hasReturnValue = targetMethod.ReturnType != typeof(void);
+            
             try
             {
-                var returnValue = _callLog.GetNextReturnValue(methodName, methodArgs);
+                var returnValue = _callLog.GetNextReturnValue(methodName, methodArgs, hasReturnValue);
                 
-                if (targetMethod.ReturnType == typeof(void))
+                if (!hasReturnValue)
                 {
                     return null;
                 }
 
                 return ConvertReturnValue(returnValue, targetMethod.ReturnType);
+            }
+            catch (ParrotMissingReturnValueException)
+            {
+                // Let this exception bubble up unchanged - it's the expected workflow
+                throw;
             }
             catch (InvalidOperationException ex)
             {
@@ -60,8 +67,9 @@ namespace SpecRec
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException(
-                    $"Cannot convert return value '{value}' of type {value.GetType().Name} to expected type {targetType.Name}", ex);
+                throw new ParrotTypeConversionException(
+                    $"Cannot convert return value '{value}' of type {value.GetType().Name} to expected type {targetType.Name}. " +
+                    $"Update the verified file with a value that can be converted to {targetType.Name}.", ex);
             }
         }
 
@@ -71,9 +79,27 @@ namespace SpecRec
         }
     }
 
-    public class ParrotCallMismatchException : Exception
+    public class ParrotException : Exception
+    {
+        public ParrotException(string message) : base(message) { }
+        public ParrotException(string message, Exception innerException) : base(message, innerException) { }
+    }
+
+    public class ParrotCallMismatchException : ParrotException
     {
         public ParrotCallMismatchException(string message) : base(message) { }
         public ParrotCallMismatchException(string message, Exception innerException) : base(message, innerException) { }
+    }
+
+    public class ParrotMissingReturnValueException : ParrotException
+    {
+        public ParrotMissingReturnValueException(string message) : base(message) { }
+        public ParrotMissingReturnValueException(string message, Exception innerException) : base(message, innerException) { }
+    }
+
+    public class ParrotTypeConversionException : ParrotException
+    {
+        public ParrotTypeConversionException(string message) : base(message) { }
+        public ParrotTypeConversionException(string message, Exception innerException) : base(message, innerException) { }
     }
 }

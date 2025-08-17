@@ -1,0 +1,12 @@
+🦜 GetMessage:
+  🔸 arg0: 200
+  🔹 Returns: Success
+
+🦜 IsValid:
+  🔸 arg0: test
+  🔹 Returns: true
+
+🦜 GetOptionalValue:
+  🔸 arg0: missing
+  🔹 Returns: <null>
+

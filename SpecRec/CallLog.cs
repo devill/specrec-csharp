@@ -28,7 +28,7 @@ namespace SpecRec
         public static CallLog FromFile(string filePath)
         {
             if (!File.Exists(filePath))
-                throw new FileNotFoundException($"Verified file not found: {filePath}");
+                return new CallLog(); // Return empty CallLog if no verified file exists yet
 
             var content = File.ReadAllText(filePath);
             return new CallLog(content);
@@ -42,19 +42,18 @@ namespace SpecRec
             var testFileName = Path.GetFileNameWithoutExtension(sourceFilePath);
             var testDirectory = Path.GetDirectoryName(sourceFilePath);
             
-            // First try the full test name with nested class
-            var verifiedFileName = $"{testFileName}.{testName}.verified.txt";
-            var verifiedFilePath = Path.Combine(testDirectory!, verifiedFileName);
+            // Find all .verified.txt files in the directory that contain the test method name
+            var allVerifiedFiles = Directory.GetFiles(testDirectory!, "*.verified.txt");
+            var matchingFile = allVerifiedFiles.FirstOrDefault(f => 
+                Path.GetFileName(f).Contains($".{testName}.verified.txt"));
             
-            if (File.Exists(verifiedFilePath))
-                return FromFile(verifiedFilePath);
-            
-            // If that doesn't exist, try with just the method name (for backwards compatibility)
-            var methodOnlyName = testName.Contains('.') ? testName.Split('.').Last() : testName;
-            verifiedFileName = $"{testFileName}.{methodOnlyName}.verified.txt";
-            verifiedFilePath = Path.Combine(testDirectory!, verifiedFileName);
+            if (matchingFile != null && File.Exists(matchingFile))
+            {
+                return FromFile(matchingFile);
+            }
 
-            return FromFile(verifiedFilePath);
+            // If no file found, return empty CallLog (will cause missing return value exceptions)
+            return new CallLog();
         }
 
         public CallLog Append(string value)
@@ -74,19 +73,30 @@ namespace SpecRec
             return _content.ToString();
         }
 
-        public object? GetNextReturnValue(string methodName, object?[] args)
+        public object? GetNextReturnValue(string methodName, object?[] args, bool hasReturnValue)
         {
+            // Always log the call, regardless of whether we have verified calls
             if (_currentCallIndex >= _parsedCalls.Count)
             {
-                LogCall(methodName, args, null);
-                throw new InvalidOperationException($"No more expected calls. Got unexpected call to {methodName}");
+                // Log first, then throw if needed
+                if (hasReturnValue)
+                {
+                    LogCallWithHasReturnValue(methodName, args, "<missing_value>", hasReturnValue);
+                    throw new ParrotMissingReturnValueException(
+                        $"No return value available for call to {methodName}({string.Join(", ", args?.Select(a => a?.ToString() ?? "null") ?? new string[0])}).");
+                }
+                else
+                {
+                    LogCallWithHasReturnValue(methodName, args, null, hasReturnValue);
+                    return null; // Void methods don't need return values
+                }
             }
 
             var expectedCall = _parsedCalls[_currentCallIndex];
             
             if (!IsCallMatch(expectedCall, methodName, args))
             {
-                LogCall(methodName, args, null);
+                LogCallWithHasReturnValue(methodName, args, hasReturnValue ? "<missing_value>" : null, hasReturnValue);
                 var expectedSignature = FormatCallSignature(expectedCall.MethodName, expectedCall.Arguments);
                 var actualSignature = FormatCallSignature(methodName, args);
                 throw new InvalidOperationException(
@@ -96,13 +106,59 @@ namespace SpecRec
             }
 
             _currentCallIndex++;
-            LogCall(methodName, args, expectedCall.ReturnValue);
+            
+            // Check if the return value is the special <missing_value> placeholder
+            if (expectedCall.ReturnValue?.ToString() == "<missing_value>")
+            {
+                LogCallWithHasReturnValue(methodName, args, "<missing_value>", hasReturnValue);
+                throw new ParrotMissingReturnValueException(
+                    $"No return value available for call to {methodName}({string.Join(", ", args?.Select(a => a?.ToString() ?? "null") ?? new string[0])}). " +
+                    $"This is expected on first run. Check the generated .received.txt file and update return values as needed.");
+            }
+            
+            LogCallWithHasReturnValue(methodName, args, expectedCall.ReturnValue, hasReturnValue);
             return expectedCall.ReturnValue;
         }
 
         public void LogCall(string methodName, object?[] args, object? returnValue)
         {
+            LogCallWithHasReturnValue(methodName, args, returnValue, returnValue != null);
+        }
+
+        public void LogCallWithHasReturnValue(string methodName, object?[] args, object? returnValue, bool hasReturnValue)
+        {
             _loggedCalls.Add((methodName, args, returnValue));
+            
+            // Add to the content in the same format as CallLogger
+            _content.AppendLine($"🦜 {methodName}:");
+            
+            if (args != null)
+            {
+                for (int i = 0; i < args.Length; i++)
+                {
+                    var argValue = FormatValue(args[i]);
+                    _content.AppendLine($"  🔸 arg{i}: {argValue}");
+                }
+            }
+            
+            // Always show Returns line for non-void methods
+            if (hasReturnValue)
+            {
+                var formattedReturn = FormatValue(returnValue);
+                _content.AppendLine($"  🔹 Returns: {formattedReturn}");
+            }
+            
+            _content.AppendLine();
+        }
+        
+        private string FormatValue(object? value)
+        {
+            if (value == null) return "<null>";
+            if (value is string) return value.ToString()!;
+            if (value is bool b) return b ? "true" : "false";
+            if (value is decimal || value is double || value is float)
+                return value.ToString()!;
+            return value.ToString() ?? "<null>";
         }
 
         public bool HasMoreCalls()
@@ -200,6 +256,8 @@ namespace SpecRec
         private object? ParseValue(string valueStr)
         {
             if (valueStr == "null") return null;
+            if (valueStr == "<null>") return null; // Special null placeholder with angle brackets
+            if (valueStr == "<missing_value>") return "<missing_value>"; // Special placeholder
             if (valueStr == "true") return true;
             if (valueStr == "false") return false;
             if (int.TryParse(valueStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intVal)) return intVal;
