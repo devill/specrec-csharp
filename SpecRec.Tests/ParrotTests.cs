@@ -78,7 +78,7 @@ namespace SpecRec.Tests
                 calculator.Reset();
                 var result = calculator.Add(5, 3);
                 Assert.Equal(8, result);
-                await Verify(callLog.ToString());    
+                await callLog.Verify();    
             }
             
         }

@@ -41,17 +41,15 @@ namespace SpecRec
             if (string.IsNullOrEmpty(testName) || string.IsNullOrEmpty(sourceFilePath))
                 throw new ArgumentException("Could not determine test name or source file path");
 
-            var testFileName = Path.GetFileNameWithoutExtension(sourceFilePath);
             var testDirectory = Path.GetDirectoryName(sourceFilePath);
+            if (string.IsNullOrEmpty(testDirectory))
+                throw new ArgumentException("Could not determine test directory from source file path");
+
+            var expectedFilePath = FilenameGenerator.GetVerifiedFilePath(testDirectory, testName, sourceFilePath);
             
-            // Find all .verified.txt files in the directory that contain the test method name
-            var allVerifiedFiles = Directory.GetFiles(testDirectory!, "*.verified.txt");
-            var matchingFile = allVerifiedFiles.FirstOrDefault(f => 
-                Path.GetFileName(f).Contains($".{testName}.verified.txt"));
-            
-            if (matchingFile != null && File.Exists(matchingFile))
+            if (File.Exists(expectedFilePath))
             {
-                return FromFile(matchingFile);
+                return FromFile(expectedFilePath);
             }
 
             // If no file found, return empty CallLog (will cause missing return value exceptions)
