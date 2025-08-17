@@ -181,24 +181,6 @@ namespace SpecRec.Tests
             }
         }
 
-        private static string GetTestDirectory()
-        {
-            // Use the source file location to find the test directory
-            var currentDirectory = Directory.GetCurrentDirectory();
-            
-            // Look for the verified files in the current working directory first
-            if (Directory.GetFiles(currentDirectory, "*.verified.txt").Length > 0)
-                return currentDirectory;
-            
-            // Navigate up to find the test project directory
-            var directory = new DirectoryInfo(currentDirectory);
-            while (directory != null && !Directory.GetFiles(directory.FullName, "*.verified.txt").Any())
-            {
-                directory = directory.Parent;
-            }
-            
-            return directory?.FullName ?? currentDirectory;
-        }
     }
 
     public interface ITestCalculator
