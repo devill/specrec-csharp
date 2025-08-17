@@ -301,7 +301,7 @@ namespace SpecRec
             }
             else if (parameter.ParameterType.IsByRef)
             {
-                callLogger.withArgument($"ref {argumentValue}", parameter.Name);
+                callLogger.withArgument(argumentValue, parameter.Name);
             }
             else
             {
@@ -495,12 +495,34 @@ namespace SpecRec
             if (TryFormatDateTime(value, out var dateResult))
                 return dateResult;
 
+            if (value is string str)
+            {
+                // Special placeholders should not be quoted
+                if (str == "<missing_value>")
+                    return str;
+                return $"\"{str}\"";
+            }
+
             return value.ToString() ?? "null";
         }
 
         private bool TryFormatCollection(object value, out string result)
         {
             result = string.Empty;
+            
+            // Handle dictionaries specially
+            if (value is System.Collections.IDictionary dict)
+            {
+                var pairs = new List<string>();
+                foreach (System.Collections.DictionaryEntry entry in dict)
+                {
+                    var key = FormatValue(entry.Key);
+                    var val = FormatValue(entry.Value);
+                    pairs.Add($"{key}: {val}");
+                }
+                result = $"{{{string.Join(", ", pairs)}}}";
+                return true;
+            }
             
             if (value is System.Collections.IEnumerable enumerable && !(value is string))
             {
@@ -509,7 +531,7 @@ namespace SpecRec
                 {
                     items.Add(FormatValue(item));
                 }
-                result = string.Join(",", items);
+                result = $"[{string.Join(",", items)}]";
                 return true;
             }
             return false;

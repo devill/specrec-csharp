@@ -3,6 +3,6 @@
   🔸 money: 123.45
   🔸 precision: 67.89
   🔸 single: 12.34
-  🔸 numbers: 1,2,3
+  🔸 numbers: [1,2,3]
   🔸 nullValue: null
 

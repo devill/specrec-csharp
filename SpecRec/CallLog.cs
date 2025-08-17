@@ -146,12 +146,18 @@ namespace SpecRec
         
         private string FormatValue(object? value)
         {
-            if (value == null) return "<null>";
-            if (value is string) return value.ToString()!;
+            if (value == null) return "null";
+            if (value is string str)
+            {
+                // Special placeholders should not be quoted
+                if (str == "<missing_value>")
+                    return str;
+                return $"\"{str}\"";
+            }
             if (value is bool b) return b ? "true" : "false";
             if (value is decimal || value is double || value is float)
                 return value.ToString()!;
-            return value.ToString() ?? "<null>";
+            return value.ToString() ?? "null";
         }
 
         private void ParseVerifiedContent(string content)
@@ -233,10 +239,17 @@ namespace SpecRec
         private object? ParseValue(string valueStr)
         {
             if (valueStr == "null") return null;
-            if (valueStr == "<null>") return null; // Special null placeholder with angle brackets
+            if (valueStr == "<null>") return null; // Legacy support for old format
             if (valueStr == "<missing_value>") return "<missing_value>"; // Special placeholder
             if (valueStr == "true") return true;
             if (valueStr == "false") return false;
+            
+            // Handle quoted strings
+            if (valueStr.StartsWith("\"") && valueStr.EndsWith("\"") && valueStr.Length >= 2)
+            {
+                return valueStr.Substring(1, valueStr.Length - 2);
+            }
+            
             if (int.TryParse(valueStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intVal)) return intVal;
             if (decimal.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var decimalVal)) return decimalVal;
             if (double.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var doubleVal)) return doubleVal;

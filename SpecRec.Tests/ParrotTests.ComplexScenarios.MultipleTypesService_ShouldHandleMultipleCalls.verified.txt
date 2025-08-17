@@ -1,10 +1,10 @@
-🦜 GetMessage:
+﻿🦜 GetMessage:
   🔸 code: 200
-  🔹 Returns: Success
+  🔹 Returns: "Success"
 
 🦜 IsValid:
-  🔸 input: test
+  🔸 input: "test"
   🔹 Returns: True
 
 🦜 GetOptionalValue:
-  🔸 key: missing
+  🔸 key: "missing"

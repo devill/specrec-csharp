@@ -191,9 +191,9 @@ The resulting SpecBook will look something like this:
 
 ```
 📩 SendMessage:
-  🔸 recipient: user@example.com
-  🔸 subject: Welcome
-  🔸 body: Hello and welcome!
+  🔸 recipient: "user@example.com"
+  🔸 subject: "Welcome"
+  🔸 body: "Hello and welcome!"
   🔹 Returns: true
 ```
 
@@ -202,17 +202,17 @@ The resulting SpecBook will look something like this:
 Method call format:
 ```
 📩 MethodName:
-  🔸 parameter_name: parameter_value
-  🔸 out_parameter_name: out_parameter_value_before_the_call
-  ♦️ out_parameter_name: out_parameter_value_after_the_call
-  🔹 Returns: return_value
+  🔸 parameter_name: "parameter_value"
+  🔸 out_parameter_name: "out_parameter_value_before_the_call"
+  ♦️ out_parameter_name: "out_parameter_value_after_the_call"
+  🔹 Returns: "return_value"
 ```
 
 Constructor call format:
 ```
 📩 IInterfaceName constructor called with:
-  🔸 parameter_name: parameter_value
-  🔸 parameter_name2: parameter_value2
+  🔸 parameter_name: "parameter_value"
+  🔸 parameter_name2: "parameter_value2"
 ```
 
 #### Shared SpecBook
@@ -348,7 +348,7 @@ Replace `<missing_value>` with the expected return values and rename to `.verifi
 ```
 🦜 GetMessage:
   🔸 code: 200
-  🔹 Returns: Success
+  🔹 Returns: "Success"
 ```
 
 This time the test will continue running until the next missing return value:
@@ -356,13 +356,13 @@ This time the test will continue running until the next missing return value:
 ```
 🦜 GetMessage:
   🔸 code: 200
-  🔹 Returns: Success
+  🔹 Returns: "Success"
 
 🦜 SendMessage:
-  🔸 input: test
+  🔸 input: "test"
 
 🦜 GetOptionalValue:
-  🔸 key: missing
+  🔸 key: "missing"
   🔹 Returns: <missing_value>
 ```
 
@@ -371,14 +371,14 @@ Let's specify this return value as well:
 ```
 🦜 GetMessage:
   🔸 code: 200
-  🔹 Returns: Success
+  🔹 Returns: "Success"
 
 🦜 SendMessage:
-  🔸 input: test
+  🔸 input: "test"
 
 🦜 GetOptionalValue:
-  🔸 key: missing
-  🔹 Returns: <null>
+  🔸 key: "missing"
+  🔹 Returns: null
 ```
 
 Now the test passes! Parrot replays the exact return values from the verified file.
