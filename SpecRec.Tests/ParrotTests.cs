@@ -117,7 +117,7 @@ namespace SpecRec.Tests
             [Fact]
             public void ParrotMissingReturnValue_ShouldThrowSpecificException()
             {
-                var callLog = new CallLog(); // No verified content
+                var callLog = new CallLog();
                 var calculator = Parrot.Create<ITestCalculator>(callLog);
                 
                 // Void methods should work fine
@@ -189,7 +189,7 @@ namespace SpecRec.Tests
         int Multiply(int x, int y);
         void Reset();
     }
-
+    
     public interface IParrotTestService
     {
         string GetMessage(int code);

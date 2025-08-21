@@ -1,0 +1,12 @@
+🦜 NextValues:
+  🔹 Returns: [0,0]
+
+🦜 NextOperation:
+  🔹 Returns: "add"
+
+🦜 Add:
+  🔸 a: 0
+  🔸 b: 0
+  🔹 Returns: 0
+
+Result was: 0

@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace SpecRec
 {
-    internal static class FilenameGenerator
+    public static class FilenameGenerator
     {
         public static string GetVerifiedFileName(Type testClass, string methodName, params object[]? parameters)
         {
@@ -54,7 +54,15 @@ namespace SpecRec
             return Path.Combine(testDirectory, fileName);
         }
 
-        private static string GetFullClassName(Type testClass)
+        public static string GetVerifiedFilePathWithTestCase(string testDirectory, string methodName, string testCaseName, string sourceFilePath)
+        {
+            var testClass = GetTestClassFromContext(methodName, sourceFilePath);
+            var className = GetFullClassName(testClass);
+            var fileName = $"{className}.{methodName}.{testCaseName}.verified.txt";
+            return Path.Combine(testDirectory, fileName);
+        }
+
+        public static string GetFullClassName(Type testClass)
         {
             // For nested classes, build the full hierarchy: OuterClass.InnerClass
             var names = new List<string>();
@@ -71,9 +79,6 @@ namespace SpecRec
 
         private static Type GetTestClassContainingMethod(string methodName, string sourceFilePath)
         {
-            // Extract the test class name from the file path
-            var fileName = Path.GetFileNameWithoutExtension(sourceFilePath);
-            
             // Look through all loaded assemblies to find the test type with the method
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             
@@ -81,8 +86,7 @@ namespace SpecRec
             {
                 try
                 {
-                    var types = assembly.GetTypes()
-                        .Where(t => t.Name == fileName || t.FullName?.EndsWith($".{fileName}") == true);
+                    var types = assembly.GetTypes();
                     
                     foreach (var type in types)
                     {

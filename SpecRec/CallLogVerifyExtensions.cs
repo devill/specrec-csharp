@@ -16,7 +16,22 @@ namespace SpecRec
             if (string.IsNullOrEmpty(testDirectory))
                 throw new ArgumentException("Could not determine test directory from source file path");
 
-            var baseFileName = FilenameGenerator.GetBaseFileName(methodName, sourceFilePath, parameters);
+            // Check if we have a current test case from SpecRecContext
+            var currentTestCase = SpecRecContext.CurrentTestCase;
+            string baseFileName;
+            
+            if (!string.IsNullOrEmpty(currentTestCase))
+            {
+                // Use test case specific filename for SpecRecTheory tests  
+                // Build the base name directly without the .verified.txt extension
+                var regularBaseName = FilenameGenerator.GetBaseFileName(methodName, sourceFilePath);
+                baseFileName = $"{regularBaseName}.{currentTestCase}";
+            }
+            else
+            {
+                // Use regular base filename for normal tests
+                baseFileName = FilenameGenerator.GetBaseFileName(methodName, sourceFilePath, parameters);
+            }
             
             var settings = new VerifySettings();
             settings.UseDirectory(testDirectory);

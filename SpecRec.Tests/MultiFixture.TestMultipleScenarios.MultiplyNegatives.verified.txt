@@ -1,0 +1,12 @@
+🦜 NextValues:
+  🔹 Returns: [-2,6]
+
+🦜 NextOperation:
+  🔹 Returns: "multiply"
+
+🦜 Multiply:
+  🔸 a: -2
+  🔸 b: 6
+  🔹 Returns: -12
+
+Result was: -12

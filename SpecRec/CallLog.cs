@@ -56,6 +56,50 @@ namespace SpecRec
             return new CallLog();
         }
 
+        public static CallLog FromVerifiedFileWithTestCase(string testCaseName, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
+        {
+            if (string.IsNullOrEmpty(testName) || string.IsNullOrEmpty(sourceFilePath))
+                throw new ArgumentException("Could not determine test name or source file path");
+
+            var testDirectory = Path.GetDirectoryName(sourceFilePath);
+            if (string.IsNullOrEmpty(testDirectory))
+                throw new ArgumentException("Could not determine test directory from source file path");
+
+            var expectedFilePath = FilenameGenerator.GetVerifiedFilePathWithTestCase(testDirectory, testName, testCaseName, sourceFilePath);
+            
+            if (File.Exists(expectedFilePath))
+            {
+                return FromFile(expectedFilePath);
+            }
+
+            // If no file found, return empty CallLog (will cause missing return value exceptions)
+            return new CallLog();
+        }
+
+        public static CallLog FromVerifiedFileAutoTestCase([CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
+        {
+            // Get test case name from context (set by SpecRec framework)
+            var testCaseName = SpecRecContext.CurrentTestCase;
+            
+            if (!string.IsNullOrEmpty(testCaseName))
+            {
+                return FromVerifiedFileWithTestCase(testCaseName, testName, sourceFilePath);
+            }
+
+            // Fallback to regular verified file loading
+            return FromVerifiedFile(testName, sourceFilePath);
+        }
+
+        /// <summary>
+        /// Sets up SpecRec context for the current test case and returns CallLog.
+        /// This method should be called at the beginning of test methods that use SpecRecLogs.
+        /// </summary>
+        public static CallLog ForTestCase(string testCaseName, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
+        {
+            SpecRecContext.SetTestCase(testCaseName);
+            return FromVerifiedFileWithTestCase(testCaseName, testName, sourceFilePath);
+        }
+
         public CallLog Append(string value)
         {
             _content.Append(value);

@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="Verify.Xunit" Version="30.4.0" />
+    <PackageReference Include="xunit.extensibility.core" Version="2.9.3" />
   </ItemGroup>
 
   <ItemGroup>

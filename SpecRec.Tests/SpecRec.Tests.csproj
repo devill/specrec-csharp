@@ -122,6 +122,30 @@
     <None Update="ParrotTests.BasicWorkflow.CorrectVerifiedFile_ShouldPassAsExpectedWhenReturnValueIsPresent.verified.txt">
       <DependentUpon>ParrotTests.cs</DependentUpon>
     </None>
+    <None Update="MultiFixture.AddTwoNumbers.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.AddZeroes.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.MultiplyNegatives.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.MultiplyTwoNumbers.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.TestMultipleScenarios.AddTwoNumbers.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.TestMultipleScenarios.AddZeroes.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.TestMultipleScenarios.MultiplyNegatives.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.TestMultipleScenarios.MultiplyTwoNumbers.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,12 @@
+🦜 NextValues:
+  🔹 Returns: [7,4]
+
+🦜 NextOperation:
+  🔹 Returns: "multiply"
+
+🦜 Multiply:
+  🔸 a: 7
+  🔸 b: 4
+  🔹 Returns: 28
+
+Result was: 28

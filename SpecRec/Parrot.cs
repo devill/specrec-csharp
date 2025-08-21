@@ -56,6 +56,12 @@ namespace SpecRec
             if (targetType == typeof(string))
                 return value.ToString();
 
+            // Handle array types
+            if (targetType.IsArray && value is string stringValue)
+            {
+                return ParseArrayFromString(stringValue, targetType);
+            }
+
             try
             {
                 return Convert.ChangeType(value, targetType);
@@ -66,6 +72,55 @@ namespace SpecRec
                     $"Cannot convert return value '{value}' of type {value.GetType().Name} to expected type {targetType.Name}. " +
                     $"Update the verified file with a value that can be converted to {targetType.Name}.", ex);
             }
+        }
+
+        private object ParseArrayFromString(string arrayString, Type arrayType)
+        {
+            var elementType = arrayType.GetElementType()!;
+            
+            // Remove brackets and split by comma
+            if (!arrayString.StartsWith("[") || !arrayString.EndsWith("]"))
+            {
+                throw new ArgumentException($"Array string must be in format [item1, item2, ...], got: {arrayString}");
+            }
+            
+            var content = arrayString.Substring(1, arrayString.Length - 2).Trim();
+            
+            if (string.IsNullOrEmpty(content))
+            {
+                return Array.CreateInstance(elementType, 0);
+            }
+            
+            var parts = content.Split(',');
+            var result = Array.CreateInstance(elementType, parts.Length);
+            
+            for (int i = 0; i < parts.Length; i++)
+            {
+                var trimmedPart = parts[i].Trim();
+                
+                try
+                {
+                    object convertedValue;
+                    if (elementType == typeof(string))
+                    {
+                        // Remove quotes if present
+                        convertedValue = trimmedPart.Trim('"');
+                    }
+                    else
+                    {
+                        convertedValue = Convert.ChangeType(trimmedPart, elementType);
+                    }
+                    
+                    result.SetValue(convertedValue, i);
+                }
+                catch (Exception ex)
+                {
+                    throw new ParrotTypeConversionException(
+                        $"Cannot convert array element '{trimmedPart}' to type {elementType.Name} in array '{arrayString}'.", ex);
+                }
+            }
+            
+            return result;
         }
     }
 
