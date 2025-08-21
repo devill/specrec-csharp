@@ -466,6 +466,114 @@ public async Task EndToEndWorkflow()
 }
 ```
 
+
+### SpecRecLogsAttribute
+
+Enables data-driven testing by automatically discovering verified files and generating individual test cases for each scenario. Works with xUnit Theory to create multiple test executions from a single test method.
+
+#### Usage example
+
+When you are creating tests for an untested sub system you may find that multiple tests use the same set of Parrot Test Doubles and preconditions. In these scenarios you can use the `[SpecRecLogs]` annotation to create a Theory with multiple test cases. 
+
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task TestMultipleScenarios(string testCaseName)
+{
+    var callLog = CallLog.ForTestCase(testCaseName);
+    var reader = Parrot.Create<IInputReader>(callLog);
+    var calculator = Parrot.Create<ICalculatorService>(callLog);
+
+    var result = ProcessInput(reader, calculator);
+
+    callLog.AppendLine($"Result was: {result}");
+    await callLog.Verify();
+}
+
+private int ProcessInput(IInputReader reader, ICalculatorService calculator)
+{
+    var values = reader.NextValues();
+    switch (reader.NextOperation())
+    {
+        case "add":
+            return calculator.Add(values[0], values[1]);
+        case "multiply":
+            return calculator.Multiply(values[0], values[1]);
+        default:
+            throw new Exception("Unknown operation");
+    }
+}
+```
+
+#### File Naming Convention
+
+SpecRecLogsAttribute discovers verified files using the pattern:
+```
+{ClassName}.{MethodName}.{TestCaseName}.verified.txt
+```
+
+For example:
+- `MultiFixture.TestMultipleScenarios.AddTwoNumbers.verified.txt`
+- `MultiFixture.TestMultipleScenarios.MultiplyNumbers.verified.txt`
+- `MultiFixture.TestMultipleScenarios.AddZeroes.verified.txt`
+
+#### Test Case Generation
+
+Each verified file becomes a separate test case:
+
+```
+✓ TestMultipleScenarios(testCaseName: "AddTwoNumbers")
+✓ TestMultipleScenarios(testCaseName: "MultiplyNumbers")  
+✓ TestMultipleScenarios(testCaseName: "AddZeroes")
+```
+
+#### Creating Test Cases
+
+1. Write your test method with `[Theory]` and `[SpecRecLogs]`
+2. Run the test - it will fail with "FirstTestCase" if no files exist
+3. Create verified files for each scenario you want to test
+4. Each file will become a separate test case automatically
+
+#### Verified File Content
+
+Each verified file contains the expected interactions for that test case:
+
+**AddTwoNumbers.verified.txt:**
+```
+🦜 NextValues:
+  🔹 Returns: [5, 3]
+
+🦜 NextOperation:
+  🔹 Returns: "add"
+
+🦜 Add:
+  🔸 a: 5
+  🔸 b: 3
+  🔹 Returns: 8
+
+Result was: 8
+```
+
+**MultiplyNumbers.verified.txt:**
+```
+🦜 NextValues:
+  🔹 Returns: [7, 4]
+
+🦜 NextOperation:
+  🔹 Returns: "multiply"
+
+🦜 Multiply:
+  🔸 a: 7
+  🔸 b: 4
+  🔹 Returns: 28
+
+Result was: 28
+```
+
+#### Integration with CallLog.ForTestCase
+
+Use `CallLog.ForTestCase(testCaseName)` to automatically load the correct verified file for each test case and set up the test context properly.
+
 ## NuGet Package
 
 Add to your project:
