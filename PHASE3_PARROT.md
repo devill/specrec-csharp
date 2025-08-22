@@ -22,66 +22,75 @@ Update Parrot to parse `<id:string_id>` format from verified files and resolve o
 
 ### Test File: `ParrotObjectIdTests.cs`
 
-#### 1. Basic Object ID Parsing Tests
+**Testing Strategy:**
+- **Unit tests** for internal parsing logic (`ParseValue`, type conversion)
+- **Approval tests** for real-world Parrot usage scenarios that demonstrate complete workflow
+- Follow pattern from `CallLoggerObjectLoggingTests.cs` and existing `ParrotTests.cs`
+
+#### 1. Basic Object ID Parsing Tests (Unit Tests)
 ```csharp
 [Fact]
-public async Task ParseValue_WithIdFormat_ShouldResolveRegisteredObject()
+public void ParseValue_WithIdFormat_ShouldResolveRegisteredObject()
 [Fact]
-public async Task ParseValue_WithMultipleIds_ShouldResolveCorrectObjects()
+public void ParseValue_WithMultipleIds_ShouldResolveCorrectObjects()
 [Fact]
-public async Task ParseValue_WithInvalidIdFormat_ShouldThrowException()
+public void ParseValue_WithInvalidIdFormat_ShouldThrowException()
 [Fact]
-public async Task ParseValue_WithEmptyId_ShouldThrowException()
+public void ParseValue_WithEmptyId_ShouldThrowException()
 ```
 
-#### 2. Unknown Object Handling Tests
+#### 2. Unknown Object Handling Tests (Unit Tests)
 ```csharp
 [Fact]
-public async Task ParseValue_WithUnknownMarker_ShouldThrowParrotUnknownObjectException()
+public void ParseValue_WithUnknownMarker_ShouldThrowParrotUnknownObjectException()
 [Fact]
-public async Task Parrot_WithUnknownInVerifiedFile_ShouldFailImmediately()
+public void ParseValue_WithUnknownInVerifiedFile_ShouldFailImmediately()
 [Fact]
-public async Task Parrot_WithUnknownReturnValue_ShouldProvideHelpfulErrorMessage()
+public void ParseValue_WithUnknownReturnValue_ShouldProvideHelpfulErrorMessage()
 ```
 
-#### 3. Object Registry Integration Tests
+#### 3. Object Registry Integration Tests (Unit Tests)
 ```csharp
 [Fact]
-public async Task Parrot_WithRegisteredObjects_ShouldReturnCorrectInstances()
+public void Parrot_WithRegisteredObjects_ShouldReturnCorrectInstances()
 [Fact]
-public async Task Parrot_WithUnregisteredId_ShouldThrowParrotCallMismatchException()
+public void Parrot_WithUnregisteredId_ShouldThrowParrotCallMismatchException()
 [Fact]
-public async Task Parrot_WithChangedRegistry_ShouldReflectCurrentState()
+public void Parrot_WithChangedRegistry_ShouldReflectCurrentState()
 ```
 
-#### 4. Type Conversion Tests
-```csharp
-[Fact]
-public async Task ConvertReturnValue_WithRegisteredObject_ShouldMaintainType()
-[Fact]
-public async Task ConvertReturnValue_WithWrongType_ShouldThrowTypeConversionException()
-[Fact]
-public async Task ConvertReturnValue_WithInterfaceType_ShouldReturnImplementation()
-```
-
-#### 5. End-to-End Parrot Workflow Tests
+#### 4. End-to-End Parrot Workflow Tests (Approval Tests)
+**These should use `await Verify()` to demonstrate real usage scenarios:**
 ```csharp
 [Fact]
 public async Task ParrotWorkflow_RegisterCreateReplay_ShouldWork()
 [Fact]
 public async Task ParrotWorkflow_WithMixedPrimitivesAndObjects_ShouldWork()
 [Fact]
-public async Task ParrotWorkflow_WithNestedObjectCalls_ShouldWork()
+public async Task ParrotWorkflow_WithComplexServiceInteraction_ShouldWork()
+[Fact]
+public async Task ParrotWorkflow_WithObjectReturnsAndChaining_ShouldWork()
 ```
 
-#### 6. Preserve Existing Behavior Tests
+#### 5. Error Scenario Tests (Approval Tests)
+**These should show complete error messages users will see:**
 ```csharp
 [Fact]
-public async Task ParseValue_WithPrimitives_ShouldKeepExistingBehavior()
+public async Task ParrotError_WithUnknownObject_ShouldShowHelpfulMessage()
 [Fact]
-public async Task ParseValue_WithArrays_ShouldKeepExistingBehavior()
+public async Task ParrotError_WithMissingId_ShouldShowHelpfulMessage()
 [Fact]
-public async Task ParseValue_WithNullValues_ShouldKeepExistingBehavior()
+public async Task ParrotError_WithTypeMismatch_ShouldShowHelpfulMessage()
+```
+
+#### 6. Preserve Existing Behavior Tests (Unit Tests)
+```csharp
+[Fact]
+public void ParseValue_WithPrimitives_ShouldKeepExistingBehavior()
+[Fact]
+public void ParseValue_WithArrays_ShouldKeepExistingBehavior()
+[Fact]
+public void ParseValue_WithNullValues_ShouldKeepExistingBehavior()
 ```
 
 ---
