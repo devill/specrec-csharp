@@ -1,0 +1,5 @@
+﻿🔧 ProcessMixedData:
+  🔸 dependency: <id:dbConnection>
+  🔸 text: "user_data.json"
+  🔸 number: 42
+

@@ -1,0 +1,11 @@
+﻿🔧 ProcessData:
+  🔸 dependency: <id:emailSvc>
+
+🔧 ProcessMixedData:
+  🔸 dependency: <id:userDb>
+  🔸 text: "SELECT * FROM users"
+  🔸 number: 100
+
+🔧 ProcessData:
+  🔸 dependency: <unknown>
+

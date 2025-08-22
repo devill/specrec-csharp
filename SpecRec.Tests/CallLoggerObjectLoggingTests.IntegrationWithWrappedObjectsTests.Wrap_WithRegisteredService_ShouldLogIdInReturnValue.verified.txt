@@ -1,0 +1,3 @@
+﻿🔧 GetService:
+  🔹 Returns: <id:resultService>
+

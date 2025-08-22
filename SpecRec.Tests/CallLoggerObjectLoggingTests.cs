@@ -52,80 +52,98 @@ public class CallLoggerObjectLoggingTests
     public class IntegrationWithWrappedObjectsTests
     {
         [Fact]
-        public void Wrap_WithRegisteredService_ShouldLogIdInArguments()
+        public async Task Wrap_WithRegisteredService_ShouldLogIdInArguments()
         {
             var factory = new ObjectFactory();
             var service = new TestService();
             var dependency = new AnotherService();
             
-            factory.Register(dependency, "dep1");
+            factory.Register(dependency, "emailService");
             
-            var sb = new StringBuilder();
-            var callLogger = new CallLogger(sb, "🔧", factory);
-            var wrappedService = callLogger.Wrap<ITestService>(service);
+            var callLogger = new CallLogger(objectFactory: factory);
+            var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
             
             wrappedService.ProcessData(dependency);
             
-            var output = sb.ToString();
-            Assert.Contains("<id:dep1>", output);
+            await Verify(callLogger.SpecBook.ToString());
         }
         
         [Fact]
-        public void Wrap_WithRegisteredService_ShouldLogIdInReturnValue()
+        public async Task Wrap_WithRegisteredService_ShouldLogIdInReturnValue()
         {
             var factory = new ObjectFactory();
             var service = new TestService();
             var returnedObject = new AnotherService();
             
-            factory.Register(returnedObject, "retObj");
+            factory.Register(returnedObject, "resultService");
             service.SetReturnValue(returnedObject);
             
-            var sb = new StringBuilder();
-            var callLogger = new CallLogger(sb, "🔧", factory);
-            var wrappedService = callLogger.Wrap<ITestService>(service);
+            var callLogger = new CallLogger(objectFactory: factory);
+            var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
             
             wrappedService.GetService();
             
-            var output = sb.ToString();
-            Assert.Contains("<id:retObj>", output);
+            await Verify(callLogger.SpecBook.ToString());
         }
         
         [Fact]
-        public void Wrap_WithUnregisteredService_ShouldLogUnknownInArguments()
+        public async Task Wrap_WithUnregisteredService_ShouldLogUnknownInArguments()
         {
             var factory = new ObjectFactory();
             var service = new TestService();
             var dependency = new AnotherService();
             
-            var sb = new StringBuilder();
-            var callLogger = new CallLogger(sb, "🔧", factory);
-            var wrappedService = callLogger.Wrap<ITestService>(service);
+            var callLogger = new CallLogger(objectFactory: factory);
+            var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
             
             wrappedService.ProcessData(dependency);
             
-            var output = sb.ToString();
-            Assert.Contains("<unknown>", output);
+            await Verify(callLogger.SpecBook.ToString());
         }
         
         [Fact]
-        public void Wrap_WithMixedRegisteredAndPrimitiveArgs_ShouldFormatCorrectly()
+        public async Task Wrap_WithMixedRegisteredAndPrimitiveArgs_ShouldFormatCorrectly()
         {
             var factory = new ObjectFactory();
             var service = new TestService();
             var dependency = new AnotherService();
             
-            factory.Register(dependency, "mixedDep");
+            factory.Register(dependency, "dbConnection");
             
-            var sb = new StringBuilder();
-            var callLogger = new CallLogger(sb, "🔧", factory);
-            var wrappedService = callLogger.Wrap<ITestService>(service);
+            var callLogger = new CallLogger(objectFactory: factory);
+            var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
             
-            wrappedService.ProcessMixedData(dependency, "text", 42);
+            wrappedService.ProcessMixedData(dependency, "user_data.json", 42);
             
-            var output = sb.ToString();
-            Assert.Contains("<id:mixedDep>", output);
-            Assert.Contains("\"text\"", output);
-            Assert.Contains("42", output);
+            await Verify(callLogger.SpecBook.ToString());
+        }
+        
+        [Fact]
+        public async Task Wrap_WithComplexObjectScenario_ShouldShowRealWorldUsage()
+        {
+            var factory = new ObjectFactory();
+            var userService = new TestService();
+            var emailService = new AnotherService { Name = "EmailService" };
+            var dbService = new AnotherService { Name = "DatabaseService" };
+            var config = new AnotherService { Name = "Configuration" };
+            
+            // Register some objects with descriptive IDs
+            factory.Register(emailService, "emailSvc");
+            factory.Register(dbService, "userDb");
+            factory.Register(config, "appConfig");
+            
+            var callLogger = new CallLogger(objectFactory: factory);
+            var wrappedUserService = callLogger.Wrap<ITestService>(userService, "🔧");
+            
+            // Simulate real-world method calls with mixed registered/unregistered objects
+            wrappedUserService.ProcessData(emailService);
+            wrappedUserService.ProcessMixedData(dbService, "SELECT * FROM users", 100);
+            
+            // Call with unregistered object
+            var unregisteredLogger = new AnotherService { Name = "UnregisteredLogger" };
+            wrappedUserService.ProcessData(unregisteredLogger);
+            
+            await Verify(callLogger.SpecBook.ToString());
         }
     }
 

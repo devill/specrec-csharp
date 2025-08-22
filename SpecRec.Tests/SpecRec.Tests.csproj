@@ -146,6 +146,9 @@
     <None Update="MultiFixture.TestMultipleScenarios.MultiplyTwoNumbers.verified.txt">
       <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
     </None>
+    <None Update="CallLoggerObjectLoggingTests.IntegrationWithWrappedObjectsTests.Wrap_WithComplexObjectScenario_ShouldShowRealWorldUsage.verified.txt">
+      <DependentUpon>CallLoggerObjectLoggingTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>
