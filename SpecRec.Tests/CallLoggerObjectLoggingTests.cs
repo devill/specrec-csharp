@@ -2,7 +2,7 @@ using System.Text;
 
 namespace SpecRec.Tests;
 
-public class CallLoggerIdFormattingTests
+public class CallLoggerObjectLoggingTests
 {
     public class BasicObjectIdFormattingTests
     {
