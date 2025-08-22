@@ -316,10 +316,8 @@ var logger = new CallLogger(objectFactory: factory);
 var wrappedUserService = logger.Wrap<IUserService>(userService, "🔧");
 wrappedUserService.SendWelcomeEmail(emailService); // Logs as <id:emailSvc>
 
-// Replay (Parrot resolves IDs back to objects)
-var callLog = new CallLog(logger.SpecBook.ToString(), factory);
-var parrot = Parrot.Create<IUserService>(callLog, "🦜", factory);
-var result = parrot.SendWelcomeEmail(emailService); // Resolves emailSvc back to original object
+// Result: Clean, readable specification
+Console.WriteLine(logger.SpecBook.ToString());
 ```
 
 ### Migrating Existing Tests
@@ -376,16 +374,6 @@ Instead of verbose object dumps:
   🔹 Returns: true
 ```
 
-When replaying with Parrot, the IDs are resolved back to the original objects:
-
-```csharp
-var callLog = new CallLog(logger.SpecBook.ToString(), factory);
-var parrot = Parrot.Create<IUserService>(callLog, "🦜", factory);
-
-// Parrot automatically resolves <id:emailSvc> back to the original emailService object
-var result = parrot.ProcessUser(emailService, databaseService, "user123");
-```
-
 ### Error Handling
 
 If you forget to register an object, CallLogger will output `<unknown>`:
@@ -426,6 +414,8 @@ factory.SetAlways(databaseService); // Auto-generates "DatabaseService_2"
 ### Parrot Test Double
 
 Provides intelligent test doubles that replay method calls and return values from verified specification files. Parrot combines the advanced logging capabilities of CallLogger with a Stub to further simplify creating gold master tests.
+
+When used with Object ID Tracking, Parrot automatically resolves `<id:objectName>` references back to the original registered objects, enabling seamless replay of complex object interactions.
 
 #### Usage example
 
