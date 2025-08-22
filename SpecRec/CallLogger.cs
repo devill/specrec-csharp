@@ -102,7 +102,7 @@ namespace SpecRec
 
         private void SetupContextForTarget(object?[] args)
         {
-            CallLogFormatterContext.SetCurrentLogger(new CallLogger(_logger._specbook, _emoji));
+            CallLogFormatterContext.SetCurrentLogger(new CallLogger(_logger._specbook, _emoji, _logger._objectFactory));
             CallLogFormatterContext.SetCurrentMethodName("ConstructorCalledWith");
         }
 
@@ -139,7 +139,7 @@ namespace SpecRec
 
         private void LogConstructorCall(string interfaceName, ConstructorParameterInfo[] parameters)
         {
-            var callLogger = new CallLogger(_logger._specbook, _emoji);
+            var callLogger = new CallLogger(_logger._specbook, _emoji, _logger._objectFactory);
             callLogger.forInterface(interfaceName);
 
             AddConstructorArguments(callLogger, parameters);
@@ -216,7 +216,7 @@ namespace SpecRec
         private CallLogger CreateCallLogger()
         {
             var sb = new StringBuilder();
-            return new CallLogger(sb, _emoji);
+            return new CallLogger(sb, _emoji, _logger._objectFactory);
         }
 
         private void SetupLoggingContext(CallLogger callLogger, string methodName)
@@ -331,7 +331,7 @@ namespace SpecRec
             }
         }
 
-        public static T Create(T target, CallLogger logger, string emoji)
+        public static T Create(T target, CallLogger logger, string emoji, ObjectFactory? objectFactory = null)
         {
             var proxy = Create<T, CallLoggerProxy<T>>() as CallLoggerProxy<T>;
             proxy!._target = target;
@@ -345,6 +345,7 @@ namespace SpecRec
     {
         internal readonly StringBuilder _specbook;
         private readonly string _emoji;
+        internal readonly ObjectFactory? _objectFactory;
         private object? _returnValue;
         private string? _note;
         private readonly List<(string name, object? value, string emoji)> _parameters = new();
@@ -362,15 +363,17 @@ namespace SpecRec
         /// </summary>
         public StringBuilder SpecBook => _specbook;
 
-        public CallLogger(StringBuilder? specbook = null, string emoji = "")
+        public CallLogger(StringBuilder? specbook = null, string emoji = "", ObjectFactory? objectFactory = null)
         {
             _specbook = specbook ?? new StringBuilder();
             _emoji = emoji;
+            _objectFactory = objectFactory ?? ObjectFactory.Instance();
         }
 
-        public T Wrap<T>(T target, string emoji = "🔧") where T : class
+        public T Wrap<T>(T target, string emoji = "🔧", ObjectFactory? objectFactory = null) where T : class
         {
-            return CallLoggerProxy<T>.Create(target, this, emoji);
+            var factory = objectFactory ?? _objectFactory;
+            return CallLoggerProxy<T>.Create(target, this, emoji, factory);
         }
 
         public CallLogger withReturn(object? returnValue, string? description = null)
@@ -486,6 +489,16 @@ namespace SpecRec
         {
             if (value == null) return "null";
 
+            // NEW: Check if object is registered first
+            if (_objectFactory != null && IsComplexObject(value))
+            {
+                var registeredId = _objectFactory.GetRegisteredId(value);
+                if (registeredId != null)
+                    return $"<id:{registeredId}>";
+                else
+                    return "<unknown>";
+            }
+
             if (TryFormatCollection(value, out var collectionResult))
                 return collectionResult;
 
@@ -504,6 +517,29 @@ namespace SpecRec
             }
 
             return value.ToString() ?? "null";
+        }
+
+        private bool IsComplexObject(object value)
+        {
+            // Returns true for objects that should be tracked by ID
+            // Returns false for primitives, strings, collections that should use existing formatting
+            var type = value.GetType();
+            
+            // Exclude primitives
+            if (type.IsPrimitive) return false;
+            
+            // Exclude common value types that should use existing formatting
+            if (type == typeof(string)) return false;
+            if (type == typeof(DateTime)) return false;
+            if (type == typeof(decimal)) return false;
+            if (type == typeof(Guid)) return false;
+            
+            // Exclude collections (let existing collection formatting handle them)
+            if (value is System.Collections.IEnumerable && !(value is string))
+                return false;
+                
+            // Everything else is a complex object that should be tracked
+            return true;
         }
 
         private bool TryFormatCollection(object value, out string result)
