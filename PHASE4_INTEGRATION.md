@@ -69,28 +69,6 @@ public async Task ThreadSafety_ConcurrentParrotReplay_ShouldWork()
 public async Task ThreadSafety_RegistryChangesWhileLogging_ShouldBeConsistent()
 ```
 
-#### 5. Legacy Compatibility Tests
-```csharp
-[Fact]
-public async Task LegacyCompatibility_ExistingTestsWithoutIds_ShouldStillWork()
-[Fact]
-public async Task LegacyCompatibility_MixedIdAndNonIdObjects_ShouldWork()
-[Fact]
-public async Task LegacyCompatibility_ExistingVerifiedFiles_ShouldStillWork()
-```
-
-#### 6. Performance and Edge Cases
-```csharp
-[Fact]
-public async Task Performance_LargeNumberOfRegisteredObjects_ShouldPerform()
-[Fact]
-public async Task EdgeCase_SameObjectMultipleIds_ShouldUseFirstId()
-[Fact]
-public async Task EdgeCase_ObjectRegisteredAfterFirstUse_ShouldShowUnknownThenId()
-[Fact]
-public async Task EdgeCase_ClearedRegistryDuringTest_ShouldHandleGracefully()
-```
-
 ---
 
 ## Integration Test Scenarios
