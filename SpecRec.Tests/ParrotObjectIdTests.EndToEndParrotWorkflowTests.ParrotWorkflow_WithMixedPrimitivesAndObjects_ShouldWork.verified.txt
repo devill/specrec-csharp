@@ -1,1 +1,6 @@
-﻿
+﻿🔧 ProcessMixedData:
+  🔸 dependency: <id:email>
+  🔸 text: "test@example.com"
+  🔸 number: 100
+  🔹 Returns: True
+

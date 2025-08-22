@@ -1,1 +1,10 @@
-﻿
+﻿🔧 ProcessData:
+  🔸 dependency: <id:emailSvc>
+  🔹 Returns: <id:emailSvc>
+
+🔧 ProcessMixedData:
+  🔸 dependency: <id:userDb>
+  🔸 text: "query"
+  🔸 number: 42
+  🔹 Returns: True
+
