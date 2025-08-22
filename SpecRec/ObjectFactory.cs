@@ -9,6 +9,11 @@ namespace SpecRec
 
         private readonly Dictionary<Type, Queue<object>> _queuedObjects = new Dictionary<Type, Queue<object>>();
         private readonly Dictionary<Type, object> _alwaysObjects = new Dictionary<Type, object>();
+        
+        private readonly Dictionary<string, object> _registeredObjectsById = new Dictionary<string, object>();
+        private readonly Dictionary<object, string> _registeredIdsByObject = new Dictionary<object, string>();
+        private int _autoIdCounter = 1;
+        private readonly object _registryLock = new object();
 
         public ObjectFactory()
         {
@@ -153,6 +158,11 @@ namespace SpecRec
 
         public void SetOne<T>(T obj)
         {
+            SetOne(obj, null);
+        }
+
+        public void SetOne<T>(T obj, string? id)
+        {
             var type = typeof(T);
             if (!_queuedObjects.ContainsKey(type))
             {
@@ -160,11 +170,44 @@ namespace SpecRec
             }
 
             _queuedObjects[type].Enqueue(obj!);
+
+            // Register with ID if provided, or auto-generate one
+            if (obj != null)
+            {
+                var objectId = id ?? GenerateAutoId();
+                lock (_registryLock)
+                {
+                    if (!_registeredObjectsById.ContainsKey(objectId))
+                    {
+                        _registeredObjectsById[objectId] = obj;
+                        _registeredIdsByObject[obj] = objectId;
+                    }
+                }
+            }
         }
 
         public void SetAlways<T>(T obj)
         {
+            SetAlways(obj, null);
+        }
+
+        public void SetAlways<T>(T obj, string? id)
+        {
             _alwaysObjects[typeof(T)] = obj!;
+
+            // Register with ID if provided, or auto-generate one
+            if (obj != null)
+            {
+                var objectId = id ?? GenerateAutoId();
+                lock (_registryLock)
+                {
+                    if (!_registeredObjectsById.ContainsKey(objectId))
+                    {
+                        _registeredObjectsById[objectId] = obj;
+                        _registeredIdsByObject[obj] = objectId;
+                    }
+                }
+            }
         }
 
         public void Clear<T>()
@@ -172,12 +215,85 @@ namespace SpecRec
             var type = typeof(T);
             _alwaysObjects.Remove(type);
             _queuedObjects.Remove(type);
+            
+            // Remove from registry all objects of this type
+            lock (_registryLock)
+            {
+                var objectsToRemove = _registeredIdsByObject.Keys
+                    .Where(obj => obj.GetType() == type || type.IsAssignableFrom(obj.GetType()))
+                    .ToList();
+                
+                foreach (var obj in objectsToRemove)
+                {
+                    var id = _registeredIdsByObject[obj];
+                    _registeredIdsByObject.Remove(obj);
+                    _registeredObjectsById.Remove(id);
+                }
+            }
         }
 
         public void ClearAll()
         {
             _alwaysObjects.Clear();
             _queuedObjects.Clear();
+            lock (_registryLock)
+            {
+                _registeredObjectsById.Clear();
+                _registeredIdsByObject.Clear();
+            }
+        }
+
+        public void Register<T>(T obj, string id) where T : class
+        {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            if (id == null) throw new ArgumentNullException(nameof(id));
+            
+            lock (_registryLock)
+            {
+                if (_registeredObjectsById.ContainsKey(id))
+                    throw new ArgumentException($"An object with ID '{id}' is already registered.", nameof(id));
+                
+                _registeredObjectsById[id] = obj;
+                _registeredIdsByObject[obj] = id;
+            }
+        }
+
+        public string? GetRegisteredId(object obj)
+        {
+            if (obj == null) return null;
+            
+            lock (_registryLock)
+            {
+                return _registeredIdsByObject.TryGetValue(obj, out var id) ? id : null;
+            }
+        }
+
+        public T? GetRegisteredObject<T>(string id) where T : class
+        {
+            if (id == null) return null;
+            
+            lock (_registryLock)
+            {
+                return _registeredObjectsById.TryGetValue(id, out var obj) ? obj as T : null;
+            }
+        }
+
+        public bool IsRegistered(object obj)
+        {
+            if (obj == null) return false;
+            
+            lock (_registryLock)
+            {
+                return _registeredIdsByObject.ContainsKey(obj);
+            }
+        }
+
+        private string GenerateAutoId()
+        {
+            lock (_registryLock)
+            {
+                return $"obj_{_autoIdCounter++}";
+            }
         }
     }
 
