@@ -152,6 +152,9 @@
     <None Update="ParrotObjectIdTests.EndToEndParrotWorkflowTests.ParrotWorkflow_RegisterCreateReplay_ShouldWork.received.txt">
       <DependentUpon>ParrotObjectIdTests.cs</DependentUpon>
     </None>
+    <None Update="ObjectIdIntegrationTests.CompleteWorkflowTests.CompleteWorkflow_LogThenReplay_ShouldWork.verified.txt">
+      <DependentUpon>ObjectIdIntegrationTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -341,7 +341,7 @@ var logger = new CallLogger(objectFactory: factory);
 1. **Use descriptive IDs**: `"userDb"`, `"emailSvc"` instead of `"obj1"`, `"obj2"`
 2. **Register before wrapping**: Register all objects before creating wrapped services
 3. **Consistent ObjectFactory**: Use the same ObjectFactory instance for logging and replay
-4. **Auto-generated IDs**: Let ObjectFactory generate IDs with `SetOne()` and `SetAlways()`
+4. **Auto-generated IDs**: Let ObjectFactory generate descriptive IDs with `SetOne()` and `SetAlways()`
 
 ### How It Works
 
@@ -417,9 +417,9 @@ string? id = factory.GetRegisteredId(myObject);
 // Get the object for a registered ID
 MyService? obj = factory.GetRegisteredObject<MyService>("myServiceId");
 
-// Auto-generate IDs for SetOne/SetAlways
-factory.SetOne(emailService); // Auto-generates "obj_1"
-factory.SetAlways(databaseService); // Auto-generates "obj_2"
+// Auto-generate descriptive IDs for SetOne/SetAlways
+factory.SetOne(emailService); // Auto-generates "EmailService_1"
+factory.SetAlways(databaseService); // Auto-generates "DatabaseService_2"
 ```
 
 

@@ -174,7 +174,7 @@ namespace SpecRec
             // Register with ID if provided, or auto-generate one
             if (obj != null)
             {
-                var objectId = id ?? GenerateAutoId();
+                var objectId = id ?? GenerateAutoId(obj.GetType());
                 lock (_registryLock)
                 {
                     if (!_registeredObjectsById.ContainsKey(objectId))
@@ -198,7 +198,7 @@ namespace SpecRec
             // Register with ID if provided, or auto-generate one
             if (obj != null)
             {
-                var objectId = id ?? GenerateAutoId();
+                var objectId = id ?? GenerateAutoId(obj.GetType());
                 lock (_registryLock)
                 {
                     if (!_registeredObjectsById.ContainsKey(objectId))
@@ -288,11 +288,11 @@ namespace SpecRec
             }
         }
 
-        private string GenerateAutoId()
+        private string GenerateAutoId(Type objectType)
         {
             lock (_registryLock)
             {
-                return $"obj_{_autoIdCounter++}";
+                return $"{objectType.Name}_{_autoIdCounter++}";
             }
         }
     }
