@@ -299,6 +299,130 @@ var spec = logger.SpecBook.ToString();
 ```
 
 
+## Object ID Tracking
+
+SpecRec now supports automatic object identification in tests, replacing verbose object serialization with clean ID references.
+
+### Quick Example
+
+```csharp
+// Setup
+var factory = new ObjectFactory();
+var emailService = new EmailService();
+factory.Register(emailService, "emailSvc");
+
+// Logging (produces clean output)
+var logger = new CallLogger(objectFactory: factory);
+var wrappedUserService = logger.Wrap<IUserService>(userService, "🔧");
+wrappedUserService.SendWelcomeEmail(emailService); // Logs as <id:emailSvc>
+
+// Replay (Parrot resolves IDs back to objects)
+var callLog = new CallLog(logger.SpecBook.ToString(), factory);
+var parrot = Parrot.Create<IUserService>(callLog, "🦜", factory);
+var result = parrot.SendWelcomeEmail(emailService); // Resolves emailSvc back to original object
+```
+
+### Migrating Existing Tests
+
+No changes required for existing tests. Object tracking is opt-in:
+
+```csharp
+// Before (still works)
+var logger = new CallLogger();
+
+// After (with object tracking)
+var factory = new ObjectFactory();
+factory.Register(myService, "myService");
+var logger = new CallLogger(objectFactory: factory);
+```
+
+### Best Practices
+
+1. **Use descriptive IDs**: `"userDb"`, `"emailSvc"` instead of `"obj1"`, `"obj2"`
+2. **Register before wrapping**: Register all objects before creating wrapped services
+3. **Consistent ObjectFactory**: Use the same ObjectFactory instance for logging and replay
+4. **Auto-generated IDs**: Let ObjectFactory generate IDs with `SetOne()` and `SetAlways()`
+
+### How It Works
+
+When you register objects with the ObjectFactory:
+
+```csharp
+var factory = new ObjectFactory();
+var emailService = new EmailService();
+var databaseService = new DatabaseService();
+
+factory.Register(emailService, "emailSvc");
+factory.Register(databaseService, "userDb");
+```
+
+CallLogger will format registered objects as clean ID references:
+
+```
+🔧 ProcessUser:
+  🔸 emailService: <id:emailSvc>
+  🔸 database: <id:userDb>
+  🔸 userId: "user123"
+  🔹 Returns: true
+```
+
+Instead of verbose object dumps:
+
+```
+🔧 ProcessUser:
+  🔸 emailService: {Name: "EmailService", ConnectionString: "smtp://..."}
+  🔸 database: {Name: "DatabaseService", Provider: "SqlServer", ...}
+  🔸 userId: "user123"
+  🔹 Returns: true
+```
+
+When replaying with Parrot, the IDs are resolved back to the original objects:
+
+```csharp
+var callLog = new CallLog(logger.SpecBook.ToString(), factory);
+var parrot = Parrot.Create<IUserService>(callLog, "🦜", factory);
+
+// Parrot automatically resolves <id:emailSvc> back to the original emailService object
+var result = parrot.ProcessUser(emailService, databaseService, "user123");
+```
+
+### Error Handling
+
+If you forget to register an object, CallLogger will output `<unknown>`:
+
+```
+🔧 ProcessUser:
+  🔸 emailService: <unknown>
+  🔹 Returns: true
+```
+
+When Parrot encounters `<unknown>` in a verified file, it throws a helpful error:
+
+```
+ParrotUnknownObjectException: Encountered <unknown> object in verified file. 
+Register all objects with ObjectFactory before running tests.
+```
+
+### Registry Management
+
+The ObjectFactory provides full registry management:
+
+```csharp
+// Check if object is registered
+bool isRegistered = factory.IsRegistered(myObject);
+
+// Get the ID for a registered object
+string? id = factory.GetRegisteredId(myObject);
+
+// Get the object for a registered ID
+MyService? obj = factory.GetRegisteredObject<MyService>("myServiceId");
+
+// Auto-generate IDs for SetOne/SetAlways
+factory.SetOne(emailService); // Auto-generates "obj_1"
+factory.SetAlways(databaseService); // Auto-generates "obj_2"
+```
+
+
 ### Parrot Test Double
 
 Provides intelligent test doubles that replay method calls and return values from verified specification files. Parrot combines the advanced logging capabilities of CallLogger with a Stub to further simplify creating gold master tests.

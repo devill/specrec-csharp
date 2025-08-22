@@ -1,0 +1,9 @@
+﻿🔧 SendWelcomeEmail:
+  🔸 emailService: <id:emailSvc>
+  🔹 Returns: True
+
+🔧 CreateUser:
+  🔸 databaseService: <id:userDb>
+  🔸 email: "john@example.com"
+  🔹 Returns: 42
+

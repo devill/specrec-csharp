@@ -1,0 +1,12 @@
+﻿🔧 SendWelcomeEmail:
+  🔸 emailService: <id:email>
+  🔹 Returns: True
+
+🔧 ValidateEmail:
+  🔸 email: "test@example.com"
+  🔹 Returns: True
+
+🔧 SendWelcomeEmail:
+  🔸 emailService: null
+  🔹 Returns: False
+
