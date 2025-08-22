@@ -1,0 +1,20 @@
+﻿{
+  originalSpec:
+🔧 ProcessData:
+  🔸 dependency: <id:secondary>
+  🔹 Returns: <id:secondary>
+
+🔧 ProcessData:
+  🔸 dependency: <id:secondary>
+  🔹 Returns: <id:secondary>
+
+,
+  chainedResults: {
+    intermediate: {
+      Name: AnotherService
+    },
+    final: {
+      Name: AnotherService
+    }
+  }
+}

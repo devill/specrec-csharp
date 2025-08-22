@@ -11,15 +11,17 @@ namespace SpecRec
         private readonly List<ParsedCall> _parsedCalls;
         private int _currentCallIndex;
         private readonly List<(string methodName, object?[] args, object? returnValue)> _loggedCalls;
+        private readonly ObjectFactory? _objectFactory;
 
         public StringBuilder SpecBook => _content;
 
-        public CallLog(string? verifiedContent = null)
+        public CallLog(string? verifiedContent = null, ObjectFactory? objectFactory = null)
         {
             _content = new StringBuilder();
             _parsedCalls = new List<ParsedCall>();
             _currentCallIndex = 0;
             _loggedCalls = new List<(string, object?[], object?)>();
+            _objectFactory = objectFactory;
 
             if (!string.IsNullOrEmpty(verifiedContent))
             {
@@ -27,16 +29,16 @@ namespace SpecRec
             }
         }
 
-        public static CallLog FromFile(string filePath)
+        public static CallLog FromFile(string filePath, ObjectFactory? objectFactory = null)
         {
             if (!File.Exists(filePath))
-                return new CallLog(); // Return empty CallLog if no verified file exists yet
+                return new CallLog(objectFactory: objectFactory); // Return empty CallLog if no verified file exists yet
 
             var content = File.ReadAllText(filePath);
-            return new CallLog(content);
+            return new CallLog(content, objectFactory);
         }
 
-        public static CallLog FromVerifiedFile([CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
+        public static CallLog FromVerifiedFile(ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
         {
             if (string.IsNullOrEmpty(testName) || string.IsNullOrEmpty(sourceFilePath))
                 throw new ArgumentException("Could not determine test name or source file path");
@@ -49,14 +51,14 @@ namespace SpecRec
             
             if (File.Exists(expectedFilePath))
             {
-                return FromFile(expectedFilePath);
+                return FromFile(expectedFilePath, objectFactory);
             }
 
             // If no file found, return empty CallLog (will cause missing return value exceptions)
-            return new CallLog();
+            return new CallLog(objectFactory: objectFactory);
         }
 
-        public static CallLog FromVerifiedFileWithTestCase(string testCaseName, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
+        public static CallLog FromVerifiedFileWithTestCase(string testCaseName, ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
         {
             if (string.IsNullOrEmpty(testName) || string.IsNullOrEmpty(sourceFilePath))
                 throw new ArgumentException("Could not determine test name or source file path");
@@ -69,35 +71,35 @@ namespace SpecRec
             
             if (File.Exists(expectedFilePath))
             {
-                return FromFile(expectedFilePath);
+                return FromFile(expectedFilePath, objectFactory);
             }
 
             // If no file found, return empty CallLog (will cause missing return value exceptions)
-            return new CallLog();
+            return new CallLog(objectFactory: objectFactory);
         }
 
-        public static CallLog FromVerifiedFileAutoTestCase([CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
+        public static CallLog FromVerifiedFileAutoTestCase(ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
         {
             // Get test case name from context (set by SpecRec framework)
             var testCaseName = SpecRecContext.CurrentTestCase;
             
             if (!string.IsNullOrEmpty(testCaseName))
             {
-                return FromVerifiedFileWithTestCase(testCaseName, testName, sourceFilePath);
+                return FromVerifiedFileWithTestCase(testCaseName, objectFactory, testName, sourceFilePath);
             }
 
             // Fallback to regular verified file loading
-            return FromVerifiedFile(testName, sourceFilePath);
+            return FromVerifiedFile(objectFactory, testName, sourceFilePath);
         }
 
         /// <summary>
         /// Sets up SpecRec context for the current test case and returns CallLog.
         /// This method should be called at the beginning of test methods that use SpecRecLogs.
         /// </summary>
-        public static CallLog ForTestCase(string testCaseName, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
+        public static CallLog ForTestCase(string testCaseName, ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
         {
             SpecRecContext.SetTestCase(testCaseName);
-            return FromVerifiedFileWithTestCase(testCaseName, testName, sourceFilePath);
+            return FromVerifiedFileWithTestCase(testCaseName, objectFactory, testName, sourceFilePath);
         }
 
         public CallLog Append(string value)
@@ -285,6 +287,21 @@ namespace SpecRec
             if (valueStr == "null") return null;
             if (valueStr == "<null>") return null; // Legacy support for old format
             if (valueStr == "<missing_value>") return "<missing_value>"; // Special placeholder
+            
+            // NEW: Handle object ID format
+            if (valueStr == "<unknown>")
+            {
+                throw new ParrotUnknownObjectException(
+                    "Encountered <unknown> object in verified file. " +
+                    "Register all objects with ObjectFactory before running tests.");
+            }
+            
+            // NEW: Parse <id:string_id> format
+            if (TryParseObjectId(valueStr, out var objectId))
+            {
+                return ResolveObjectById(objectId);
+            }
+            
             if (valueStr == "true") return true;
             if (valueStr == "false") return false;
             
@@ -299,6 +316,48 @@ namespace SpecRec
             if (double.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var doubleVal)) return doubleVal;
             
             return valueStr;
+        }
+
+        private bool TryParseObjectId(string valueStr, out string objectId)
+        {
+            objectId = "";
+            var pattern = @"^<id:(.+)>$";
+            var match = Regex.Match(valueStr, pattern);
+            if (match.Success)
+            {
+                objectId = match.Groups[1].Value;
+                if (string.IsNullOrWhiteSpace(objectId))
+                {
+                    throw new ParrotCallMismatchException("Object ID cannot be empty in <id:> format.");
+                }
+                return true;
+            }
+            
+            // Check if it's the malformed empty ID format
+            if (valueStr == "<id:>")
+            {
+                throw new ParrotCallMismatchException("Object ID cannot be empty in <id:> format.");
+            }
+            
+            return false;
+        }
+
+        private object ResolveObjectById(string objectId)
+        {
+            if (_objectFactory == null)
+            {
+                throw new ParrotCallMismatchException(
+                    $"Cannot resolve object ID '{objectId}' - no ObjectFactory provided to CallLog.");
+            }
+            
+            var obj = _objectFactory.GetRegisteredObject<object>(objectId);
+            if (obj == null)
+            {
+                throw new ParrotCallMismatchException(
+                    $"Object with ID '{objectId}' not found in ObjectFactory registry.");
+            }
+            
+            return obj;
         }
 
         private bool IsCallMatch(ParsedCall expected, string actualMethodName, object?[] actualArgs)

@@ -1,0 +1,10 @@
+﻿{
+  specification:
+🔧 ComplexOperation:
+  🔸 service1: <id:emailService>
+  🔸 service2: <id:database>
+  🔹 Returns: <id:emailService>
+
+,
+  replayedResult: EmailService
+}

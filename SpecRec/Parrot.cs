@@ -50,6 +50,16 @@ namespace SpecRec
                 return null;
             }
 
+            // NEW: Handle resolved objects from ObjectFactory
+            if (value is object obj && !IsPrimitiveType(obj))
+            {
+                if (targetType.IsAssignableFrom(obj.GetType()))
+                    return obj;
+                    
+                throw new ParrotTypeConversionException(
+                    $"Resolved object of type {obj.GetType().Name} cannot be assigned to expected type {targetType.Name}.");
+            }
+
             if (targetType.IsAssignableFrom(value.GetType()))
                 return value;
 
@@ -122,14 +132,20 @@ namespace SpecRec
             
             return result;
         }
+
+        private bool IsPrimitiveType(object obj)
+        {
+            var type = obj.GetType();
+            return type.IsPrimitive || type == typeof(string) || type == typeof(DateTime) || type == typeof(decimal);
+        }
     }
 
     public static class Parrot
     {
-        public static T Create<T>(CallLog callLog, string emoji = "🦜") where T : class
+        public static T Create<T>(CallLog callLog, string emoji = "🦜", ObjectFactory? objectFactory = null) where T : class
         {
             var stub = ParrotStub<T>.Create(callLog);
-            var callLogger = new CallLogger(callLog.SpecBook, emoji);
+            var callLogger = new CallLogger(callLog.SpecBook, emoji, objectFactory);
             return callLogger.Wrap<T>(stub, emoji);
         }
     }
@@ -156,5 +172,11 @@ namespace SpecRec
     {
         public ParrotTypeConversionException(string message) : base(message) { }
         public ParrotTypeConversionException(string message, Exception innerException) : base(message, innerException) { }
+    }
+
+    public class ParrotUnknownObjectException : ParrotException
+    {
+        public ParrotUnknownObjectException(string message) : base(message) { }
+        public ParrotUnknownObjectException(string message, Exception innerException) : base(message, innerException) { }
     }
 }
