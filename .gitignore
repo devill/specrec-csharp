@@ -55,3 +55,9 @@ artifacts/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+fixtures/**/*.received
+
+# CLI projects (only exist on feature branch)
+SpecRec.CLI/
+SpecRec.CLI.Tests/
