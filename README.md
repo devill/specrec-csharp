@@ -1,24 +1,102 @@
 # SpecRec for .NET
 
-**Automated Legacy Testing Tools for .NET**
+**Turn untestable legacy code into comprehensive test suites in minutes**
 
 ![Spec Rec Logo](./SpecRecLogo.png)
 
-## Overview
+## Why SpecRec?
 
-SpecRec makes legacy code testable through automated instrumentation and transparent record-replay capabilities. By replacing direct object instantiation with controllable factories and wrapping dependencies with recording proxies, SpecRec eliminates the manual effort required to characterize and test existing systems.
+Testing legacy code is painful. You spend hours setting up mocks, understanding complex dependencies, and writing brittle tests that break when implementation details change. 
 
-**⚠️ This library is incomplete and under active development. Currently the ObjectFactory, CallLogger, and Parrot components are implemented.**
+SpecRec solves this by:
+- **Recording** actual method calls and return values from your legacy code
+- **Generating** human-readable specifications automatically
+- **Replaying** those interactions as fast, reliable test doubles
 
-## Core Principles
+No more guessing what your code does - SpecRec shows you exactly what happens.
 
-- **Prioritize ease of use** - Hide complexity behind well-designed interfaces
-- **Focus on public interactions** - Test behavior, not implementation details  
-- **Minimal code changes** - Validate changes at a glance
+## Installation
 
-## Current Components
+Add to your test project:
 
-### ObjectFactory
+```xml
+<PackageReference Include="SpecRec" Version="0.0.4" />
+<PackageReference Include="Verify.Xunit" Version="26.6.0" />
+```
+
+Or via Package Manager Console:
+
+```powershell
+Install-Package SpecRec
+Install-Package Verify.Xunit
+```
+
+## The Complete Picture
+
+Here's what a finished SpecRec test looks like - clean, fast, and comprehensive:
+
+```csharp
+[Fact]
+public async Task UserRegistration_ShouldWork()
+{
+    using static GlobalObjectFactory;
+    
+    // Initialize a CallLog
+    var callLog = CallLog.FromVerifiedFile();
+ 
+    // Set up test doubles
+    var emailParrot = Parrot.Create<IEmailService>(callLog, "📧");
+    var dbParrot = Parrot.Create<IDatabaseService>(callLog, "🗃️");
+    
+    // Inject the test doubles
+    SetOne<IEmailService>(emailParrot, "email");
+    SetOne<IDatabaseService>(dbParrot, "userDb");
+    
+    // Act: call your legacy code
+    (new UserService()).RegisterNewUser("john@example.com", "John Doe");
+    
+    // Verify the call log
+    await callLog.Verify();
+}
+```
+
+**That's it!** When the test runs it creates a log of all interactions you can approve by coping the `.received.txt` file to the corresponding `.verified.txt`.
+
+**UserRegistration_ShouldWork.verified.txt:**
+```
+📧 SendWelcomeEmail:
+  🔸 recipient: "john@example.com"
+  🔸 subject: "Welcome John Doe"
+  🔹 Returns: True
+
+🗃️ CreateUser:
+  🔸 email: "john@example.com"
+  🔸 name: "John Doe" 
+  🔹 Returns: 42
+```
+
+## How to Get There: The 6-Step SpecRec Workflow
+
+1. **Identify dependencies** - Find objects outside your system under test that need test doubles
+2. **Break the dependencies** - Change `new EmailService()` to `factory.Create<EmailService>()` so you can control what gets created
+3. **Create the test doubles** - SpecRec uses a Spy called Parrot to log all interactions
+4. **Run the test** - It will fail with "missing return value" exceptions
+5. **Fix return values** - Copy `.received.txt` to `.verified.txt` and fill in expected return values
+6. **Repeat until green** - Each run reveals the next missing return value until your test passes
+
+**Result:** A fast, reliable characterization test that documents exactly what your legacy code does.
+
+**⚠️ This library is under active development. Core components (ObjectFactory, CallLogger, Parrot) are stable.**
+
+## How It Works
+
+SpecRec has three main components that work together:
+
+1. **ObjectFactory** - Makes dependencies controllable for testing
+2. **CallLogger** - Records method calls and return values
+3. **Parrot** - Replays recorded interactions as test doubles  
+
+## ObjectFactory: Breaking Dependencies
 
 Replaces `new` keyword with controllable dependency injection for testing.
 
@@ -147,7 +225,7 @@ factory.ClearAll();
 ```
 
 
-### CallLogger
+## CallLogger: Recording Method Calls
 
 Records method calls and constructor invocations to generate human-readable specifications for testing and documentation.
 
@@ -476,9 +554,9 @@ This improvement makes it easier to identify which objects need to be registered
 The parsing system maintains compatibility with existing verified files while enforcing stricter rules for new content. Legacy `<unknown>` markers are still supported but will be gradually replaced with the enhanced `<unknown:TypeName>` format for better debugging.
 
 
-### Parrot Test Double
+## Parrot: Intelligent Test Doubles
 
-Provides intelligent test doubles that replay method calls and return values from verified specification files. Parrot combines the advanced logging capabilities of CallLogger with a Stub to further simplify creating gold master tests.
+Provides intelligent test doubles that replay method calls and return values from verified specification files. Parrot eliminates the tedious work of manually setting up stubs by automatically replaying the exact interactions from your verified specification files.
 
 When used with Object ID Tracking, Parrot automatically resolves `<id:objectName>` references back to the original registered objects, enabling seamless replay of complex object interactions.
 
@@ -646,7 +724,7 @@ public async Task EndToEndWorkflow()
 ```
 
 
-### SpecRecLogsAttribute
+## SpecRecLogsAttribute: Data-Driven Testing
 
 Enables data-driven testing by automatically discovering verified files and generating individual test cases for each scenario. Supports test input parameters extracted from preamble sections.
 
@@ -781,20 +859,6 @@ Result was: 28
 
 Parameters are extracted from preamble sections and passed to test methods. Supports built-in types, arrays, and dictionaries. Error messages provide copy-paste preamble sections when parameters are missing.
 
-## NuGet Package
-
-Add to your project:
-
-```xml
-<PackageReference Include="SpecRec" Version="0.0.1" />
-```
-
-Or via Package Manager Console:
-
-```powershell
-Install-Package SpecRec
-```
-
 ## Planned Components
 
 - **Automated test discovery**: Generates call logs automatically to create 100% branch coverage of SUT
@@ -804,6 +868,8 @@ Install-Package SpecRec
 
 - .NET 9.0+
 - C# 13+
+- xUnit (for examples) - any test framework works
+- Verify framework (for approval testing)
 
 ## License
 
