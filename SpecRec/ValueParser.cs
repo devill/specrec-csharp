@@ -11,10 +11,21 @@ namespace SpecRec
             if (valueStr == "<missing_value>") return "<missing_value>"; // Special placeholder
             
             // Handle object ID format
-            if (valueStr == "<unknown>")
+            if (valueStr == "<unknown>" || valueStr.StartsWith("<unknown:"))
             {
+                string typeName = "";
+                if (valueStr.StartsWith("<unknown:") && valueStr.EndsWith(">"))
+                {
+                    typeName = valueStr.Substring(9, valueStr.Length - 10);
+                    typeName = string.IsNullOrEmpty(typeName) ? "unknown type" : typeName;
+                }
+                else
+                {
+                    typeName = "unknown type";
+                }
+                
                 throw new ParrotUnknownObjectException(
-                    "Encountered <unknown> object in verified file. " +
+                    $"Encountered <unknown:{typeName}> object in verified file. " +
                     "Register all objects with ObjectFactory before running tests.");
             }
             
@@ -108,7 +119,7 @@ namespace SpecRec
             }
             
             // Special values stay as-is
-            if (valueStr == "<missing_value>" || valueStr == "<unknown>")
+            if (valueStr == "<missing_value>" || valueStr == "<unknown>" || valueStr.StartsWith("<unknown:"))
                 return valueStr;
                 
             // Everything else is unquoted string (but we don't support this in strict mode)
@@ -265,7 +276,7 @@ namespace SpecRec
             if (value is string stringValue)
             {
                 // Special placeholders should not be quoted
-                if (stringValue == "<missing_value>" || stringValue == "<unknown>")
+                if (stringValue == "<missing_value>" || stringValue == "<unknown>" || stringValue.StartsWith("<unknown:"))
                     return stringValue;
                 return $"\"{stringValue}\"";
             }

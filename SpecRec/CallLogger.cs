@@ -496,7 +496,7 @@ namespace SpecRec
                 if (registeredId != null)
                     return $"<id:{registeredId}>";
                 else
-                    return "<unknown>";
+                    return $"<unknown:{value.GetType().Name}>";
             }
 
             if (TryFormatCollection(value, out var collectionResult))

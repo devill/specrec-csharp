@@ -307,10 +307,21 @@ namespace SpecRec
         private void ValidateSpecialValues(string valueStr)
         {
             // Fail immediately for error conditions
-            if (valueStr == "<unknown>")
+            if (valueStr == "<unknown>" || valueStr.StartsWith("<unknown:"))
             {
+                string typeName = "";
+                if (valueStr.StartsWith("<unknown:") && valueStr.EndsWith(">"))
+                {
+                    typeName = valueStr.Substring(9, valueStr.Length - 10);
+                    typeName = string.IsNullOrEmpty(typeName) ? "unknown type" : typeName;
+                }
+                else
+                {
+                    typeName = "unknown type";
+                }
+                
                 throw new ParrotUnknownObjectException(
-                    "Encountered <unknown> object in verified file. " +
+                    $"Encountered <unknown:{typeName}> object in verified file. " +
                     "Register all objects with ObjectFactory before running tests.");
             }
             

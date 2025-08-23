@@ -410,6 +410,71 @@ factory.SetOne(emailService); // Auto-generates "EmailService_1"
 factory.SetAlways(databaseService); // Auto-generates "DatabaseService_2"
 ```
 
+## Type-Safe Value Parsing and Formatting
+
+SpecRec uses a type-aware parser that ensures robust handling of values in specification files. The `ValueParser` enforces strict formatting rules to eliminate ambiguity and prevent type mismatches during test replay.
+
+### Strict Formatting Rules
+
+**Strings**: Must be quoted with double quotes
+```
+✅ "hello world"
+❌ hello world (unquoted strings not supported)
+```
+
+**Booleans**: Case-sensitive `True` and `False`
+```
+✅ True, False
+❌ true, false, TRUE, FALSE
+```
+
+**Numbers**: Use invariant culture formatting
+```
+✅ 42 (integer)
+✅ 3.14 (decimal)
+✅ -123 (negative)
+```
+
+**Arrays**: Square brackets with comma-separated values
+```
+✅ [1,2,3]
+✅ ["item1","item2","item3"]
+❌ [1, 2, 3] (spaces not supported)
+```
+
+**Object References**: Use Object ID format
+```
+✅ <id:emailService> (registered object)
+✅ <unknown:EmailService> (unregistered object with type info)
+❌ <unknown> (deprecated, lacks type information)
+```
+
+**Null Values**: Simple lowercase `null`
+```
+✅ null
+```
+
+### Type-Safe Parsing
+
+The parser requires the target type to be known, eliminating guesswork:
+
+- **Parse-only-when-converting**: Raw string values are stored during file parsing, then converted to the correct type only when needed
+- **Immediate error validation**: Invalid formats like `<unknown>` or empty object IDs fail immediately during file loading
+- **Type compatibility checking**: Object ID resolution validates that resolved objects can be assigned to the expected type
+
+### Enhanced Error Messages
+
+When objects aren't registered in the ObjectFactory, SpecRec now provides helpful type information:
+
+**Before**: `<unknown>`  
+**After**: `<unknown:EmailService>`
+
+This improvement makes it easier to identify which objects need to be registered for tests to work properly.
+
+### Backward Compatibility
+
+The parsing system maintains compatibility with existing verified files while enforcing stricter rules for new content. Legacy `<unknown>` markers are still supported but will be gradually replaced with the enhanced `<unknown:TypeName>` format for better debugging.
+
 
 ### Parrot Test Double
 
