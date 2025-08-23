@@ -7,5 +7,5 @@
   🔸 number: 100
 
 🔧 ProcessData:
-  🔸 dependency: <unknown>
+  🔸 dependency: <unknown:AnotherService>
 
