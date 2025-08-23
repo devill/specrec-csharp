@@ -43,8 +43,9 @@ namespace SpecRec
                 
                 if (verifiedFiles.Length == 0)
                 {
-                    // No verified files found - return "FirstTestCase" as default
-                    testCases.Add(new object[] { "FirstTestCase" });
+                    // No verified files found - create empty CallLog for "FirstTestCase"
+                    var emptyCallLog = new CallLog();
+                    testCases.Add(CreateTestCaseData(testMethod, emptyCallLog));
                 }
                 else
                 {
@@ -55,7 +56,12 @@ namespace SpecRec
 
                         if (!string.IsNullOrEmpty(testCaseName))
                         {
-                            testCases.Add(new object[] { testCaseName });
+                            // Load verified file content and create CallLog
+                            var content = File.ReadAllText(filePath);
+                            var callLog = new CallLog(content);
+                            callLog.TestCaseName = testCaseName;
+                            
+                            testCases.Add(CreateTestCaseData(testMethod, callLog, filePath));
                         }
                     }
                 }
@@ -64,7 +70,8 @@ namespace SpecRec
             {
                 diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Error discovering test data for {testMethod.Name}: {ex.Message}"));
                 // Fallback to default test case
-                testCases.Add(new object[] { "FirstTestCase" });
+                var fallbackCallLog = new CallLog();
+                testCases.Add(CreateTestCaseData(testMethod, fallbackCallLog));
             }
 
             return testCases;
@@ -126,6 +133,51 @@ namespace SpecRec
                 return testCaseName;
             }
             return "";
+        }
+
+        private object[] CreateTestCaseData(IMethodInfo testMethod, CallLog callLog, string? verifiedFilePath = null)
+        {
+            var methodParams = testMethod.GetParameters().ToArray();
+            var paramValues = new object[methodParams.Length];
+            paramValues[0] = callLog; // First parameter is always CallLog
+            
+            // Match remaining parameters to preamble values by name
+            for (int i = 1; i < methodParams.Length; i++)
+            {
+                var paramInfo = methodParams[i];
+                var paramName = paramInfo.Name ?? "arg" + i;
+                var paramType = paramInfo.ParameterType.ToRuntimeType();
+                
+                if (callLog.PreambleParameters.TryGetValue(paramName, out var value))
+                {
+                    try
+                    {
+                        paramValues[i] = ValueParser.ConvertValue(value, paramType);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException(
+                            $"Failed to convert preamble parameter '{paramName}' of value '{value}' to type {paramType.Name}: {ex.Message}", ex);
+                    }
+                }
+                else
+                {
+                    // For methods with only CallLog parameter, skip preamble matching
+                    if (methodParams.Length == 1)
+                    {
+                        break;
+                    }
+                    
+                    var fileInfo = !string.IsNullOrEmpty(verifiedFilePath) ? $" in file '{verifiedFilePath}'" : "";
+                    var availableParams = callLog.PreambleParameters.Keys.Any() 
+                        ? string.Join(", ", callLog.PreambleParameters.Keys) 
+                        : "(none - no preamble section found)";
+                    throw new InvalidOperationException(
+                        $"Preamble parameter '{paramName}' not found{fileInfo}. Available parameters: {availableParams}");
+                }
+            }
+            
+            return paramValues;
         }
     }
 }

@@ -14,6 +14,8 @@ namespace SpecRec
         private readonly ObjectFactory? _objectFactory;
 
         public StringBuilder SpecBook => _content;
+        public Dictionary<string, object?> PreambleParameters { get; private set; } = new();
+        public string? TestCaseName { get; internal set; }
 
         public CallLog(string? verifiedContent = null, ObjectFactory? objectFactory = null)
         {
@@ -58,49 +60,6 @@ namespace SpecRec
             return new CallLog(objectFactory: objectFactory);
         }
 
-        public static CallLog FromVerifiedFileWithTestCase(string testCaseName, ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
-        {
-            if (string.IsNullOrEmpty(testName) || string.IsNullOrEmpty(sourceFilePath))
-                throw new ArgumentException("Could not determine test name or source file path");
-
-            var testDirectory = Path.GetDirectoryName(sourceFilePath);
-            if (string.IsNullOrEmpty(testDirectory))
-                throw new ArgumentException("Could not determine test directory from source file path");
-
-            var expectedFilePath = FilenameGenerator.GetVerifiedFilePathWithTestCase(testDirectory, testName, testCaseName, sourceFilePath);
-            
-            if (File.Exists(expectedFilePath))
-            {
-                return FromFile(expectedFilePath, objectFactory);
-            }
-
-            // If no file found, return empty CallLog (will cause missing return value exceptions)
-            return new CallLog(objectFactory: objectFactory);
-        }
-
-        public static CallLog FromVerifiedFileAutoTestCase(ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
-        {
-            // Get test case name from context (set by SpecRec framework)
-            var testCaseName = SpecRecContext.CurrentTestCase;
-            
-            if (!string.IsNullOrEmpty(testCaseName))
-            {
-                return FromVerifiedFileWithTestCase(testCaseName, objectFactory, testName, sourceFilePath);
-            }
-
-            // Fallback to regular verified file loading
-            return FromVerifiedFile(objectFactory, testName, sourceFilePath);
-        }
-
-        /// <summary>
-        /// Sets up SpecRec context for the current test case and returns CallLog.
-        /// This method should be called at the beginning of test methods that use SpecRecLogs.
-        /// </summary>
-        public static CallLog ForTestCase(string testCaseName, ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
-        {
-            SpecRecContext.SetTestCase(testCaseName);
-            return FromVerifiedFileWithTestCase(testCaseName, objectFactory, testName, sourceFilePath);
-        }
 
         public CallLog Append(string value)
         {
@@ -116,8 +75,25 @@ namespace SpecRec
 
         public override string ToString()
         {
+            var sb = new StringBuilder();
+            
+            // Add preamble section if we have preamble parameters
+            if (PreambleParameters.Any())
+            {
+                sb.AppendLine("📋 <Test Inputs>");
+                foreach (var param in PreambleParameters)
+                {
+                    var valueStr = ValueParser.FormatValue(param.Value);
+                    sb.AppendLine($"  🔸 {param.Key}: {valueStr}");
+                }
+                sb.AppendLine();
+            }
+            
             var result = _content.ToString();
-            return result.TrimEnd('\r', '\n') + (result.Length > 0 ? "\n" : "");
+            sb.Append(result);
+            
+            var finalResult = sb.ToString();
+            return finalResult.TrimEnd('\r', '\n') + (finalResult.Length > 0 ? "\n" : "");
         }
 
         public object? GetNextReturnValue(string methodName, object?[] args, bool hasReturnValue)
@@ -210,23 +186,56 @@ namespace SpecRec
         {
             var lines = content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
             ParsedCall? currentCall = null;
+            bool inPreamble = false;
 
-            foreach (var line in lines)
+            for (int i = 0; i < lines.Length; i++)
             {
-                var trimmedLine = line.Trim();
+                var trimmedLine = lines[i].Trim();
                 if (string.IsNullOrEmpty(trimmedLine))
                     continue;
 
-                if (IsMethodCallLine(trimmedLine))
+                // Check for preamble start
+                if (IsPreambleStartLine(trimmedLine))
                 {
-                    if (currentCall != null)
-                        _parsedCalls.Add(currentCall);
-
-                    currentCall = ParseMethodCallLine(trimmedLine);
+                    inPreamble = true;
+                    continue;
                 }
-                else if (currentCall != null)
+
+                // Parse preamble parameters
+                if (inPreamble)
                 {
-                    ParseParameterOrReturnLine(trimmedLine, currentCall);
+                    if (IsPreambleParameterLine(trimmedLine))
+                    {
+                        ParsePreambleParameterLine(trimmedLine);
+                        continue;
+                    }
+                    else if (IsMethodCallLine(trimmedLine))
+                    {
+                        // End of preamble, start of method calls
+                        inPreamble = false;
+                    }
+                    else
+                    {
+                        // Skip other lines in preamble section
+                        continue;
+                    }
+                }
+
+                // Parse method calls for replay, but don't add to SpecBook
+                // The SpecBook should only contain new content added during test execution
+                if (!inPreamble)
+                {
+                    if (IsMethodCallLine(trimmedLine))
+                    {
+                        if (currentCall != null)
+                            _parsedCalls.Add(currentCall);
+
+                        currentCall = ParseMethodCallLine(trimmedLine);
+                    }
+                    else if (currentCall != null)
+                    {
+                        ParseParameterOrReturnLine(trimmedLine, currentCall);
+                    }
                 }
             }
 
@@ -273,91 +282,39 @@ namespace SpecRec
             {
                 var paramName = parameterPart.Substring(0, colonIndex);
                 var paramValue = parameterPart.Substring(colonIndex + 2);
-                call.Arguments[paramName] = ParseValue(paramValue);
+                call.Arguments[paramName] = ValueParser.ParseValue(paramValue, _objectFactory);
             }
         }
 
         private void ParseReturnLine(string returnPart, ParsedCall call)
         {
-            call.ReturnValue = ParseValue(returnPart);
+            call.ReturnValue = ValueParser.ParseValue(returnPart, _objectFactory);
         }
 
-        private object? ParseValue(string valueStr)
+        private bool IsPreambleStartLine(string line)
         {
-            if (valueStr == "null") return null;
-            if (valueStr == "<null>") return null; // Legacy support for old format
-            if (valueStr == "<missing_value>") return "<missing_value>"; // Special placeholder
-            
-            // NEW: Handle object ID format
-            if (valueStr == "<unknown>")
-            {
-                throw new ParrotUnknownObjectException(
-                    "Encountered <unknown> object in verified file. " +
-                    "Register all objects with ObjectFactory before running tests.");
-            }
-            
-            // NEW: Parse <id:string_id> format
-            if (TryParseObjectId(valueStr, out var objectId))
-            {
-                return ResolveObjectById(objectId);
-            }
-            
-            if (valueStr == "true") return true;
-            if (valueStr == "false") return false;
-            
-            // Handle quoted strings
-            if (valueStr.StartsWith("\"") && valueStr.EndsWith("\"") && valueStr.Length >= 2)
-            {
-                return valueStr.Substring(1, valueStr.Length - 2);
-            }
-            
-            if (int.TryParse(valueStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intVal)) return intVal;
-            if (decimal.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var decimalVal)) return decimalVal;
-            if (double.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var doubleVal)) return doubleVal;
-            
-            return valueStr;
+            return line.StartsWith("📋 <Test Inputs>");
         }
 
-        private bool TryParseObjectId(string valueStr, out string objectId)
+        private bool IsPreambleParameterLine(string line)
         {
-            objectId = "";
-            var pattern = @"^<id:(.+)>$";
-            var match = Regex.Match(valueStr, pattern);
-            if (match.Success)
+            return line.Trim().StartsWith("🔸 ");
+        }
+
+        private void ParsePreambleParameterLine(string line)
+        {
+            var trimmedLine = line.Trim();
+            if (trimmedLine.StartsWith("🔸 "))
             {
-                objectId = match.Groups[1].Value;
-                if (string.IsNullOrWhiteSpace(objectId))
+                var parameterPart = trimmedLine.Substring(3); // Remove "🔸 "
+                var colonIndex = parameterPart.IndexOf(": ");
+                if (colonIndex > 0)
                 {
-                    throw new ParrotCallMismatchException("Object ID cannot be empty in <id:> format.");
+                    var paramName = parameterPart.Substring(0, colonIndex);
+                    var paramValue = parameterPart.Substring(colonIndex + 2);
+                    PreambleParameters[paramName] = ValueParser.ParseValue(paramValue, _objectFactory);
                 }
-                return true;
             }
-            
-            // Check if it's the malformed empty ID format
-            if (valueStr == "<id:>")
-            {
-                throw new ParrotCallMismatchException("Object ID cannot be empty in <id:> format.");
-            }
-            
-            return false;
-        }
-
-        private object ResolveObjectById(string objectId)
-        {
-            if (_objectFactory == null)
-            {
-                throw new ParrotCallMismatchException(
-                    $"Cannot resolve object ID '{objectId}' - no ObjectFactory provided to CallLog.");
-            }
-            
-            var obj = _objectFactory.GetRegisteredObject<object>(objectId);
-            if (obj == null)
-            {
-                throw new ParrotCallMismatchException(
-                    $"Object with ID '{objectId}' not found in ObjectFactory registry.");
-            }
-            
-            return obj;
         }
 
         private bool IsCallMatch(ParsedCall expected, string actualMethodName, object?[] actualArgs)

@@ -1,0 +1,18 @@
+﻿📋 <Test Inputs>
+  🔸 userName: "john.doe"
+  🔸 isAdmin: "True"
+  🔸 age: 25
+
+🦜 NextValues:
+  🔹 Returns: [10,5]
+
+🦜 NextOperation:
+  🔹 Returns: "add"
+
+🦜 Add:
+  🔸 a: 10
+  🔸 b: 5
+  🔹 Returns: 15
+
+User: john.doe (Admin: True, Age: 25)
+Result was: 15

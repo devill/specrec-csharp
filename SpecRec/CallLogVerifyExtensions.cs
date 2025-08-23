@@ -16,8 +16,14 @@ namespace SpecRec
             if (string.IsNullOrEmpty(testDirectory))
                 throw new ArgumentException("Could not determine test directory from source file path");
 
-            // Check if we have a current test case from SpecRecContext
-            var currentTestCase = SpecRecContext.CurrentTestCase;
+            // Set the test case context from the CallLog
+            if (!string.IsNullOrEmpty(callLog.TestCaseName))
+            {
+                SpecRecContext.SetTestCase(callLog.TestCaseName);
+            }
+            
+            // Check if we have a test case name from CallLog or context
+            var currentTestCase = callLog.TestCaseName ?? SpecRecContext.CurrentTestCase;
             string baseFileName;
             
             if (!string.IsNullOrEmpty(currentTestCase))
@@ -37,7 +43,57 @@ namespace SpecRec
             settings.UseDirectory(testDirectory);
             settings.UseFileName(baseFileName);
             
-            return Verifier.Verify(callLog.ToString(), settings);
+            // Get the content to verify, preserving preamble if it exists
+            var contentToVerify = callLog.ToString();
+            
+            return Verifier.Verify(contentToVerify, settings);
+        }
+
+        private static string StripPreambleFromOutput(string content)
+        {
+            var lines = content.Split(new[] { Environment.NewLine, "\n", "\r\n" }, StringSplitOptions.None);
+            var outputLines = new List<string>();
+            bool inPreamble = false;
+
+            foreach (var line in lines)
+            {
+                var trimmedLine = line.Trim();
+                
+                // Check for preamble start
+                if (trimmedLine.StartsWith("📋 <Test Inputs>"))
+                {
+                    inPreamble = true;
+                    continue;
+                }
+
+                // Skip preamble lines
+                if (inPreamble)
+                {
+                    if (trimmedLine.StartsWith("🔸 "))
+                    {
+                        continue;
+                    }
+                    else if (!string.IsNullOrEmpty(trimmedLine))
+                    {
+                        // End of preamble (non-empty, non-parameter line)
+                        inPreamble = false;
+                    }
+                    else
+                    {
+                        // Empty line in preamble, skip it
+                        continue;
+                    }
+                }
+
+                // Add non-preamble lines to output
+                if (!inPreamble)
+                {
+                    outputLines.Add(line);
+                }
+            }
+
+            var result = string.Join("\n", outputLines);
+            return result.TrimEnd('\r', '\n') + (result.Length > 0 ? "\n" : "");
         }
     }
 }

@@ -4,14 +4,28 @@ namespace SpecRec.Tests
     {
         [Theory]
         [SpecRecLogs]
-        public async Task TestMultipleScenarios(string testCaseName)
+        public async Task TestMultipleScenarios(CallLog callLog)
         {
-            var callLog = CallLog.ForTestCase(testCaseName);
             var reader = Parrot.Create<IInputReader>(callLog);
             var calculator = Parrot.Create<ICalculatorService>(callLog);
 
             var result = MultiFixtureTestMethod(reader, calculator);
 
+            callLog.AppendLine($"Result was: {result}");
+            await callLog.Verify();
+        }
+
+        [Theory]
+        [SpecRecLogs]
+        public async Task TestWithPreambleParameters(CallLog callLog, string userName, bool isAdmin, int age)
+        {
+            var reader = Parrot.Create<IInputReader>(callLog);
+            var calculator = Parrot.Create<ICalculatorService>(callLog);
+
+            // Use the preamble parameters in test logic
+            var result = MultiFixtureTestMethod(reader, calculator);
+            
+            callLog.AppendLine($"User: {userName} (Admin: {isAdmin}, Age: {age})");
             callLog.AppendLine($"Result was: {result}");
             await callLog.Verify();
         }

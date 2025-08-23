@@ -124,7 +124,7 @@ public class ObjectIdIntegrationTests
                       🔹 Returns: true
                     """));
             
-            Assert.Equal("Cannot resolve object ID 'emailSvc' - no ObjectFactory provided to CallLog.", ex.Message);
+            Assert.Equal("Cannot resolve object ID 'emailSvc' - no ObjectFactory provided.", ex.Message);
         }
     }
 
