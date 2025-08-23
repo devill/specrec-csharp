@@ -25,8 +25,8 @@ namespace SpecRec
                 return ResolveObjectById(objectId, objectFactory);
             }
             
-            if (valueStr == "true") return true;
-            if (valueStr == "false") return false;
+            if (valueStr.Equals("true", StringComparison.OrdinalIgnoreCase)) return true;
+            if (valueStr.Equals("false", StringComparison.OrdinalIgnoreCase)) return false;
             
             // Handle quoted strings
             if (valueStr.StartsWith("\"") && valueStr.EndsWith("\"") && valueStr.Length >= 2)
@@ -198,7 +198,7 @@ namespace SpecRec
             
             if (value is bool boolValue)
             {
-                return boolValue.ToString();
+                return boolValue ? "True" : "False";
             }
             
             if (value.GetType().IsArray)
