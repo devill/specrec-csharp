@@ -583,7 +583,7 @@ public async Task EndToEndWorkflow()
 
 ### SpecRecLogsAttribute
 
-Enables data-driven testing by automatically discovering verified files and generating individual test cases for each scenario. Works with xUnit Theory to create multiple test executions from a single test method.
+Enables data-driven testing by automatically discovering verified files and generating individual test cases for each scenario. Supports test input parameters extracted from preamble sections.
 
 #### Usage example
 
@@ -592,15 +592,27 @@ When you are creating tests for an untested sub system you may find that multipl
 ```csharp
 [Theory]
 [SpecRecLogs]
-public async Task TestMultipleScenarios(string testCaseName)
+public async Task TestMultipleScenarios(CallLog callLog)
 {
-    var callLog = CallLog.ForTestCase(testCaseName);
     var reader = Parrot.Create<IInputReader>(callLog);
     var calculator = Parrot.Create<ICalculatorService>(callLog);
 
     var result = ProcessInput(reader, calculator);
 
     callLog.AppendLine($"Result was: {result}");
+    await callLog.Verify();
+}
+
+// With test input parameters
+[Theory]
+[SpecRecLogs]
+public async Task TestWithUserData(CallLog callLog, string userName, bool isAdmin, int age)
+{
+    var service = Parrot.Create<IUserService>(callLog);
+    
+    var user = service.CreateUser(userName, isAdmin, age);
+    
+    callLog.AppendLine($"Created user: {userName} (Admin: {isAdmin}, Age: {age})");
     await callLog.Verify();
 }
 
@@ -668,6 +680,22 @@ Each verified file contains the expected interactions for that test case:
 Result was: 8
 ```
 
+**With test input parameters (TestWithUserData.verified.txt):**
+```
+📋 <Test Inputs>
+  🔸 userName: "john.doe"
+  🔸 isAdmin: True
+  🔸 age: 25
+
+🦜 CreateUser:
+  🔸 name: "john.doe"
+  🔸 isAdmin: True
+  🔸 age: 25
+  🔹 Returns: <id:user1>
+
+Created user: john.doe (Admin: True, Age: 25)
+```
+
 **MultiplyNumbers.verified.txt:**
 ```
 🦜 NextValues:
@@ -684,9 +712,9 @@ Result was: 8
 Result was: 28
 ```
 
-#### Integration with CallLog.ForTestCase
+#### Test Input Parameters
 
-Use `CallLog.ForTestCase(testCaseName)` to automatically load the correct verified file for each test case and set up the test context properly.
+Parameters are extracted from preamble sections and passed to test methods. Supports built-in types, arrays, and dictionaries. Error messages provide copy-paste preamble sections when parameters are missing.
 
 ## NuGet Package
 

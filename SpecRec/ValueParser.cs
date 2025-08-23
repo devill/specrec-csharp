@@ -8,7 +8,6 @@ namespace SpecRec
         public static object? ParseValue(string valueStr, ObjectFactory? objectFactory = null)
         {
             if (valueStr == "null") return null;
-            if (valueStr == "<null>") return null; // Legacy support for old format
             if (valueStr == "<missing_value>") return "<missing_value>"; // Special placeholder
             
             // Handle object ID format
