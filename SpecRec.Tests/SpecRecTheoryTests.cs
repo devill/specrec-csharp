@@ -30,6 +30,7 @@ namespace SpecRec.Tests
             await callLog.Verify();
         }
 
+
         private int MultiFixtureTestMethod(IInputReader reader, ICalculatorService calculator)
         {
             var values = reader.NextValues();

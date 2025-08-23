@@ -155,6 +155,15 @@
     <None Update="ObjectIdIntegrationTests.CompleteWorkflowTests.CompleteWorkflow_LogThenReplay_ShouldWork.verified.txt">
       <DependentUpon>ObjectIdIntegrationTests.cs</DependentUpon>
     </None>
+    <None Update="MultiFixture.TestMultipleScenarios.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.TestMultipleScenarios.WithPreamble.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.TestWithPreambleParameters.WithPreamble.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -172,12 +173,71 @@ namespace SpecRec
                     var availableParams = callLog.PreambleParameters.Keys.Any() 
                         ? string.Join(", ", callLog.PreambleParameters.Keys) 
                         : "(none - no preamble section found)";
+                    
+                    var suggestedPreamble = GenerateSuggestedPreamble(methodParams);
+                    
                     throw new InvalidOperationException(
-                        $"Preamble parameter '{paramName}' not found{fileInfo}. Available parameters: {availableParams}");
+                        $"Preamble parameter '{paramName}' not found{fileInfo}. Available parameters: {availableParams}\n\n" +
+                        $"Add this preamble section to your verified file:\n{suggestedPreamble}");
                 }
             }
             
             return paramValues;
+        }
+        
+        private string GenerateSuggestedPreamble(IParameterInfo[] methodParams)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("📋 <Test Inputs>");
+            
+            // Skip the first parameter (CallLog) and generate placeholders for the rest
+            for (int i = 1; i < methodParams.Length; i++)
+            {
+                var paramInfo = methodParams[i];
+                var paramName = paramInfo.Name ?? "arg" + i;
+                var paramType = paramInfo.ParameterType.ToRuntimeType();
+                var placeholder = GetPlaceholderValue(paramType);
+                
+                sb.AppendLine($"  🔸 {paramName}: {placeholder}");
+            }
+            
+            return sb.ToString();
+        }
+        
+        private string GetPlaceholderValue(Type paramType)
+        {
+            if (paramType == typeof(string))
+                return "\"example_string\"";
+            if (paramType == typeof(bool))
+                return "true";
+            if (paramType == typeof(int))
+                return "42";
+            if (paramType == typeof(long))
+                return "42";
+            if (paramType == typeof(double))
+                return "3.14";
+            if (paramType == typeof(decimal))
+                return "3.14";
+            if (paramType == typeof(float))
+                return "3.14";
+            if (paramType.IsArray)
+            {
+                var elementType = paramType.GetElementType();
+                if (elementType == typeof(int))
+                    return "[1,2,3]";
+                if (elementType == typeof(string))
+                    return "[\"item1\",\"item2\",\"item3\"]";
+                return "[\"value1\",\"value2\"]";
+            }
+            
+            // Handle nullable types
+            var underlyingType = Nullable.GetUnderlyingType(paramType);
+            if (underlyingType != null)
+            {
+                return GetPlaceholderValue(underlyingType);
+            }
+            
+            return "\"example_value\"";
         }
     }
 }
