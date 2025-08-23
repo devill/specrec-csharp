@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -55,6 +56,12 @@ namespace SpecRec
             if (targetType.IsArray)
             {
                 return ParseArrayFromString(valueStr, targetType, objectFactory);
+            }
+            
+            // Handle dictionary types
+            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                return ParseDictionaryFromString(valueStr, targetType, objectFactory);
             }
             
             // Parse based on target type
@@ -221,6 +228,136 @@ namespace SpecRec
             return result;
         }
 
+        public static object ParseDictionaryFromString(string dictString, Type dictType, ObjectFactory? objectFactory = null)
+        {
+            var genericArgs = dictType.GetGenericArguments();
+            var keyType = genericArgs[0];
+            var valueType = genericArgs[1];
+            
+            // Remove braces and parse content
+            if (!dictString.StartsWith("{") || !dictString.EndsWith("}"))
+            {
+                throw new ArgumentException($"Dictionary string must be in format {{key1: value1, key2: value2}}, got: {dictString}");
+            }
+            
+            var content = dictString.Substring(1, dictString.Length - 2).Trim();
+            
+            // Create dictionary instance
+            var dictInstance = Activator.CreateInstance(dictType);
+            var addMethod = dictType.GetMethod("Add");
+            
+            if (string.IsNullOrEmpty(content))
+            {
+                return dictInstance!;
+            }
+            
+            // Parse key-value pairs
+            var pairs = SplitKeyValuePairs(content);
+            
+            foreach (var pair in pairs)
+            {
+                var colonIndex = FindColonSeparator(pair);
+                if (colonIndex == -1)
+                {
+                    throw new ArgumentException($"Invalid key-value pair format: '{pair}'. Expected 'key: value'.");
+                }
+                
+                var keyStr = pair.Substring(0, colonIndex).Trim();
+                var valueStr = pair.Substring(colonIndex + 1).Trim();
+                
+                try
+                {
+                    var parsedKey = ParseTypedValue(keyStr, keyType, objectFactory);
+                    var parsedValue = ParseTypedValue(valueStr, valueType, objectFactory);
+                    addMethod!.Invoke(dictInstance, new[] { parsedKey, parsedValue });
+                }
+                catch (Exception ex)
+                {
+                    throw new ParrotTypeConversionException(
+                        $"Cannot convert dictionary pair '{keyStr}: {valueStr}' to types {keyType.Name}, {valueType.Name} in dictionary '{dictString}'.", ex);
+                }
+            }
+            
+            return dictInstance!;
+        }
+        
+        private static List<string> SplitKeyValuePairs(string content)
+        {
+            var pairs = new List<string>();
+            var current = new System.Text.StringBuilder();
+            var inQuotes = false;
+            var braceDepth = 0;
+            var bracketDepth = 0;
+            var angleDepth = 0;
+            
+            for (int i = 0; i < content.Length; i++)
+            {
+                var c = content[i];
+                
+                if (c == '"' && (i == 0 || content[i - 1] != '\\'))
+                {
+                    inQuotes = !inQuotes;
+                }
+                else if (!inQuotes)
+                {
+                    if (c == '{') braceDepth++;
+                    else if (c == '}') braceDepth--;
+                    else if (c == '[') bracketDepth++;
+                    else if (c == ']') bracketDepth--;
+                    else if (c == '<') angleDepth++;
+                    else if (c == '>') angleDepth--;
+                    else if (c == ',' && braceDepth == 0 && bracketDepth == 0 && angleDepth == 0)
+                    {
+                        pairs.Add(current.ToString().Trim());
+                        current.Clear();
+                        continue;
+                    }
+                }
+                
+                current.Append(c);
+            }
+            
+            if (current.Length > 0)
+            {
+                pairs.Add(current.ToString().Trim());
+            }
+            
+            return pairs;
+        }
+        
+        private static int FindColonSeparator(string pair)
+        {
+            var inQuotes = false;
+            var braceDepth = 0;
+            var bracketDepth = 0;
+            var angleDepth = 0;
+            
+            for (int i = 0; i < pair.Length; i++)
+            {
+                var c = pair[i];
+                
+                if (c == '"' && (i == 0 || pair[i - 1] != '\\'))
+                {
+                    inQuotes = !inQuotes;
+                }
+                else if (!inQuotes)
+                {
+                    if (c == '{') braceDepth++;
+                    else if (c == '}') braceDepth--;
+                    else if (c == '[') bracketDepth++;
+                    else if (c == ']') bracketDepth--;
+                    else if (c == '<') angleDepth++;
+                    else if (c == '>') angleDepth--;
+                    else if (c == ':' && braceDepth == 0 && bracketDepth == 0 && angleDepth == 0)
+                    {
+                        return i;
+                    }
+                }
+            }
+            
+            return -1;
+        }
+
         public static bool TryParseObjectId(string valueStr, out string objectId)
         {
             objectId = "";
@@ -295,6 +432,19 @@ namespace SpecRec
                     elements[i] = FormatValue(array.GetValue(i));
                 }
                 return "[" + string.Join(",", elements) + "]";
+            }
+            
+            // Handle dictionaries
+            if (value is System.Collections.IDictionary dict)
+            {
+                var pairs = new List<string>();
+                foreach (System.Collections.DictionaryEntry entry in dict)
+                {
+                    var key = FormatValue(entry.Key);
+                    var val = FormatValue(entry.Value);
+                    pairs.Add($"{key}: {val}");
+                }
+                return $"{{{string.Join(", ", pairs)}}}";
             }
             
             // Use invariant culture for numbers

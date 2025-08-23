@@ -164,6 +164,9 @@
     <None Update="MultiFixture.TestWithPreambleParameters.WithPreamble.verified.txt">
       <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
     </None>
+    <None Update="DictionaryParrotIntegrationTests.EndToEndDictionary_LogThenReplay_ShouldWork.verified.txt">
+      <DependentUpon>DictionaryParsingTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>
