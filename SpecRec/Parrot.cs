@@ -25,14 +25,14 @@ namespace SpecRec
             
             try
             {
-                var returnValue = _callLog.GetNextReturnValue(methodName, methodArgs, hasReturnValue);
+                var returnValue = _callLog.GetNextReturnValue(methodName, methodArgs, hasReturnValue, hasReturnValue ? targetMethod.ReturnType : null);
                 
                 if (!hasReturnValue)
                 {
                     return null;
                 }
 
-                return ConvertReturnValue(returnValue, targetMethod.ReturnType);
+                return returnValue; // Already parsed to correct type by GetNextReturnValue
             }
             catch (InvalidOperationException ex)
             {
@@ -41,10 +41,6 @@ namespace SpecRec
             }
         }
 
-        private object? ConvertReturnValue(object? value, Type targetType)
-        {
-            return ValueParser.ConvertValue(value, targetType);
-        }
 
     }
 

@@ -14,7 +14,7 @@ namespace SpecRec
         private readonly ObjectFactory? _objectFactory;
 
         public StringBuilder SpecBook => _content;
-        public Dictionary<string, object?> PreambleParameters { get; private set; } = new();
+        public Dictionary<string, string> PreambleParameters { get; private set; } = new();
         public string? TestCaseName { get; internal set; }
 
         public CallLog(string? verifiedContent = null, ObjectFactory? objectFactory = null)
@@ -83,8 +83,8 @@ namespace SpecRec
                 sb.AppendLine("📋 <Test Inputs>");
                 foreach (var param in PreambleParameters)
                 {
-                    var valueStr = ValueParser.FormatValue(param.Value);
-                    sb.AppendLine($"  🔸 {param.Key}: {valueStr}");
+                    // Parameters are already formatted as strings, just use them directly
+                    sb.AppendLine($"  🔸 {param.Key}: {param.Value}");
                 }
                 sb.AppendLine();
             }
@@ -96,7 +96,7 @@ namespace SpecRec
             return finalResult.TrimEnd('\r', '\n') + (finalResult.Length > 0 ? "\n" : "");
         }
 
-        public object? GetNextReturnValue(string methodName, object?[] args, bool hasReturnValue)
+        public object? GetNextReturnValue(string methodName, object?[] args, bool hasReturnValue, Type? returnType = null)
         {
             if (_currentCallIndex >= _parsedCalls.Count)
             {
@@ -126,10 +126,16 @@ namespace SpecRec
             _currentCallIndex++;
             
             // Check if the return value is the special <missing_value> placeholder
-            if (expectedCall.ReturnValue?.ToString() == "<missing_value>")
+            if (expectedCall.ReturnValue == "<missing_value>")
             {
                 throw new ParrotMissingReturnValueException(
                     $"No return value available for call to {methodName}({string.Join(", ", args?.Select(a => a?.ToString() ?? "null") ?? new string[0])}). ");
+            }
+            
+            // Parse only when we have a return type (for actual conversion)
+            if (returnType != null && expectedCall.ReturnValue != null)
+            {
+                return ValueParser.ParseTypedValue(expectedCall.ReturnValue, returnType, _objectFactory);
             }
             
             return expectedCall.ReturnValue;
@@ -257,7 +263,7 @@ namespace SpecRec
             return new ParsedCall
             {
                 MethodName = match.Groups[1].Value,
-                Arguments = new Dictionary<string, object?>(),
+                Arguments = new Dictionary<string, string>(),
                 ReturnValue = null
             };
         }
@@ -282,13 +288,61 @@ namespace SpecRec
             {
                 var paramName = parameterPart.Substring(0, colonIndex);
                 var paramValue = parameterPart.Substring(colonIndex + 2);
-                call.Arguments[paramName] = ValueParser.ParseValue(paramValue, _objectFactory);
+                
+                // Check for error conditions that should fail immediately
+                ValidateSpecialValues(paramValue);
+                
+                call.Arguments[paramName] = paramValue; // Store as raw string
             }
         }
 
         private void ParseReturnLine(string returnPart, ParsedCall call)
         {
-            call.ReturnValue = ValueParser.ParseValue(returnPart, _objectFactory);
+            // Check for error conditions that should fail immediately
+            ValidateSpecialValues(returnPart);
+            
+            call.ReturnValue = returnPart; // Store as raw string
+        }
+
+        private void ValidateSpecialValues(string valueStr)
+        {
+            // Fail immediately for error conditions
+            if (valueStr == "<unknown>")
+            {
+                throw new ParrotUnknownObjectException(
+                    "Encountered <unknown> object in verified file. " +
+                    "Register all objects with ObjectFactory before running tests.");
+            }
+            
+            // Validate object ID format and existence
+            if (valueStr.StartsWith("<id:") && valueStr.EndsWith(">"))
+            {
+                var idPart = valueStr.Substring(4, valueStr.Length - 5);
+                if (string.IsNullOrWhiteSpace(idPart))
+                {
+                    throw new ParrotCallMismatchException("Object ID cannot be empty in <id:> format.");
+                }
+                
+                // Check if object ID exists in ObjectFactory
+                if (_objectFactory == null)
+                {
+                    throw new ParrotCallMismatchException(
+                        $"Cannot resolve object ID '{idPart}' - no ObjectFactory provided.");
+                }
+                else
+                {
+                    var obj = _objectFactory.GetRegisteredObject<object>(idPart);
+                    if (obj == null)
+                    {
+                        throw new ParrotCallMismatchException(
+                            $"Object with ID '{idPart}' not found in ObjectFactory registry.");
+                    }
+                }
+            }
+            else if (valueStr == "<id:>")
+            {
+                throw new ParrotCallMismatchException("Object ID cannot be empty in <id:> format.");
+            }
         }
 
         private bool IsPreambleStartLine(string line)
@@ -312,7 +366,11 @@ namespace SpecRec
                 {
                     var paramName = parameterPart.Substring(0, colonIndex);
                     var paramValue = parameterPart.Substring(colonIndex + 2);
-                    PreambleParameters[paramName] = ValueParser.ParseValue(paramValue, _objectFactory);
+                    
+                    // Check for error conditions that should fail immediately
+                    ValidateSpecialValues(paramValue);
+                    
+                    PreambleParameters[paramName] = paramValue; // Store as raw string
                 }
             }
         }
@@ -322,29 +380,31 @@ namespace SpecRec
             if (expected.MethodName != actualMethodName)
                 return false;
 
+            // Check argument count for basic validation
             if (actualArgs.Length != expected.Arguments.Count)
                 return false;
-
+                
+            // Do basic argument matching to catch obvious mismatches early
+            // More detailed validation is still handled by Verify framework
             var expectedValues = expected.Arguments.Values.ToArray();
             for (int i = 0; i < actualArgs.Length; i++)
             {
-                var expectedValue = expectedValues[i];
-                var actualValue = actualArgs[i];
+                var expectedStr = expectedValues[i];
+                var actualStr = FormatValue(actualArgs[i]);
                 
-                if (!ValuesEqual(expectedValue, actualValue))
+                // For object IDs, we need special handling - skip detailed validation
+                // Let Verify framework handle this
+                if (expectedStr.StartsWith("<id:") || actualStr.StartsWith("<id:"))
+                    continue;
+                    
+                if (expectedStr != actualStr)
                     return false;
             }
-
+                
             return true;
         }
 
-        private bool ValuesEqual(object? expected, object? actual)
-        {
-            if (expected == null && actual == null) return true;
-            if (expected == null || actual == null) return false;
-            
-            return expected.ToString() == actual?.ToString();
-        }
+        // Removed - no longer needed since we only check method names
 
         private string FormatCallSignature(string methodName, object?[] args)
         {
@@ -352,17 +412,17 @@ namespace SpecRec
             return $"{methodName}({string.Join(", ", argStrings)})";
         }
 
-        private string FormatCallSignature(string methodName, Dictionary<string, object?> args)
+        private string FormatCallSignature(string methodName, Dictionary<string, string> args)
         {
-            var argStrings = args.Values.Select(a => a?.ToString() ?? "null");
+            var argStrings = args.Values.Select(a => a ?? "null");
             return $"{methodName}({string.Join(", ", argStrings)})";
         }
 
         private class ParsedCall
         {
             public string MethodName { get; set; } = "";
-            public Dictionary<string, object?> Arguments { get; set; } = new();
-            public object? ReturnValue { get; set; }
+            public Dictionary<string, string> Arguments { get; set; } = new();
+            public string? ReturnValue { get; set; }
         }
     }
 }

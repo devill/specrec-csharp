@@ -5,7 +5,7 @@ namespace SpecRec
 {
     public static class ValueParser
     {
-        public static object? ParseValue(string valueStr, ObjectFactory? objectFactory = null)
+        public static object? ParseTypedValue(string valueStr, Type targetType, ObjectFactory? objectFactory = null)
         {
             if (valueStr == "null") return null;
             if (valueStr == "<missing_value>") return "<missing_value>"; // Special placeholder
@@ -21,11 +21,65 @@ namespace SpecRec
             // Parse <id:string_id> format
             if (TryParseObjectId(valueStr, out var objectId))
             {
-                return ResolveObjectById(objectId, objectFactory);
+                var resolvedObj = ResolveObjectById(objectId, objectFactory);
+                
+                // Validate type compatibility
+                if (resolvedObj != null && !targetType.IsAssignableFrom(resolvedObj.GetType()))
+                {
+                    throw new ParrotTypeConversionException(
+                        $"Resolved object of type {resolvedObj.GetType().Name} cannot be assigned to expected type {targetType.Name}.");
+                }
+                
+                return resolvedObj;
             }
             
-            if (valueStr.Equals("true", StringComparison.OrdinalIgnoreCase)) return true;
-            if (valueStr.Equals("false", StringComparison.OrdinalIgnoreCase)) return false;
+            // Handle nullable types
+            var underlyingType = Nullable.GetUnderlyingType(targetType);
+            if (underlyingType != null)
+            {
+                return ParseTypedValue(valueStr, underlyingType, objectFactory);
+            }
+            
+            // Handle array types
+            if (targetType.IsArray)
+            {
+                return ParseArrayFromString(valueStr, targetType, objectFactory);
+            }
+            
+            // Parse based on target type
+            if (targetType == typeof(string))
+                return ParseString(valueStr);
+            if (targetType == typeof(bool))
+                return ParseBoolean(valueStr);
+            if (targetType == typeof(int))
+                return ParseInt(valueStr);
+            if (targetType == typeof(long))
+                return ParseLong(valueStr);
+            if (targetType == typeof(double))
+                return ParseDouble(valueStr);
+            if (targetType == typeof(float))
+                return ParseFloat(valueStr);
+            if (targetType == typeof(decimal))
+                return ParseDecimal(valueStr);
+            
+            // Fallback to Convert.ChangeType for other types
+            try
+            {
+                var parsed = ParseByFormat(valueStr);
+                return Convert.ChangeType(parsed, targetType);
+            }
+            catch (Exception ex)
+            {
+                throw new ParrotTypeConversionException(
+                    $"Cannot convert value '{valueStr}' to expected type {targetType.Name}.", ex);
+            }
+        }
+        
+        private static object ParseByFormat(string valueStr)
+        {
+            // Apply strict format rules for fallback parsing
+            if (valueStr == "True") return true;
+            if (valueStr == "False") return false;
             
             // Handle quoted strings
             if (valueStr.StartsWith("\"") && valueStr.EndsWith("\"") && valueStr.Length >= 2)
@@ -33,63 +87,91 @@ namespace SpecRec
                 return valueStr.Substring(1, valueStr.Length - 2);
             }
             
-            if (int.TryParse(valueStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intVal)) return intVal;
-            if (decimal.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var decimalVal)) return decimalVal;
-            if (double.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var doubleVal)) return doubleVal;
+            // Numbers without decimal are long
+            if (long.TryParse(valueStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longVal))
+                return longVal;
+                
+            // Numbers with decimal are double
+            if (double.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var doubleVal))
+                return doubleVal;
             
+            // Everything else is treated as unquoted string
             return valueStr;
         }
-
-        public static object? ConvertValue(object? value, Type targetType)
+        
+        public static string ParseString(string valueStr)
         {
-            if (value == null)
+            // Handle quoted strings
+            if (valueStr.StartsWith("\"") && valueStr.EndsWith("\"") && valueStr.Length >= 2)
             {
-                if (targetType.IsValueType && Nullable.GetUnderlyingType(targetType) == null)
-                    return Activator.CreateInstance(targetType);
-                return null;
+                return valueStr.Substring(1, valueStr.Length - 2);
             }
-
-            // Handle resolved objects from ObjectFactory
-            if (value is object obj && !IsPrimitiveType(obj))
-            {
-                if (targetType.IsAssignableFrom(obj.GetType()))
-                    return obj;
-                    
-                throw new ParrotTypeConversionException(
-                    $"Resolved object of type {obj.GetType().Name} cannot be assigned to expected type {targetType.Name}.");
-            }
-
-            if (targetType.IsAssignableFrom(value.GetType()))
-                return value;
-
-            if (targetType == typeof(string))
-                return value.ToString();
-
-            // Handle array types
-            if (targetType.IsArray && value is string stringValue)
-            {
-                return ParseArrayFromString(stringValue, targetType);
-            }
-
-            // Handle nullable types
-            var underlyingType = Nullable.GetUnderlyingType(targetType);
-            if (underlyingType != null)
-            {
-                return ConvertValue(value, underlyingType);
-            }
-
-            try
-            {
-                return Convert.ChangeType(value, targetType);
-            }
-            catch (Exception ex)
-            {
-                throw new ParrotTypeConversionException(
-                    $"Cannot convert value '{value}' of type {value.GetType().Name} to expected type {targetType.Name}.", ex);
-            }
+            
+            // Special values stay as-is
+            if (valueStr == "<missing_value>" || valueStr == "<unknown>")
+                return valueStr;
+                
+            // Everything else is unquoted string (but we don't support this in strict mode)
+            throw new ParrotTypeConversionException(
+                $"String values must be quoted. Got unquoted string: '{valueStr}'");
+        }
+        
+        public static bool ParseBoolean(string valueStr)
+        {
+            if (valueStr == "True") return true;
+            if (valueStr == "False") return false;
+            
+            throw new ParrotTypeConversionException(
+                $"Boolean values must be 'True' or 'False' (case-sensitive). Got: '{valueStr}'");
+        }
+        
+        public static int ParseInt(string valueStr)
+        {
+            if (int.TryParse(valueStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intVal))
+                return intVal;
+                
+            throw new ParrotTypeConversionException(
+                $"Cannot parse '{valueStr}' as integer.");
+        }
+        
+        public static long ParseLong(string valueStr)
+        {
+            if (long.TryParse(valueStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longVal))
+                return longVal;
+                
+            throw new ParrotTypeConversionException(
+                $"Cannot parse '{valueStr}' as long integer.");
+        }
+        
+        public static double ParseDouble(string valueStr)
+        {
+            if (double.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var doubleVal))
+                return doubleVal;
+                
+            throw new ParrotTypeConversionException(
+                $"Cannot parse '{valueStr}' as double.");
+        }
+        
+        public static float ParseFloat(string valueStr)
+        {
+            if (float.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var floatVal))
+                return floatVal;
+                
+            throw new ParrotTypeConversionException(
+                $"Cannot parse '{valueStr}' as float.");
+        }
+        
+        public static decimal ParseDecimal(string valueStr)
+        {
+            if (decimal.TryParse(valueStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var decimalVal))
+                return decimalVal;
+                
+            throw new ParrotTypeConversionException(
+                $"Cannot parse '{valueStr}' as decimal.");
         }
 
-        public static object ParseArrayFromString(string arrayString, Type arrayType)
+
+        public static object ParseArrayFromString(string arrayString, Type arrayType, ObjectFactory? objectFactory = null)
         {
             var elementType = arrayType.GetElementType()!;
             
@@ -115,17 +197,7 @@ namespace SpecRec
                 
                 try
                 {
-                    object convertedValue;
-                    if (elementType == typeof(string))
-                    {
-                        // Remove quotes if present
-                        convertedValue = trimmedPart.Trim('"');
-                    }
-                    else
-                    {
-                        convertedValue = Convert.ChangeType(trimmedPart, elementType);
-                    }
-                    
+                    var convertedValue = ParseTypedValue(trimmedPart, elementType, objectFactory);
                     result.SetValue(convertedValue, i);
                 }
                 catch (Exception ex)
@@ -192,6 +264,9 @@ namespace SpecRec
             
             if (value is string stringValue)
             {
+                // Special placeholders should not be quoted
+                if (stringValue == "<missing_value>" || stringValue == "<unknown>")
+                    return stringValue;
                 return $"\"{stringValue}\"";
             }
             
@@ -210,6 +285,14 @@ namespace SpecRec
                 }
                 return "[" + string.Join(",", elements) + "]";
             }
+            
+            // Use invariant culture for numbers
+            if (value is decimal dec)
+                return dec.ToString(CultureInfo.InvariantCulture);
+            if (value is double d)
+                return d.ToString(CultureInfo.InvariantCulture);
+            if (value is float f)
+                return f.ToString(CultureInfo.InvariantCulture);
             
             return value.ToString() ?? "null";
         }

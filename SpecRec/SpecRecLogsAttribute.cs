@@ -149,16 +149,16 @@ namespace SpecRec
                 var paramName = paramInfo.Name ?? "arg" + i;
                 var paramType = paramInfo.ParameterType.ToRuntimeType();
                 
-                if (callLog.PreambleParameters.TryGetValue(paramName, out var value))
+                if (callLog.PreambleParameters.TryGetValue(paramName, out var valueStr))
                 {
                     try
                     {
-                        paramValues[i] = ValueParser.ConvertValue(value, paramType);
+                        paramValues[i] = ValueParser.ParseTypedValue(valueStr, paramType, null); // ObjectFactory not available at this level
                     }
                     catch (Exception ex)
                     {
                         throw new InvalidOperationException(
-                            $"Failed to convert preamble parameter '{paramName}' of value '{value}' to type {paramType.Name}: {ex.Message}", ex);
+                            $"Failed to convert preamble parameter '{paramName}' of value '{valueStr}' to type {paramType.Name}: {ex.Message}", ex);
                     }
                 }
                 else
