@@ -93,7 +93,7 @@ public class ObjectIdIntegrationTests
                       🔹 Returns: true
                     """, factory));
             
-            Assert.Equal("Encountered <unknown> object in verified file. Register all objects with ObjectFactory before running tests.", ex.Message);
+            Assert.Equal("Encountered <unknown:unknown type> object in verified file. Register all objects with ObjectFactory before running tests.", ex.Message);
         }
 
         [Fact]

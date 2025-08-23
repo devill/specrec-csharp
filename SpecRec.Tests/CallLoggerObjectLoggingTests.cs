@@ -29,7 +29,7 @@ public class CallLoggerObjectLoggingTests
             var callLogger = new CallLogger(objectFactory: factory);
             var result = callLogger.TestFormatValue(testService);
             
-            Assert.Equal("<unknown>", result);
+            Assert.Equal("<unknown:TestService>", result);
         }
         
         [Fact]
@@ -232,7 +232,7 @@ public class CallLoggerObjectLoggingTests
             
             var result = callLogger.TestFormatValue(testObj);
             
-            Assert.Equal("<unknown>", result);
+            Assert.Equal("<unknown:TestService>", result);
         }
     }
 
@@ -251,7 +251,7 @@ public class CallLoggerObjectLoggingTests
             
             factory.Clear<TestService>();
             
-            Assert.Equal("<unknown>", callLogger.TestFormatValue(testObj));
+            Assert.Equal("<unknown:TestService>", callLogger.TestFormatValue(testObj));
         }
         
         [Fact]
@@ -261,7 +261,7 @@ public class CallLoggerObjectLoggingTests
             var testObj = new TestService();
             var callLogger = new CallLogger(objectFactory: factory);
             
-            Assert.Equal("<unknown>", callLogger.TestFormatValue(testObj));
+            Assert.Equal("<unknown:TestService>", callLogger.TestFormatValue(testObj));
             
             factory.Register(testObj, "newId");
             
@@ -283,7 +283,7 @@ public class CallLoggerObjectLoggingTests
             var result = callLogger.TestFormatValue(list);
             
             Assert.Contains("<id:nested1>", result);
-            Assert.Contains("<unknown>", result);
+            Assert.Contains("<unknown:TestService>", result);
         }
     }
 
