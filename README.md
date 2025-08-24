@@ -20,7 +20,7 @@ No more guessing what your code does - SpecRec shows you exactly what happens.
 Add to your test project:
 
 ```xml
-<PackageReference Include="SpecRec" Version="0.0.4" />
+<PackageReference Include="SpecRec" Version="1.0.0" />
 <PackageReference Include="Verify.Xunit" Version="26.6.0" />
 ```
 

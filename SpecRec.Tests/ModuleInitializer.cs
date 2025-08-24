@@ -1,4 +1,8 @@
 using System.Runtime.CompilerServices;
+using Xunit;
+using System.Reflection;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace SpecRec.Tests;
 
@@ -15,5 +19,8 @@ public static class ModuleInitializer
             Environment.SetEnvironmentVariable("Verify_DisableDiff", "true");
             VerifierSettings.AutoVerify(false);
         }
+        
+        // Force initial cleanup to ensure clean state
+        ObjectFactory.Instance().ClearAll();
     }
 }
