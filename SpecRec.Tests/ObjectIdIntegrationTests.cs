@@ -10,70 +10,84 @@ public class ObjectIdIntegrationTests
         public async Task CompleteWorkflow_LogThenReplay_ShouldWork()
         {
             // Arrange: Set up factory and register objects
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var emailService = new EmailService();
             var databaseService = new DatabaseService();
-            factory.Register(emailService, "emailSvc");
-            factory.Register(databaseService, "userDb");
             
-            // Act 1: CallLogger logs interactions with registered objects
-            var callLogger = new CallLogger(objectFactory: factory);
-            var wrappedService = callLogger.Wrap<IUserService>(new UserService(), "🔧");
-            
-            var emailResult = wrappedService.SendWelcomeEmail(emailService);
-            var userResult = wrappedService.CreateUser(databaseService, "john@example.com");
-            
-            // Act 2: Parrot replays the logged interactions
-            var callLog = new CallLog(callLogger.SpecBook.ToString(), factory);
-            var parrot = Parrot.Create<IUserService>(callLog, "🦜", factory);
-            
-            var replayEmailResult = parrot.SendWelcomeEmail(emailService);
-            var replayUserResult = parrot.CreateUser(databaseService, "john@example.com");
-            
-            // Assert: Verify the CallLog format (approval test)
-            await Verify(callLogger.SpecBook.ToString());
-            
-            // Assert: Verify functional correctness
-            Assert.True(emailResult);
-            Assert.Equal(42, userResult);
-            Assert.True(replayEmailResult);
-            Assert.Equal(42, replayUserResult);
+            try
+            {
+                globalFactory.Register(emailService, "emailSvc");
+                globalFactory.Register(databaseService, "userDb");
+                // Act 1: CallLogger logs interactions with registered objects
+                var callLogger = new CallLogger();
+                var wrappedService = callLogger.Wrap<IUserService>(new UserService(), "🔧");
+                
+                var emailResult = wrappedService.SendWelcomeEmail(emailService);
+                var userResult = wrappedService.CreateUser(databaseService, "john@example.com");
+                
+                // Act 2: Parrot replays the logged interactions
+                var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
+                var parrot = Parrot.Create<IUserService>(callLog, "🦜", globalFactory);
+                
+                var replayEmailResult = parrot.SendWelcomeEmail(emailService);
+                var replayUserResult = parrot.CreateUser(databaseService, "john@example.com");
+                
+                // Assert: Verify the CallLog format (approval test)
+                await Verify(callLogger.SpecBook.ToString());
+                
+                // Assert: Verify functional correctness
+                Assert.True(emailResult);
+                Assert.Equal(42, userResult);
+                Assert.True(replayEmailResult);
+                Assert.Equal(42, replayUserResult);
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
 
         [Fact]
         public async Task CompleteWorkflow_WithMixedScenarios_ShouldWork()
         {
             // Arrange: Mix of registered objects, primitives, and unregistered objects
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var emailService = new EmailService();
-            factory.Register(emailService, "email");
             
-            // Act 1: Log interactions with mixed parameter types
-            var callLogger = new CallLogger(objectFactory: factory);
-            var wrappedService = callLogger.Wrap<IUserService>(new UserService(), "🔧");
-            
-            // Registered object + primitives
-            wrappedService.SendWelcomeEmail(emailService);
-            // Primitives only
-            wrappedService.ValidateEmail("test@example.com");
-            // null values
-            wrappedService.SendWelcomeEmail(null);
-            
-            // Act 2: Replay the mixed interactions
-            var callLog = new CallLog(callLogger.SpecBook.ToString(), factory);
-            var parrot = Parrot.Create<IUserService>(callLog, "🦜", factory);
-            
-            var result1 = parrot.SendWelcomeEmail(emailService);
-            var result2 = parrot.ValidateEmail("test@example.com");
-            var result3 = parrot.SendWelcomeEmail(null);
-            
-            // Assert: Verify the CallLog format (approval test)
-            await Verify(callLogger.SpecBook.ToString());
-            
-            // Assert: Verify functional correctness
-            Assert.True(result1);
-            Assert.True(result2);
-            Assert.False(result3);
+            try
+            {
+                globalFactory.Register(emailService, "email");
+                // Act 1: Log interactions with mixed parameter types
+                var callLogger = new CallLogger();
+                var wrappedService = callLogger.Wrap<IUserService>(new UserService(), "🔧");
+                
+                // Registered object + primitives
+                wrappedService.SendWelcomeEmail(emailService);
+                // Primitives only
+                wrappedService.ValidateEmail("test@example.com");
+                // null values
+                wrappedService.SendWelcomeEmail(null);
+                
+                // Act 2: Replay the mixed interactions
+                var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
+                var parrot = Parrot.Create<IUserService>(callLog, "🦜", globalFactory);
+                
+                var result1 = parrot.SendWelcomeEmail(emailService);
+                var result2 = parrot.ValidateEmail("test@example.com");
+                var result3 = parrot.SendWelcomeEmail(null);
+                
+                // Assert: Verify the CallLog format (approval test)
+                await Verify(callLogger.SpecBook.ToString());
+                
+                // Assert: Verify functional correctness
+                Assert.True(result1);
+                Assert.True(result2);
+                Assert.False(result3);
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
     }
 

@@ -9,43 +9,62 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public void FormatValue_WithRegisteredObject_ShouldReturnIdFormat()
         {
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var testService = new TestService();
             
-            factory.Register(testService, "testSvc");
-            
-            var callLogger = new CallLogger(objectFactory: factory);
-            var result = callLogger.TestFormatValue(testService);
-            
-            Assert.Equal("<id:testSvc>", result);
+            try
+            {
+                globalFactory.Register(testService, "testSvc");
+                var callLogger = new CallLogger();
+                var result = callLogger.TestFormatValue(testService);
+                
+                Assert.Equal("<id:testSvc>", result);
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
         
         [Fact]
         public void FormatValue_WithUnregisteredObject_ShouldReturnUnknown()
         {
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var testService = new TestService();
             
-            var callLogger = new CallLogger(objectFactory: factory);
-            var result = callLogger.TestFormatValue(testService);
-            
-            Assert.Equal("<unknown:TestService>", result);
+            try
+            {
+                var callLogger = new CallLogger();
+                var result = callLogger.TestFormatValue(testService);
+                
+                Assert.Equal("<unknown:TestService>", result);
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
         
         [Fact]
         public void FormatValue_WithMultipleRegisteredObjects_ShouldUseCorrectIds()
         {
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var service1 = new TestService { Name = "Service1" };
             var service2 = new TestService { Name = "Service2" };
             
-            factory.Register(service1, "svc1");
-            factory.Register(service2, "svc2");
-            
-            var callLogger = new CallLogger(objectFactory: factory);
-            
-            Assert.Equal("<id:svc1>", callLogger.TestFormatValue(service1));
-            Assert.Equal("<id:svc2>", callLogger.TestFormatValue(service2));
+            try
+            {
+                globalFactory.Register(service1, "svc1");
+                globalFactory.Register(service2, "svc2");
+                var callLogger = new CallLogger();
+                
+                Assert.Equal("<id:svc1>", callLogger.TestFormatValue(service1));
+                Assert.Equal("<id:svc2>", callLogger.TestFormatValue(service2));
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
     }
 
@@ -54,96 +73,127 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public async Task Wrap_WithRegisteredService_ShouldLogIdInArguments()
         {
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var service = new TestService();
             var dependency = new AnotherService();
             
-            factory.Register(dependency, "emailService");
-            
-            var callLogger = new CallLogger(objectFactory: factory);
-            var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
-            
-            wrappedService.ProcessData(dependency);
-            
-            await Verify(callLogger.SpecBook.ToString());
+            try
+            {
+                globalFactory.Register(dependency, "emailService");
+                var callLogger = new CallLogger();
+                var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
+                
+                wrappedService.ProcessData(dependency);
+                
+                await Verify(callLogger.SpecBook.ToString());
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
         
         [Fact]
         public async Task Wrap_WithRegisteredService_ShouldLogIdInReturnValue()
         {
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var service = new TestService();
             var returnedObject = new AnotherService();
-            
-            factory.Register(returnedObject, "resultService");
             service.SetReturnValue(returnedObject);
             
-            var callLogger = new CallLogger(objectFactory: factory);
-            var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
-            
-            wrappedService.GetService();
-            
-            await Verify(callLogger.SpecBook.ToString());
+            try
+            {
+                globalFactory.Register(returnedObject, "resultService");
+                var callLogger = new CallLogger();
+                var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
+                
+                wrappedService.GetService();
+                
+                await Verify(callLogger.SpecBook.ToString());
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
         
         [Fact]
         public async Task Wrap_WithUnregisteredService_ShouldLogUnknownInArguments()
         {
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var service = new TestService();
             var dependency = new AnotherService();
             
-            var callLogger = new CallLogger(objectFactory: factory);
-            var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
-            
-            wrappedService.ProcessData(dependency);
-            
-            await Verify(callLogger.SpecBook.ToString());
+            try
+            {
+                var callLogger = new CallLogger();
+                var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
+                
+                wrappedService.ProcessData(dependency);
+                
+                await Verify(callLogger.SpecBook.ToString());
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
         
         [Fact]
         public async Task Wrap_WithMixedRegisteredAndPrimitiveArgs_ShouldFormatCorrectly()
         {
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var service = new TestService();
             var dependency = new AnotherService();
             
-            factory.Register(dependency, "dbConnection");
-            
-            var callLogger = new CallLogger(objectFactory: factory);
-            var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
-            
-            wrappedService.ProcessMixedData(dependency, "user_data.json", 42);
-            
-            await Verify(callLogger.SpecBook.ToString());
+            try
+            {
+                globalFactory.Register(dependency, "dbConnection");
+                var callLogger = new CallLogger();
+                var wrappedService = callLogger.Wrap<ITestService>(service, "🔧");
+                
+                wrappedService.ProcessMixedData(dependency, "user_data.json", 42);
+                
+                await Verify(callLogger.SpecBook.ToString());
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
         
         [Fact]
         public async Task Wrap_WithComplexObjectScenario_ShouldShowRealWorldUsage()
         {
-            var factory = new ObjectFactory();
+            var globalFactory = ObjectFactory.Instance();
             var userService = new TestService();
             var emailService = new AnotherService { Name = "EmailService" };
             var dbService = new AnotherService { Name = "DatabaseService" };
             var config = new AnotherService { Name = "Configuration" };
             
-            // Register some objects with descriptive IDs
-            factory.Register(emailService, "emailSvc");
-            factory.Register(dbService, "userDb");
-            factory.Register(config, "appConfig");
-            
-            var callLogger = new CallLogger(objectFactory: factory);
-            var wrappedUserService = callLogger.Wrap<ITestService>(userService, "🔧");
-            
-            // Simulate real-world method calls with mixed registered/unregistered objects
-            wrappedUserService.ProcessData(emailService);
-            wrappedUserService.ProcessMixedData(dbService, "SELECT * FROM users", 100);
-            
-            // Call with unregistered object
-            var unregisteredLogger = new AnotherService { Name = "UnregisteredLogger" };
-            wrappedUserService.ProcessData(unregisteredLogger);
-            
-            await Verify(callLogger.SpecBook.ToString());
+            try
+            {
+                // Register some objects with descriptive IDs
+                globalFactory.Register(emailService, "emailSvc");
+                globalFactory.Register(dbService, "userDb");
+                globalFactory.Register(config, "appConfig");
+                var callLogger = new CallLogger();
+                var wrappedUserService = callLogger.Wrap<ITestService>(userService, "🔧");
+                
+                // Simulate real-world method calls with mixed registered/unregistered objects
+                wrappedUserService.ProcessData(emailService);
+                wrappedUserService.ProcessMixedData(dbService, "SELECT * FROM users", 100);
+                
+                // Call with unregistered object
+                var unregisteredLogger = new AnotherService { Name = "UnregisteredLogger" };
+                wrappedUserService.ProcessData(unregisteredLogger);
+                
+                await Verify(callLogger.SpecBook.ToString());
+            }
+            finally
+            {
+                globalFactory.ClearAll();
+            }
         }
     }
 
