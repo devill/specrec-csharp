@@ -1,0 +1,12 @@
+﻿🧮 Calculate:
+  🔸 x: 10
+  🔸 y: 5
+  🔹 Returns: 15
+
+🧮 Calculate:
+  🔸 x: 20
+  🔸 y: 3
+  🔹 Returns: 23
+
+🧮 GetTotal:
+  🔹 Returns: 38

@@ -1,0 +1,11 @@
+﻿✈️ CheckAndGetAvailableSeats:
+  🔸 flightNumber: "TEST123"
+  🔸 departureDate: 12/25/2025 10:00:00
+  🔸 passengerCount: 2
+  🔹 Returns: ["1A","1B"]
+
+💾 SaveBooking:
+  🔸 passengerName: "John Test"
+  🔸 flightDetails: "TEST123 on 2025-12-25"
+  🔸 price: 500.00
+  🔹 Returns: "TESTREF123"

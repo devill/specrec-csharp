@@ -102,8 +102,15 @@ namespace SpecRec
             {
                 if (hasReturnValue)
                 {
+                    var callDetails = $"{methodName}({string.Join(", ", args?.Select(a => a?.ToString() ?? "null") ?? new string[0])})";
+                    var availableCalls = _parsedCalls.Count > 0 
+                        ? $"Available calls in verified file: {string.Join(", ", _parsedCalls.Select(c => c.MethodName))}"
+                        : "No calls found in verified file.";
+                    
                     throw new ParrotMissingReturnValueException(
-                        $"No return value available for call to {methodName}({string.Join(", ", args?.Select(a => a?.ToString() ?? "null") ?? new string[0])}).");
+                        $"No return value available for call to {callDetails}.\n" +
+                        $"Current position: {_currentCallIndex + 1} of {_parsedCalls.Count} expected calls.\n" +
+                        availableCalls);
                 }
                 else
                 {
@@ -113,14 +120,13 @@ namespace SpecRec
 
             var expectedCall = _parsedCalls[_currentCallIndex];
             
-            if (!IsCallMatch(expectedCall, methodName, args))
+            // Only check method names - let Verify() handle parameter validation at the end
+            if (expectedCall.MethodName != methodName)
             {
-                var expectedSignature = FormatCallSignature(expectedCall.MethodName, expectedCall.Arguments);
-                var actualSignature = FormatCallSignature(methodName, args);
                 throw new InvalidOperationException(
-                    $"Call mismatch at position {_currentCallIndex + 1}.\n" +
-                    $"Expected: {expectedSignature}\n" +
-                    $"Actual: {actualSignature}");
+                    $"Call sequence mismatch at position {_currentCallIndex + 1}.\n" +
+                    $"Expected method: {expectedCall.MethodName}\n" +
+                    $"Actual method: {methodName}");
             }
 
             _currentCallIndex++;
@@ -182,9 +188,10 @@ namespace SpecRec
                     return str;
                 return $"\"{str}\"";
             }
-            if (value is bool b) return b ? "true" : "false";
-            if (value is decimal || value is double || value is float)
-                return value.ToString()!;
+            if (value is bool b) return b ? "True" : "False";
+            if (value is decimal d) return d.ToString(CultureInfo.InvariantCulture);
+            if (value is double db) return db.ToString(CultureInfo.InvariantCulture);
+            if (value is float f) return f.ToString(CultureInfo.InvariantCulture);
             return value.ToString() ?? "null";
         }
 
@@ -251,7 +258,13 @@ namespace SpecRec
 
         private bool IsMethodCallLine(string line)
         {
-            return Regex.IsMatch(line, @"^[^\s]+ \w+:$");
+            // Match emoji/prefix followed by method name and colon, but exclude constructor calls
+            return Regex.IsMatch(line, @"^[^\s]+ \w+:$") && !IsConstructorCallLine(line);
+        }
+
+        private bool IsConstructorCallLine(string line)
+        {
+            return line.Contains("constructor called with:");
         }
 
         private ParsedCall ParseMethodCallLine(string line)
@@ -385,37 +398,6 @@ namespace SpecRec
                 }
             }
         }
-
-        private bool IsCallMatch(ParsedCall expected, string actualMethodName, object?[] actualArgs)
-        {
-            if (expected.MethodName != actualMethodName)
-                return false;
-
-            // Check argument count for basic validation
-            if (actualArgs.Length != expected.Arguments.Count)
-                return false;
-                
-            // Do basic argument matching to catch obvious mismatches early
-            // More detailed validation is still handled by Verify framework
-            var expectedValues = expected.Arguments.Values.ToArray();
-            for (int i = 0; i < actualArgs.Length; i++)
-            {
-                var expectedStr = expectedValues[i];
-                var actualStr = FormatValue(actualArgs[i]);
-                
-                // For object IDs, we need special handling - skip detailed validation
-                // Let Verify framework handle this
-                if (expectedStr.StartsWith("<id:") || actualStr.StartsWith("<id:"))
-                    continue;
-                    
-                if (expectedStr != actualStr)
-                    return false;
-            }
-                
-            return true;
-        }
-
-        // Removed - no longer needed since we only check method names
 
         private string FormatCallSignature(string methodName, object?[] args)
         {

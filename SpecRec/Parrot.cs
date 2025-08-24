@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace SpecRec
 {
-    public class ParrotStub<T> : DispatchProxy where T : class
+    public class ParrotStub<T> : DispatchProxy, IConstructorCalledWith where T : class
     {
         private CallLog _callLog = null!;
 
@@ -37,10 +37,14 @@ namespace SpecRec
             catch (InvalidOperationException ex)
             {
                 throw new ParrotCallMismatchException(
-                    $"ParrotStub<{typeof(T).Name}> call failed: {ex.Message}", ex);
+                    $"ParrotStub<{typeof(T).Name}> call to {methodName} failed.\n{ex.Message}", ex);
             }
         }
 
+        public void ConstructorCalledWith(ConstructorParameterInfo[] parameters)
+        {
+            // Allow constructor logging when ParrotStub is used with ObjectFactory
+        }
 
     }
 

@@ -1,0 +1,7 @@
+﻿🦜 ITestConstructorService constructor called with:
+  🔸 arg0: connectionString
+  🔸 arg1: 42
+
+🦜 DoSomething:
+  🔸 input: "test"
+  🔹 Returns: "Processed: test"

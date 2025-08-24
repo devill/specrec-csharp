@@ -110,6 +110,25 @@ namespace SpecRec.Tests
 
                 
             }
+            
+            [Fact]
+            public async Task ParrotWithObjectFactory_ShouldLogConstructorWhenCreated()
+            {
+                var callLog = CallLog.FromVerifiedFile();
+                
+                // Create a Parrot and register it with ObjectFactory
+                var parrotService = Parrot.Create<ITestConstructorService>(callLog, "🦜");
+                ObjectFactory.Instance().SetOne<ITestConstructorService>(parrotService);
+                
+                // ObjectFactory.Create should return the registered Parrot (no constructor call)  
+                var createdService = ObjectFactory.Instance().Create<ITestConstructorService>("connectionString", 42);
+                
+                // Make a method call to test the Parrot
+                var result = createdService.DoSomething("test");
+                
+                // Verify the call log
+                await Verify(callLog.ToString());
+            }
         }
 
         public class ExceptionHandling
@@ -149,14 +168,14 @@ namespace SpecRec.Tests
                 var calculator = Parrot.Create<ITestCalculator>(callLog);
                 
                 var ex = Assert.Throws<ParrotCallMismatchException>(() =>
-                    calculator.Add(10, 20)); // Different arguments than expected
+                    calculator.Add(10, 20)); // Wrong method - expects Multiply first
                 
                 await Verify(callLog.ToString());
-                Assert.Contains("Call mismatch", ex.Message);
+                Assert.Contains("Call sequence mismatch", ex.Message);
             }
 
             [Fact]
-            public async Task ArgumentMismatch_ShouldThrowParrotCallMismatchException()
+            public async Task ArgumentMismatch_ShouldDeferToVerify()
             {
                 var verifiedContent = """
                                       🦜 Add:
@@ -173,11 +192,50 @@ namespace SpecRec.Tests
                 var callLog = new CallLog(verifiedContent);
                 var calculator = Parrot.Create<ITestCalculator>(callLog);
                 
-                var ex = Assert.Throws<ParrotCallMismatchException>(() =>
-                    calculator.Add(10, 20)); // Different arguments than expected
+                // This should NOT throw - parameter differences are deferred to Verify()
+                var result = calculator.Add(10, 20); // Different arguments than expected
+                Assert.Equal(8, result); // Should return the value from verified file
+                
+                // Parameter differences will be caught by the Verify framework
+                await Verify(callLog.ToString());
+            }
+        }
+
+        public class ConstructorWithMethodCallsTests
+        {
+            [Fact]
+            public async Task ParrotWithConstructorCalls_ShouldIgnoreConstructorsAndReplayMethods()
+            {
+                var callLog = CallLog.FromVerifiedFile();
+                var flightService = Parrot.Create<ITestFlightService>(callLog, "✈️");
+                var bookingService = Parrot.Create<ITestBookingService>(callLog, "💾");
+                
+                // Test that constructor calls are ignored and method calls work sequentially
+                var seats = flightService.CheckAndGetAvailableSeats("TEST123", new DateTime(2025, 12, 25, 10, 0, 0), 2);
+                var bookingRef = bookingService.SaveBooking("John Test", "TEST123 on 2025-12-25", 500.00m);
+                
+                Assert.Equal(new[] { "1A", "1B" }, seats);
+                Assert.Equal("TESTREF123", bookingRef);
                 
                 await Verify(callLog.ToString());
-                Assert.Contains("Call mismatch", ex.Message);
+            }
+            
+            [Fact] 
+            public async Task MultipleConsecutiveMethodCalls_ShouldWorkInSequence()
+            {
+                var callLog = CallLog.FromVerifiedFile();
+                var calculator = Parrot.Create<ITestCalculatorService>(callLog, "🧮");
+                
+                // Multiple calls to the same method with different parameters should work
+                var result1 = calculator.Calculate(10, 5);
+                var result2 = calculator.Calculate(20, 3);
+                var total = calculator.GetTotal();
+                
+                Assert.Equal(15, result1);
+                Assert.Equal(23, result2);
+                Assert.Equal(38, total);
+                
+                await Verify(callLog.ToString());
             }
         }
 
@@ -195,5 +253,27 @@ namespace SpecRec.Tests
         string GetMessage(int code);
         bool IsValid(string input);
         string? GetOptionalValue(string key);
+    }
+
+    
+    public interface ITestFlightService
+    {
+        string[] CheckAndGetAvailableSeats(string flightNumber, DateTime departureDate, int passengerCount);
+    }
+    
+    public interface ITestBookingService
+    {
+        string SaveBooking(string passengerName, string flightDetails, decimal price);
+    }
+    
+    public interface ITestCalculatorService
+    {
+        int Calculate(int x, int y);
+        int GetTotal();
+    }
+    
+    public interface ITestConstructorService
+    {
+        string DoSomething(string input);
     }
 }
