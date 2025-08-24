@@ -859,6 +859,53 @@ Result was: 28
 
 Parameters are extracted from preamble sections and passed to test methods. Supports built-in types, arrays, and dictionaries. Error messages provide copy-paste preamble sections when parameters are missing.
 
+#### Default Parameter Values
+
+SpecRecLogs supports default parameter values, allowing you to omit common parameters from verified files and only specify values that differ from defaults:
+
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task TestUser(CallLog callLog, string userName = "John Doe", bool isAdmin = false, int age = 34)
+{
+    var service = Parrot.Create<IUserService>(callLog);
+    
+    var user = service.CreateUser(userName, isAdmin, age);
+    
+    callLog.AppendLine($"Created user: {userName} (Admin: {isAdmin}, Age: {age})");
+    await callLog.Verify();
+}
+```
+
+**Verified files can now omit parameters with defaults:**
+
+**AllDefaults.verified.txt** (uses all default values):
+```
+🦜 CreateUser:
+  🔸 name: "John Doe"
+  🔸 isAdmin: False  
+  🔸 age: 34
+  🔹 Returns: <id:user1>
+
+Created user: John Doe (Admin: False, Age: 34)
+```
+
+**PartialOverride.verified.txt** (overrides only isAdmin):
+```
+📋 <Test Inputs>
+  🔸 isAdmin: True
+
+🦜 CreateUser:
+  🔸 name: "John Doe"
+  🔸 isAdmin: True
+  🔸 age: 34
+  🔹 Returns: <id:user2>
+
+Created user: John Doe (Admin: True, Age: 34)
+```
+
+This eliminates repetition when many test cases share the same base values, while still allowing full customization when needed.
+
 ## Planned Components
 
 - **Automated test discovery**: Generates call logs automatically to create 100% branch coverage of SUT
