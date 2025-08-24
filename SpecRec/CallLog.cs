@@ -153,6 +153,25 @@ namespace SpecRec
                 }
                 catch (ParrotTypeConversionException ex)
                 {
+                    // Only add context for parsing errors that would benefit from file info
+                    // Don't wrap object ID resolution errors which are already clear
+                    if (ex.Message.Contains("Cannot convert value") || ex.Message.Contains("List string must be in format") || ex.Message.Contains("Array string must be in format"))
+                    {
+                        var fileInfo = !string.IsNullOrEmpty(_sourceFilePath) 
+                            ? $" (from verified file: {_sourceFilePath})" 
+                            : "";
+                        
+                        throw new ParrotTypeConversionException(
+                            $"Failed to parse return value for {methodName}{fileInfo}: {ex.Message}", ex);
+                    }
+                    else
+                    {
+                        // Re-throw as-is for object ID and other specific errors
+                        throw;
+                    }
+                }
+                catch (ArgumentException ex) when (ex.Message.Contains("string must be in format"))
+                {
                     var fileInfo = !string.IsNullOrEmpty(_sourceFilePath) 
                         ? $" (from verified file: {_sourceFilePath})" 
                         : "";

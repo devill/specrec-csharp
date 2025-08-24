@@ -266,6 +266,16 @@ namespace SpecRec
                     var convertedValue = ParseTypedValue(trimmedPart, elementType, objectFactory);
                     addMethod!.Invoke(listInstance, new[] { convertedValue });
                 }
+                catch (ParrotCallMismatchException)
+                {
+                    // Let object ID resolution errors bubble up as-is
+                    throw;
+                }
+                catch (ParrotTypeConversionException)
+                {
+                    // Let type conversion errors bubble up as-is  
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     throw new ParrotTypeConversionException(
@@ -478,6 +488,18 @@ namespace SpecRec
                 for (int i = 0; i < array.Length; i++)
                 {
                     elements[i] = FormatValue(array.GetValue(i));
+                }
+                return "[" + string.Join(",", elements) + "]";
+            }
+            
+            // Handle generic List<T>
+            if (value.GetType().IsGenericType && value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                var list = (System.Collections.IList)value;
+                var elements = new string[list.Count];
+                for (int i = 0; i < list.Count; i++)
+                {
+                    elements[i] = FormatValue(list[i]);
                 }
                 return "[" + string.Join(",", elements) + "]";
             }
