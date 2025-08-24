@@ -186,42 +186,44 @@ public class ParrotObjectIdTests
         }
     }
 
-    public class EndToEndParrotWorkflowTests
+    public class EndToEndParrotWorkflowTests : IDisposable
     {
+        public EndToEndParrotWorkflowTests()
+        {
+            ObjectFactory.Instance().ClearAll();
+        }
+        
+        public void Dispose()
+        {
+            ObjectFactory.Instance().ClearAll();
+        }
         [Fact]
         public async Task ParrotWorkflow_RegisterCreateReplay_ShouldWork()
         {
             var globalFactory = ObjectFactory.Instance();
             var emailService = new EmailService();
             var userDb = new DatabaseService();
+            globalFactory.Register(emailService, "emailSvc");
+            globalFactory.Register(userDb, "userDb");
             
-            try
-            {
-                globalFactory.Register(emailService, "emailSvc");
-                globalFactory.Register(userDb, "userDb");
-                var callLogger = new CallLogger();
-                var wrappedService = callLogger.Wrap<ITestService>(new TestService(), "🔧");
-                
-                wrappedService.ProcessData(emailService);
-                wrappedService.ProcessMixedData(userDb, "query", 42);
-                
-                var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
-                var parrot = Parrot.Create<ITestService>(callLog, "🦜", globalFactory);
-                
-                var result1 = parrot.ProcessData(emailService);
-                var result2 = parrot.ProcessMixedData(userDb, "query", 42);
-                
-                // Verify the CallLog format
-                await Verify(callLogger.SpecBook.ToString());
-                
-                // Assert functional correctness separately
-                Assert.Same(emailService, result1);
-                Assert.True(result2);
-            }
-            finally
-            {
-                globalFactory.ClearAll();
-            }
+            var callLogger = new CallLogger();
+            var wrappedService = callLogger.Wrap<ITestService>(new TestService(), "🔧");
+            
+            wrappedService.ProcessData(emailService);
+            wrappedService.ProcessMixedData(userDb, "query", 42);
+            
+            var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
+            var parrot = Parrot.Create<ITestService>(callLog, "🦜", globalFactory);
+            
+            var result1 = parrot.ProcessData(emailService);
+            var result2 = parrot.ProcessMixedData(userDb, "query", 42);
+            
+            // Verify the CallLog format
+            await Verify(callLogger.SpecBook.ToString());
+            
+            // Assert functional correctness separately
+            Assert.Same(emailService, result1);
+            Assert.True(result2);
         }
 
         [Fact]
@@ -229,30 +231,23 @@ public class ParrotObjectIdTests
         {
             var globalFactory = ObjectFactory.Instance();
             var dependency = new EmailService();
+            globalFactory.Register(dependency, "email");
             
-            try
-            {
-                globalFactory.Register(dependency, "email");
-                var callLogger = new CallLogger();
-                var wrappedService = callLogger.Wrap<ITestService>(new TestService(), "🔧");
-                
-                wrappedService.ProcessMixedData(dependency, "test@example.com", 100);
-                
-                var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
-                var parrot = Parrot.Create<ITestService>(callLog, "🦜", globalFactory);
-                
-                var result = parrot.ProcessMixedData(dependency, "test@example.com", 100);
-                
-                // Verify the CallLog format
-                await Verify(callLogger.SpecBook.ToString());
-                
-                // Assert functional correctness separately
-                Assert.True(result);
-            }
-            finally
-            {
-                globalFactory.ClearAll();
-            }
+            var callLogger = new CallLogger();
+            var wrappedService = callLogger.Wrap<ITestService>(new TestService(), "🔧");
+            
+            wrappedService.ProcessMixedData(dependency, "test@example.com", 100);
+            
+            var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
+            var parrot = Parrot.Create<ITestService>(callLog, "🦜", globalFactory);
+            
+            var result = parrot.ProcessMixedData(dependency, "test@example.com", 100);
+            
+            // Verify the CallLog format
+            await Verify(callLogger.SpecBook.ToString());
+            
+            // Assert functional correctness separately
+            Assert.True(result);
         }
 
         [Fact]
@@ -261,31 +256,24 @@ public class ParrotObjectIdTests
             var globalFactory = ObjectFactory.Instance();
             var emailSvc = new EmailService();
             var dbSvc = new DatabaseService();
+            globalFactory.Register(emailSvc, "emailService");
+            globalFactory.Register(dbSvc, "database");
             
-            try
-            {
-                globalFactory.Register(emailSvc, "emailService");
-                globalFactory.Register(dbSvc, "database");
-                var callLogger = new CallLogger();
-                var wrappedService = callLogger.Wrap<IComplexService>(new ComplexService(), "🔧");
-                
-                wrappedService.ComplexOperation(emailSvc, dbSvc);
-                
-                var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
-                var parrot = Parrot.Create<IComplexService>(callLog, "🦜", globalFactory);
-                
-                var result = parrot.ComplexOperation(emailSvc, dbSvc);
-                
-                // Verify the CallLog format
-                await Verify(callLogger.SpecBook.ToString());
-                
-                // Assert functional correctness separately
-                Assert.Same(emailSvc, result);
-            }
-            finally
-            {
-                globalFactory.ClearAll();
-            }
+            var callLogger = new CallLogger();
+            var wrappedService = callLogger.Wrap<IComplexService>(new ComplexService(), "🔧");
+            
+            wrappedService.ComplexOperation(emailSvc, dbSvc);
+            
+            var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
+            var parrot = Parrot.Create<IComplexService>(callLog, "🦜", globalFactory);
+            
+            var result = parrot.ComplexOperation(emailSvc, dbSvc);
+            
+            // Verify the CallLog format
+            await Verify(callLogger.SpecBook.ToString());
+            
+            // Assert functional correctness separately
+            Assert.Same(emailSvc, result);
         }
 
         [Fact]
@@ -294,34 +282,27 @@ public class ParrotObjectIdTests
             var globalFactory = ObjectFactory.Instance();
             var service1 = new TestService();
             var service2 = new AnotherService();
+            globalFactory.Register(service1, "primary");
+            globalFactory.Register(service2, "secondary");
             
-            try
-            {
-                globalFactory.Register(service1, "primary");
-                globalFactory.Register(service2, "secondary");
-                var callLogger = new CallLogger();
-                var wrappedService = callLogger.Wrap<ITestService>(new TestService(), "🔧");
-                
-                var intermediate = wrappedService.ProcessData(service2);
-                wrappedService.ProcessData(intermediate);
-                
-                var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
-                var parrot = Parrot.Create<ITestService>(callLog, "🦜", globalFactory);
-                
-                var replayIntermediate = parrot.ProcessData(service2);
-                var finalResult = parrot.ProcessData(replayIntermediate);
-                
-                // Verify the CallLog format
-                await Verify(callLogger.SpecBook.ToString());
-                
-                // Assert functional correctness separately
-                Assert.Same(service2, replayIntermediate);
-                Assert.Same(service2, finalResult);
-            }
-            finally
-            {
-                globalFactory.ClearAll();
-            }
+            var callLogger = new CallLogger();
+            var wrappedService = callLogger.Wrap<ITestService>(new TestService(), "🔧");
+            
+            var intermediate = wrappedService.ProcessData(service2);
+            wrappedService.ProcessData(intermediate);
+            
+            var callLog = new CallLog(callLogger.SpecBook.ToString(), globalFactory);
+            var parrot = Parrot.Create<ITestService>(callLog, "🦜", globalFactory);
+            
+            var replayIntermediate = parrot.ProcessData(service2);
+            var finalResult = parrot.ProcessData(replayIntermediate);
+            
+            // Verify the CallLog format
+            await Verify(callLogger.SpecBook.ToString());
+            
+            // Assert functional correctness separately
+            Assert.Same(service2, replayIntermediate);
+            Assert.Same(service2, finalResult);
         }
     }
 

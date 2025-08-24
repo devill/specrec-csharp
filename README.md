@@ -137,16 +137,26 @@ class MyService
 Now you can easily inject a test double:
 
 ```csharp
-public class MyServiceTests
+public class MyServiceTests : IDisposable
 {
-    private readonly ObjectFactory factory = new();
+    public MyServiceTests()
+    {
+        ObjectFactory.Instance().ClearAll();
+    }
+    
+    public void Dispose()
+    {
+        ObjectFactory.Instance().ClearAll();
+    }
     
     [Fact]
     public void TestWithTestDouble()
     {
+        using static GlobalObjectFactory;
+        
         // Arrange
         var fakeRepo = new FakeRepository();
-        factory.SetOne<IRepository>(fakeRepo);
+        ObjectFactory.Instance().SetOne<IRepository>(fakeRepo);
         
         // Act
         MyService.ComplexOperation();
@@ -157,32 +167,37 @@ public class MyServiceTests
 }
 ```
 
-#### Basic Usage
+**Recommended approach:** Use the global `ObjectFactory.Instance()` with proper test setup/teardown to avoid test isolation issues. The constructor and `Dispose` methods ensure each test starts with a clean factory state.
+
+#### Basic Usage (Recommended: Global Factory)
 
 ```csharp
-// Create objects normally
-var factory = new ObjectFactory();
-var obj = factory.Create<MyClass>();
+using static SpecRec.GlobalObjectFactory;
+
+// Create objects using the global factory (recommended)
+var obj = Create<MyClass>();
 
 // With constructor arguments
-var obj = factory.Create<MyClass>("arg1", 42);
+var obj = Create<MyClass>("arg1", 42);
 
 // Interface/implementation pattern
-var obj = factory.Create<IMyInterface, MyImplementation>();
+var obj = Create<IMyInterface, MyImplementation>();
 ```
 
 #### Test Object Injection
 
 ```csharp
+using static SpecRec.GlobalObjectFactory;
+
 // Queue specific objects for testing
 var mockObj = new MyMockClass();
-factory.SetOne<MyClass>(mockObj);
+ObjectFactory.Instance().SetOne<MyClass>(mockObj);
 
-var result = factory.Create<MyClass>();
+var result = Create<MyClass>();
 // result == mockObj
 
 // Always return the same object
-factory.SetAlways<MyClass>(mockObj);
+ObjectFactory.Instance().SetAlways<MyClass>(mockObj);
 ```
 
 #### Global Factory (Static Access)
@@ -218,11 +233,23 @@ public class MyMock : IMyInterface, IConstructorCalledWith
 
 ```csharp
 // Clear specific type
-factory.Clear<MyClass>();
+ObjectFactory.Instance().Clear<MyClass>();
 
-// Clear all registered objects
+// Clear all registered objects  
+ObjectFactory.Instance().ClearAll();
+```
+
+#### Local Factory (Alternative Pattern)
+
+```csharp
+// Alternative: Use local factory instances for specific scenarios
+var factory = new ObjectFactory();
+var obj = factory.Create<MyClass>();
+factory.SetOne<MyClass>(mockObj);
 factory.ClearAll();
 ```
+
+**Note:** While local factories work fine, the global factory is recommended for most scenarios as it simplifies test setup and integrates better with SpecRec's other components.
 
 
 ## CallLogger: Recording Method Calls
@@ -251,8 +278,8 @@ public async Task MyServiceTest()
     // Wrap it with the logger
     var loggedMessenger = logger.Wrap<IMessenger>(fakeMessenger, "📩");
     
-    // Set up factory to return logged objects
-    factory.SetOne<IMessenger>(loggedMessenger);
+    // Set up global factory to return logged objects
+    ObjectFactory.Instance().SetOne<IMessenger>(loggedMessenger);
     
     // Execute the operation
     (new MyService()).Process();
@@ -384,13 +411,13 @@ SpecRec now supports automatic object identification in tests, replacing verbose
 ### Quick Example
 
 ```csharp
-// Setup
-var factory = new ObjectFactory();
+// Setup (recommended: use global factory)
+var factory = ObjectFactory.Instance();
 var emailService = new EmailService();
 factory.Register(emailService, "emailSvc");
 
 // Logging (produces clean output)
-var logger = new CallLogger(objectFactory: factory);
+var logger = new CallLogger();
 var wrappedUserService = logger.Wrap<IUserService>(userService, "🔧");
 wrappedUserService.SendWelcomeEmail(emailService); // Logs as <id:emailSvc>
 
@@ -407,9 +434,9 @@ No changes required for existing tests. Object tracking is opt-in:
 var logger = new CallLogger();
 
 // After (with object tracking)
-var factory = new ObjectFactory();
+var factory = ObjectFactory.Instance();
 factory.Register(myService, "myService");
-var logger = new CallLogger(objectFactory: factory);
+var logger = new CallLogger();
 ```
 
 ### Best Practices
@@ -421,10 +448,10 @@ var logger = new CallLogger(objectFactory: factory);
 
 ### How It Works
 
-When you register objects with the ObjectFactory:
+When you register objects with the global ObjectFactory:
 
 ```csharp
-var factory = new ObjectFactory();
+var factory = ObjectFactory.Instance();
 var emailService = new EmailService();
 var databaseService = new DatabaseService();
 
@@ -474,6 +501,8 @@ Register all objects with ObjectFactory before running tests.
 The ObjectFactory provides full registry management:
 
 ```csharp
+var factory = ObjectFactory.Instance();
+
 // Check if object is registered
 bool isRegistered = factory.IsRegistered(myObject);
 
@@ -711,6 +740,7 @@ public async Task EndToEndWorkflow()
     var userService = Parrot.Create<IUserService>(callLog, "👤");
     var emailService = Parrot.Create<IEmailService>(callLog, "📧");
     
+    var factory = ObjectFactory.Instance();
     factory.SetOne<IAuthService>(authService);
     factory.SetOne<IUserService>(userService);
     factory.SetOne<IEmailService>(emailService);
