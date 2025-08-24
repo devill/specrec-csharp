@@ -167,6 +167,15 @@
     <None Update="DictionaryParrotIntegrationTests.EndToEndDictionary_LogThenReplay_ShouldWork.verified.txt">
       <DependentUpon>DictionaryParsingTests.cs</DependentUpon>
     </None>
+    <None Update="MultiFixture.TestWithDefaultParameters.AllDefaults.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.TestWithDefaultParameters.FullOverride.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="MultiFixture.TestWithDefaultParameters.PartialOverride.verified.txt">
+      <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

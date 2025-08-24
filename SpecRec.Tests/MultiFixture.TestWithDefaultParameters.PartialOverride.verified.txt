@@ -1,0 +1,4 @@
+﻿📋 <Test Inputs>
+  🔸 isAdmin: True
+
+User: John Doe (Admin: True, Age: 34)

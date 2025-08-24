@@ -169,16 +169,30 @@ namespace SpecRec
                         break;
                     }
                     
-                    var fileInfo = !string.IsNullOrEmpty(verifiedFilePath) ? $" in file '{verifiedFilePath}'" : "";
-                    var availableParams = callLog.PreambleParameters.Keys.Any() 
-                        ? string.Join(", ", callLog.PreambleParameters.Keys) 
-                        : "(none - no preamble section found)";
+                    // Check if parameter has a default value
+                    var runtimeParam = testMethod.Type.ToRuntimeType()
+                        .GetMethod(testMethod.Name)?
+                        .GetParameters()[i];
                     
-                    var suggestedPreamble = GenerateSuggestedPreamble(methodParams);
-                    
-                    throw new InvalidOperationException(
-                        $"Preamble parameter '{paramName}' not found{fileInfo}. Available parameters: {availableParams}\n\n" +
-                        $"Add this preamble section to your verified file:\n{suggestedPreamble}");
+                    if (runtimeParam?.HasDefaultValue == true)
+                    {
+                        // Use the default value from the method signature
+                        paramValues[i] = runtimeParam.DefaultValue;
+                    }
+                    else
+                    {
+                        // Required parameter is missing - throw error with suggestions
+                        var fileInfo = !string.IsNullOrEmpty(verifiedFilePath) ? $" in file '{verifiedFilePath}'" : "";
+                        var availableParams = callLog.PreambleParameters.Keys.Any() 
+                            ? string.Join(", ", callLog.PreambleParameters.Keys) 
+                            : "(none - no preamble section found)";
+                        
+                        var suggestedPreamble = GenerateSuggestedPreamble(methodParams);
+                        
+                        throw new InvalidOperationException(
+                            $"Required parameter '{paramName}' not found{fileInfo}. Available parameters: {availableParams}\n\n" +
+                            $"Add this preamble section to your verified file:\n{suggestedPreamble}");
+                    }
                 }
             }
             

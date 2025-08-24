@@ -1,0 +1,6 @@
+﻿📋 <Test Inputs>
+  🔸 userName: "Jane Smith"
+  🔸 isAdmin: True
+  🔸 age: 28
+
+User: Jane Smith (Admin: True, Age: 28)

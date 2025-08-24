@@ -19,14 +19,15 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task TestWithPreambleParameters(CallLog callLog, string userName, bool isAdmin, int age)
         {
-            var reader = Parrot.Create<IInputReader>(callLog);
-            var calculator = Parrot.Create<ICalculatorService>(callLog);
-
-            // Use the preamble parameters in test logic
-            var result = MultiFixtureTestMethod(reader, calculator);
-            
             callLog.AppendLine($"User: {userName} (Admin: {isAdmin}, Age: {age})");
-            callLog.AppendLine($"Result was: {result}");
+            await callLog.Verify();
+        }
+
+        [Theory]
+        [SpecRecLogs]
+        public async Task TestWithDefaultParameters(CallLog callLog, string userName = "John Doe", bool isAdmin = false, int age = 34)
+        {
+            callLog.AppendLine($"User: {userName} (Admin: {isAdmin}, Age: {age})");
             await callLog.Verify();
         }
 
