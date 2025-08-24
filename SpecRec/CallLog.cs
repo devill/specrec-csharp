@@ -12,18 +12,20 @@ namespace SpecRec
         private int _currentCallIndex;
         private readonly List<(string methodName, object?[] args, object? returnValue)> _loggedCalls;
         private readonly ObjectFactory? _objectFactory;
+        private readonly string? _sourceFilePath;
 
         public StringBuilder SpecBook => _content;
         public Dictionary<string, string> PreambleParameters { get; private set; } = new();
         public string? TestCaseName { get; internal set; }
 
-        public CallLog(string? verifiedContent = null, ObjectFactory? objectFactory = null)
+        public CallLog(string? verifiedContent = null, ObjectFactory? objectFactory = null, string? sourceFilePath = null)
         {
             _content = new StringBuilder();
             _parsedCalls = new List<ParsedCall>();
             _currentCallIndex = 0;
             _loggedCalls = new List<(string, object?[], object?)>();
             _objectFactory = objectFactory;
+            _sourceFilePath = sourceFilePath;
 
             if (!string.IsNullOrEmpty(verifiedContent))
             {
@@ -34,10 +36,10 @@ namespace SpecRec
         public static CallLog FromFile(string filePath, ObjectFactory? objectFactory = null)
         {
             if (!File.Exists(filePath))
-                return new CallLog(objectFactory: objectFactory); // Return empty CallLog if no verified file exists yet
+                return new CallLog(objectFactory: objectFactory, sourceFilePath: filePath); // Return empty CallLog if no verified file exists yet
 
             var content = File.ReadAllText(filePath);
-            return new CallLog(content, objectFactory);
+            return new CallLog(content, objectFactory, filePath);
         }
 
         public static CallLog FromVerifiedFile(ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
@@ -107,10 +109,14 @@ namespace SpecRec
                         ? $"Available calls in verified file: {string.Join(", ", _parsedCalls.Select(c => c.MethodName))}"
                         : "No calls found in verified file.";
                     
+                    var fileInfo = !string.IsNullOrEmpty(_sourceFilePath) 
+                        ? $"\nVerified file: {_sourceFilePath}" 
+                        : "";
+                    
                     throw new ParrotMissingReturnValueException(
                         $"No return value available for call to {callDetails}.\n" +
                         $"Current position: {_currentCallIndex + 1} of {_parsedCalls.Count} expected calls.\n" +
-                        availableCalls);
+                        availableCalls + fileInfo);
                 }
                 else
                 {
@@ -141,7 +147,19 @@ namespace SpecRec
             // Parse only when we have a return type (for actual conversion)
             if (returnType != null && expectedCall.ReturnValue != null)
             {
-                return ValueParser.ParseTypedValue(expectedCall.ReturnValue, returnType, _objectFactory);
+                try
+                {
+                    return ValueParser.ParseTypedValue(expectedCall.ReturnValue, returnType, _objectFactory);
+                }
+                catch (ParrotTypeConversionException ex)
+                {
+                    var fileInfo = !string.IsNullOrEmpty(_sourceFilePath) 
+                        ? $" (from verified file: {_sourceFilePath})" 
+                        : "";
+                    
+                    throw new ParrotTypeConversionException(
+                        $"Failed to parse return value for {methodName}{fileInfo}: {ex.Message}", ex);
+                }
             }
             
             return expectedCall.ReturnValue;

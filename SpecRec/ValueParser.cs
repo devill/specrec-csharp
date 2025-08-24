@@ -58,6 +58,12 @@ namespace SpecRec
                 return ParseArrayFromString(valueStr, targetType, objectFactory);
             }
             
+            // Handle List<T> types
+            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                return ParseListFromString(valueStr, targetType, objectFactory);
+            }
+            
             // Handle dictionary types
             if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
@@ -226,6 +232,48 @@ namespace SpecRec
             }
             
             return result;
+        }
+
+        public static object ParseListFromString(string listString, Type listType, ObjectFactory? objectFactory = null)
+        {
+            var elementType = listType.GetGenericArguments()[0];
+            
+            // Remove brackets and split by comma
+            if (!listString.StartsWith("[") || !listString.EndsWith("]"))
+            {
+                throw new ArgumentException($"List string must be in format [item1, item2, ...], got: {listString}");
+            }
+            
+            var content = listString.Substring(1, listString.Length - 2).Trim();
+            
+            // Create list instance
+            var listInstance = Activator.CreateInstance(listType);
+            var addMethod = listType.GetMethod("Add");
+            
+            if (string.IsNullOrEmpty(content))
+            {
+                return listInstance!;
+            }
+            
+            var parts = content.Split(',');
+            
+            for (int i = 0; i < parts.Length; i++)
+            {
+                var trimmedPart = parts[i].Trim();
+                
+                try
+                {
+                    var convertedValue = ParseTypedValue(trimmedPart, elementType, objectFactory);
+                    addMethod!.Invoke(listInstance, new[] { convertedValue });
+                }
+                catch (Exception ex)
+                {
+                    throw new ParrotTypeConversionException(
+                        $"Cannot convert list element '{trimmedPart}' to type {elementType.Name} in list '{listString}'.", ex);
+                }
+            }
+            
+            return listInstance!;
         }
 
         public static object ParseDictionaryFromString(string dictString, Type dictType, ObjectFactory? objectFactory = null)
