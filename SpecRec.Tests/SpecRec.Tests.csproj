@@ -164,9 +164,6 @@
     <None Update="MultiFixture.TestWithPreambleParameters.WithPreamble.verified.txt">
       <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
     </None>
-    <None Update="DictionaryParrotIntegrationTests.EndToEndDictionary_LogThenReplay_ShouldWork.verified.txt">
-      <DependentUpon>DictionaryParsingTests.cs</DependentUpon>
-    </None>
     <None Update="MultiFixture.TestWithDefaultParameters.AllDefaults.verified.txt">
       <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
     </None>
@@ -175,6 +172,57 @@
     </None>
     <None Update="MultiFixture.TestWithDefaultParameters.PartialOverride.verified.txt">
       <DependentUpon>SpecRecTheoryTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerObjectLoggingTests.IntegrationWithWrappedObjectsTests.Wrap_WithMixedRegisteredAndPrimitiveArgs_ShouldFormatCorrectly.verified.txt">
+      <DependentUpon>CallLoggerObjectLoggingTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerObjectLoggingTests.IntegrationWithWrappedObjectsTests.Wrap_WithRegisteredService_ShouldLogIdInArguments.verified.txt">
+      <DependentUpon>CallLoggerObjectLoggingTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerObjectLoggingTests.IntegrationWithWrappedObjectsTests.Wrap_WithRegisteredService_ShouldLogIdInReturnValue.verified.txt">
+      <DependentUpon>CallLoggerObjectLoggingTests.cs</DependentUpon>
+    </None>
+    <None Update="CallLoggerObjectLoggingTests.IntegrationWithWrappedObjectsTests.Wrap_WithUnregisteredService_ShouldLogUnknownInArguments.verified.txt">
+      <DependentUpon>CallLoggerObjectLoggingTests.cs</DependentUpon>
+    </None>
+    <None Update="ObjectIdIntegrationTests.CompleteWorkflowTests.CompleteWorkflow_WithMixedScenarios_ShouldWork.verified.txt">
+      <DependentUpon>ObjectIdIntegrationTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotObjectIdTests.EndToEndParrotWorkflowTests.ParrotWorkflow_RegisterCreateReplay_ShouldWork.verified.txt">
+      <DependentUpon>ParrotObjectIdTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotObjectIdTests.EndToEndParrotWorkflowTests.ParrotWorkflow_WithComplexServiceInteraction_ShouldWork.verified.txt">
+      <DependentUpon>ParrotObjectIdTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotObjectIdTests.EndToEndParrotWorkflowTests.ParrotWorkflow_WithMixedPrimitivesAndObjects_ShouldWork.verified.txt">
+      <DependentUpon>ParrotObjectIdTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotObjectIdTests.EndToEndParrotWorkflowTests.ParrotWorkflow_WithObjectReturnsAndChaining_ShouldWork.verified.txt">
+      <DependentUpon>ParrotObjectIdTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotTests.BasicWorkflow.VerifiedFileWithNoReturnValue_ShouldStopAtFirstUnknownReturn.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotTests.ComplexScenarios.MultipleTypesService_ShouldHandleMultipleCalls.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotTests.ComplexScenarios.ParrotWithObjectFactory_ShouldLogConstructorWhenCreated.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotTests.ConstructorWithMethodCallsTests.MultipleConsecutiveMethodCalls_ShouldWorkInSequence.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotTests.ConstructorWithMethodCallsTests.ParrotWithConstructorCalls_ShouldIgnoreConstructorsAndReplayMethods.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotTests.ExceptionHandling.ArgumentMismatch_ShouldDeferToVerify.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotTests.ExceptionHandling.ArgumentMismatch_ShouldThrowParrotCallMismatchException.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
+    <None Update="ParrotTests.ExceptionHandling.CallMismatch_ShouldThrowParrotCallMismatchException.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
     </None>
   </ItemGroup>
 

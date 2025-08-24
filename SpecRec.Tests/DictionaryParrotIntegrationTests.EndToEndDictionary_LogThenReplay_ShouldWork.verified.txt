@@ -1,9 +1,0 @@
-﻿🦜 SaveUserPreferences:
-  🔸 userId: "user456"
-  🔸 preferences: {"theme": "dark", "language": "fr"}
-  🔹 Returns: True
-
-🦜 GetUserPreferences:
-  🔸 userId: "user456"
-  🔹 Returns: {"theme": "dark", "language": "fr"}
-
