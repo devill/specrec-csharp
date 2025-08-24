@@ -86,8 +86,6 @@ public async Task UserRegistration_ShouldWork()
 
 **Result:** A fast, reliable characterization test that documents exactly what your legacy code does.
 
-**⚠️ This library is under active development. Core components (ObjectFactory, CallLogger, Parrot) are stable.**
-
 ## How It Works
 
 SpecRec has three main components that work together:
