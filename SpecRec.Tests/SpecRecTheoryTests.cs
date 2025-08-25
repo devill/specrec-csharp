@@ -31,6 +31,18 @@ namespace SpecRec.Tests
             await callLog.Verify();
         }
 
+        [Theory]
+        [SpecRecLogs]
+        public async Task TestWithDateTimeParameter(CallLog callLog, DateTime eventDate, string eventName = "Default Event")
+        {
+            var eventService = Parrot.Create<IEventService>(callLog);
+            
+            var eventId = eventService.CreateEvent(eventName, eventDate);
+            
+            callLog.AppendLine($"Created event '{eventName}' on {eventDate:dd-MM-yyyy HH:mm:ss} with ID: {eventId}");
+            await callLog.Verify();
+        }
+
 
         private int MultiFixtureTestMethod(IInputReader reader, ICalculatorService calculator)
         {
@@ -58,5 +70,10 @@ namespace SpecRec.Tests
         int Add(int a, int b);
         int Multiply(int a, int b);
         void Reset();
+    }
+    
+    public interface IEventService
+    {
+        int CreateEvent(string name, DateTime eventDate);
     }
 }

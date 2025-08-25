@@ -238,6 +238,39 @@ namespace SpecRec.Tests
                 await Verify(callLog.ToString());
             }
         }
+        
+        public class DateTimeReturnValueTests
+        {
+            [Fact]
+            public async Task ParrotWithDateTimeReturnValue_ShouldParseCorrectly()
+            {
+                var callLog = CallLog.FromVerifiedFile();
+                var dateTimeService = Parrot.Create<ITestDateTimeService>(callLog, "📅");
+                
+                var currentTime = dateTimeService.GetCurrentTime();
+                var formattedTime = dateTimeService.FormatDateTime(currentTime);
+                
+                Assert.Equal(new DateTime(2024, 6, 15, 14, 30, 0), currentTime);
+                Assert.Equal("Current time: 15-06-2024 14:30:00", formattedTime);
+                
+                await Verify(callLog.ToString());
+            }
+            
+            [Fact]
+            public async Task ParrotWithNullableDateTimeReturnValue_ShouldParseCorrectly()
+            {
+                var callLog = CallLog.FromVerifiedFile();
+                var dateTimeService = Parrot.Create<ITestDateTimeService>(callLog, "📅");
+                
+                var hasValue = dateTimeService.GetOptionalDateTime(true);
+                var nullValue = dateTimeService.GetOptionalDateTime(false);
+                
+                Assert.Equal(new DateTime(2025, 1, 1, 12, 0, 0), hasValue);
+                Assert.Null(nullValue);
+                
+                await Verify(callLog.ToString());
+            }
+        }
 
     }
 
@@ -275,5 +308,12 @@ namespace SpecRec.Tests
     public interface ITestConstructorService
     {
         string DoSomething(string input);
+    }
+    
+    public interface ITestDateTimeService
+    {
+        DateTime GetCurrentTime();
+        DateTime? GetOptionalDateTime(bool hasValue);
+        string FormatDateTime(DateTime dt);
     }
 }

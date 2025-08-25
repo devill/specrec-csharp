@@ -85,6 +85,8 @@ namespace SpecRec
                 return ParseFloat(valueStr);
             if (targetType == typeof(decimal))
                 return ParseDecimal(valueStr);
+            if (targetType == typeof(DateTime))
+                return ParseDateTime(valueStr);
             
             // Fallback to Convert.ChangeType for other types
             try
@@ -192,6 +194,16 @@ namespace SpecRec
                 
             throw new ParrotTypeConversionException(
                 $"Cannot parse '{valueStr}' as decimal.");
+        }
+        
+        public static DateTime ParseDateTime(string valueStr)
+        {
+            // Parse using the same format that CallLogger uses for formatting
+            if (DateTime.TryParseExact(valueStr, "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTimeVal))
+                return dateTimeVal;
+                
+            throw new ParrotTypeConversionException(
+                $"Cannot parse '{valueStr}' as DateTime. Expected format: dd-MM-yyyy HH:mm:ss");
         }
 
 
@@ -516,6 +528,10 @@ namespace SpecRec
                 }
                 return $"{{{string.Join(", ", pairs)}}}";
             }
+            
+            // Handle DateTime
+            if (value is DateTime dt)
+                return dt.ToString("dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
             
             // Use invariant culture for numbers
             if (value is decimal dec)

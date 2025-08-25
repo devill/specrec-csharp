@@ -1,0 +1,6 @@
+﻿📅 GetCurrentTime:
+  🔹 Returns: 15-06-2024 14:30:00
+
+📅 FormatDateTime:
+  🔸 dt: 15-06-2024 14:30:00
+  🔹 Returns: "Current time: 15-06-2024 14:30:00"

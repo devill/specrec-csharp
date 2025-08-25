@@ -605,7 +605,7 @@ namespace SpecRec
             
             if (value is DateTime dt)
             {
-                result = dt.ToString("MM/dd/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+                result = dt.ToString("dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
                 return true;
             }
             return false;

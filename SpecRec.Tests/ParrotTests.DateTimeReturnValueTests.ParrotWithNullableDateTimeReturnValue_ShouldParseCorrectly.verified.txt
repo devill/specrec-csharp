@@ -1,0 +1,6 @@
+﻿📅 GetOptionalDateTime:
+  🔸 hasValue: True
+  🔹 Returns: 01-01-2025 12:00:00
+
+📅 GetOptionalDateTime:
+  🔸 hasValue: False

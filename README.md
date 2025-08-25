@@ -533,6 +533,15 @@ SpecRec uses a type-aware parser that ensures robust handling of values in speci
 ❌ true, false, TRUE, FALSE
 ```
 
+**DateTime**: Use `dd-MM-yyyy HH:mm:ss` format (invariant culture)
+```
+✅ 25-12-2023 14:30:45
+✅ 01-01-2000 00:00:00
+❌ 25/12/2023 14:30:45 (wrong separator)
+❌ 12-25-2023 14:30:45 (wrong order - MM-dd-yyyy)
+❌ 2023-12-25 14:30:45 (ISO format)
+```
+
 **Numbers**: Use invariant culture formatting
 ```
 ✅ 42 (integer)

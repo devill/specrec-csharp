@@ -1,6 +1,6 @@
 ﻿✈️ CheckAndGetAvailableSeats:
   🔸 flightNumber: "TEST123"
-  🔸 departureDate: 12/25/2025 10:00:00
+  🔸 departureDate: 25-12-2025 10:00:00
   🔸 passengerCount: 2
   🔹 Returns: ["1A","1B"]
 

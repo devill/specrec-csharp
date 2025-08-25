@@ -1,0 +1,10 @@
+﻿📋 <Test Inputs>
+  🔸 eventDate: 25-12-2023 15:30:00
+  🔸 eventName: "Christmas Party"
+
+🦜 CreateEvent:
+  🔸 name: "Christmas Party"
+  🔸 eventDate: 25-12-2023 15:30:00
+  🔹 Returns: 42
+
+Created event 'Christmas Party' on 25-12-2023 15:30:00 with ID: 42
