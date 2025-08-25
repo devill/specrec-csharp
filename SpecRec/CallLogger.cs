@@ -265,7 +265,13 @@ namespace SpecRec
         private void LogMethodCall(CallLogger callLogger, MethodInfo targetMethod, object?[]? args, object? result, string methodName)
         {
             LogInputArguments(callLogger, targetMethod, args, methodName);
-            LogReturnValue(callLogger, result, methodName);
+            
+            // Only log return value for non-void methods
+            if (targetMethod.ReturnType != typeof(void))
+            {
+                LogReturnValue(callLogger, result, methodName);
+            }
+            
             LogOutputParameters(callLogger, targetMethod, args);
             
             callLogger.log(methodName);

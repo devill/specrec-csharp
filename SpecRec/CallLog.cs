@@ -259,9 +259,9 @@ namespace SpecRec
                         ParsePreambleParameterLine(trimmedLine);
                         continue;
                     }
-                    else if (IsMethodCallLine(trimmedLine))
+                    else if (IsMethodCallLine(trimmedLine) || IsConstructorCallLine(trimmedLine))
                     {
-                        // End of preamble, start of method calls
+                        // End of preamble, start of method calls or constructor calls
                         inPreamble = false;
                     }
                     else

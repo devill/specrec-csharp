@@ -1,0 +1,7 @@
+﻿🔧 IServiceWithConstructor constructor called with:
+  🔸 connectionString: connectionString
+  🔸 retryCount: 42
+
+🔧 DoSomething:
+
+Test parameter: default
