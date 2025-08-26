@@ -8,11 +8,17 @@ namespace SpecRec.Tests
         {
             var reader = Parrot.Create<IInputReader>(callLog);
             var calculator = Parrot.Create<ICalculatorService>(callLog);
+            try
+            {
+                var result = MultiFixtureTestMethod(reader, calculator);
 
-            var result = MultiFixtureTestMethod(reader, calculator);
-
-            callLog.AppendLine($"Result was: {result}");
-            await callLog.Verify();
+                callLog.AppendLine($"Result was: {result}");
+            }
+            finally
+            {
+                await callLog.Verify();    
+            }
+            
         }
 
         [Theory]

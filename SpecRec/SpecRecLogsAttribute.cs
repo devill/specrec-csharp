@@ -38,32 +38,38 @@ namespace SpecRec
                 var className = GetClassName(testMethod);
                 var methodName = testMethod.Name;
 
-                var pattern = $"{className}.{methodName}.*.verified.txt";
-                var verifiedFiles = Directory.GetFiles(testDirectory, pattern);
-
+                // Look for both patterns:
+                // 1. {ClassName}.{MethodName}.verified.txt (simple pattern)
+                // 2. {ClassName}.{MethodName}.{TestCaseName}.verified.txt (with test case)
+                var simplePattern = $"{className}.{methodName}.verified.txt";
+                var complexPattern = $"{className}.{methodName}.*.verified.txt";
                 
-                if (verifiedFiles.Length == 0)
+                var simpleFiles = Directory.GetFiles(testDirectory, simplePattern);
+                var complexFiles = Directory.GetFiles(testDirectory, complexPattern);
+                
+                // Combine both patterns, ensuring no duplicates
+                var allFiles = simpleFiles.Concat(complexFiles).Distinct().ToArray();
+                
+                if (allFiles.Length == 0)
                 {
-                    // No verified files found - create empty CallLog for "FirstTestCase"
+                    // No verified files found - create empty CallLog with simple pattern as default
                     var emptyCallLog = new CallLog();
+                    emptyCallLog.TestCaseName = ""; // Use empty string for simple pattern
                     testCases.Add(CreateTestCaseData(testMethod, emptyCallLog));
                 }
                 else
                 {
-                    foreach (var filePath in verifiedFiles)
+                    foreach (var filePath in allFiles)
                     {
                         var fileName = Path.GetFileNameWithoutExtension(filePath);
                         var testCaseName = ExtractTestCaseFromFileName(fileName, className, methodName);
 
-                        if (!string.IsNullOrEmpty(testCaseName))
-                        {
-                            // Load verified file content and create CallLog
-                            var content = File.ReadAllText(filePath);
-                            var callLog = new CallLog(content);
-                            callLog.TestCaseName = testCaseName;
-                            
-                            testCases.Add(CreateTestCaseData(testMethod, callLog, filePath));
-                        }
+                        // Load verified file content and create CallLog
+                        var content = File.ReadAllText(filePath);
+                        var callLog = new CallLog(content);
+                        callLog.TestCaseName = testCaseName;
+                        
+                        testCases.Add(CreateTestCaseData(testMethod, callLog, filePath));
                     }
                 }
             }
@@ -72,6 +78,7 @@ namespace SpecRec
                 diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Error discovering test data for {testMethod.Name}: {ex.Message}"));
                 // Fallback to default test case
                 var fallbackCallLog = new CallLog();
+                fallbackCallLog.TestCaseName = "";
                 testCases.Add(CreateTestCaseData(testMethod, fallbackCallLog));
             }
 
@@ -122,15 +129,30 @@ namespace SpecRec
 
         private string ExtractTestCaseFromFileName(string fileName, string className, string methodName)
         {
+            var expectedSimple = $"{className}.{methodName}";
             var expectedPrefix = $"{className}.{methodName}.";
-            if (fileName.StartsWith(expectedPrefix))
+            
+            // fileName comes from Path.GetFileNameWithoutExtension(), so:
+            // MultiFixture.TestMultipleScenarios.verified.txt -> MultiFixture.TestMultipleScenarios.verified
+            // MultiFixture.TestMultipleScenarios.AddTwo.verified.txt -> MultiFixture.TestMultipleScenarios.AddTwo.verified
+            
+            // Remove .verified suffix first if present
+            var cleanFileName = fileName;
+            if (cleanFileName.EndsWith(".verified"))
             {
-                var testCaseName = fileName.Substring(expectedPrefix.Length);
-                // Remove .verified suffix if present
-                if (testCaseName.EndsWith(".verified"))
-                {
-                    testCaseName = testCaseName.Substring(0, testCaseName.Length - ".verified".Length);
-                }
+                cleanFileName = cleanFileName.Substring(0, cleanFileName.Length - ".verified".Length);
+            }
+            
+            // Check if it's the simple pattern: {ClassName}.{MethodName}
+            if (cleanFileName == expectedSimple)
+            {
+                return ""; // Empty string indicates simple pattern
+            }
+            
+            // Check if it's the complex pattern: {ClassName}.{MethodName}.{TestCaseName}
+            if (cleanFileName.StartsWith(expectedPrefix))
+            {
+                var testCaseName = cleanFileName.Substring(expectedPrefix.Length);
                 return testCaseName;
             }
             return "";
