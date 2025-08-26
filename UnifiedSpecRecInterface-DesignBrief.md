@@ -152,6 +152,10 @@ try
         callLog.AppendLine($"🔹 Returns: {ValueParser.FormatValue(result)}");
     }
 }
+catch (ParrotMissingReturnValueException)
+{
+    throw;
+}
 catch (Exception ex) 
 {
     callLog.AppendLine($"❌ Exception: {ex.GetType().Name}: {ex.Message}");
