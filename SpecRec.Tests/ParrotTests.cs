@@ -272,6 +272,87 @@ namespace SpecRec.Tests
             }
         }
 
+        public class NewConstructorSyntax
+        {
+            [Fact]
+            public async Task ParrotWithInstanceSyntax_ShouldWorkIdenticallyToStaticMethod()
+            {
+                var callLog = CallLog.FromVerifiedFile();
+                var parrot = new Parrot(callLog);
+                var calculator = parrot.Create<ITestCalculator>();
+                
+                calculator.Reset();
+                var result = calculator.Add(5, 3);
+                Assert.Equal(8, result);
+                await callLog.Verify();
+            }
+            
+            [Fact]
+            public async Task ParrotWithCustomEmoji_ShouldUseProvidedEmoji()
+            {
+                var callLog = CallLog.FromVerifiedFile();
+                var parrot = new Parrot(callLog);
+                var calculator = parrot.Create<ITestCalculator>("🧮");
+                
+                calculator.Reset();
+                var result = calculator.Add(10, 5);
+                Assert.Equal(15, result);
+                await callLog.Verify();
+            }
+            
+            [Fact]
+            public async Task ParrotWithObjectFactory_ShouldUseProvidedFactory()
+            {
+                var callLog = CallLog.FromVerifiedFile();
+                var factory = new ObjectFactory();
+                var testService = new ParrotTestServiceImpl();
+                factory.Register(testService, "testSvc");
+                
+                var parrot = new Parrot(callLog, factory);
+                var service = parrot.Create<IParrotTestService>("🔧");
+                
+                var message = service.GetMessage(200);
+                Assert.Equal("Success", message);
+                
+                await callLog.Verify();
+            }
+            
+            [Fact]
+            public async Task ParrotInstanceSyntax_ShouldSimplifyMultipleCreations()
+            {
+                var callLog = CallLog.FromVerifiedFile();
+                var parrot = new Parrot(callLog);
+                
+                // Create multiple services without repeating callLog parameter
+                var calculator = parrot.Create<ITestCalculator>("🧮");
+                var service = parrot.Create<IParrotTestService>("🔧");
+                var dateTimeService = parrot.Create<ITestDateTimeService>("📅");
+                
+                // Test all services work
+                calculator.Reset();
+                var addResult = calculator.Add(3, 4);
+                
+                var message = service.GetMessage(200);
+                var isValid = service.IsValid("test");
+                
+                var currentTime = dateTimeService.GetCurrentTime();
+                
+                Assert.Equal(7, addResult);
+                Assert.Equal("OK", message);
+                Assert.True(isValid);
+                Assert.Equal(new DateTime(2024, 6, 15, 14, 30, 0), currentTime);
+                
+                await callLog.Verify();
+            }
+        }
+
+    }
+
+    public class ParrotTestServiceImpl : IParrotTestService
+    {
+        public string GetMessage(int code) => "Success";
+        public bool IsValid(string input) => true;
+        public string? GetOptionalValue(string key) => null;
     }
 
     public interface ITestCalculator

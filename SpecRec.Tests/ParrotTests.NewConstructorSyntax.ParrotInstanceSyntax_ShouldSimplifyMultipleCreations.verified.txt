@@ -1,0 +1,17 @@
+﻿🧮 Reset:
+
+🧮 Add:
+  🔸 a: 3
+  🔸 b: 4
+  🔹 Returns: 7
+
+🔧 GetMessage:
+  🔸 code: 200
+  🔹 Returns: "OK"
+
+🔧 IsValid:
+  🔸 input: "test"
+  🔹 Returns: True
+
+📅 GetCurrentTime:
+  🔹 Returns: 15-06-2024 14:30:00

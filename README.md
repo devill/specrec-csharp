@@ -41,12 +41,13 @@ public async Task UserRegistration_ShouldWork()
 {
     using static GlobalObjectFactory;
     
-    // Initialize a CallLog
+    // Initialize a CallLog and Parrot factory
     var callLog = CallLog.FromVerifiedFile();
+    var parrot = new Parrot(callLog);
  
-    // Set up test doubles
-    var emailParrot = Parrot.Create<IEmailService>(callLog, "📧");
-    var dbParrot = Parrot.Create<IDatabaseService>(callLog, "🗃️");
+    // Set up test doubles - simplified syntax
+    var emailParrot = parrot.Create<IEmailService>("📧");
+    var dbParrot = parrot.Create<IDatabaseService>("🗃️");
     
     // Inject the test doubles
     SetOne<IEmailService>(emailParrot, "email");
@@ -685,10 +686,34 @@ var parrot = Parrot.Create<IMyService>(callLog);
 // Custom emoji for better visual distinction
 var parrot = Parrot.Create<IMyService>(callLog, "🎭");
 
-// Load from specific verified file
+// New simplified syntax - reusable parrot factory
 var callLog = CallLog.FromFile("path/to/verified.txt");
-var parrot = Parrot.Create<IMyService>(callLog, "🔧");
+var parrotFactory = new Parrot(callLog);
+var service = parrotFactory.Create<IMyService>("🔧");
 ```
+
+#### Simplified Instance Syntax (New!)
+
+When creating multiple parrot test doubles with the same CallLog, the new instance-based constructor eliminates repetition:
+
+```csharp
+// Traditional approach - repetitive
+var emailParrot = Parrot.Create<IEmailService>(callLog, "📧");
+var dbParrot = Parrot.Create<IDatabaseService>(callLog, "🗃️");
+var authParrot = Parrot.Create<IAuthService>(callLog, "🔐");
+
+// New simplified approach - reusable parrot factory
+var parrot = new Parrot(callLog);
+var emailParrot = parrot.Create<IEmailService>("📧");
+var dbParrot = parrot.Create<IDatabaseService>("🗃️");
+var authParrot = parrot.Create<IAuthService>("🔐");
+```
+
+**Benefits:**
+- **Less repetition**: No need to pass `callLog` to every `Create()` call
+- **Cleaner tests**: Especially useful when creating many test doubles
+- **Backwards compatible**: Static methods remain unchanged
+- **ObjectFactory integration**: Pass ObjectFactory once to constructor, used by all created parrots
 
 #### Automatic Verified File Discovery
 
@@ -741,11 +766,12 @@ Use Parrot with approval testing frameworks for a complete testing workflow:
 public async Task EndToEndWorkflow()
 {
     var callLog = CallLog.FromVerifiedFile();
+    var parrot = new Parrot(callLog);
     
-    // Set up multiple services with different emojis
-    var authService = Parrot.Create<IAuthService>(callLog, "🔐");
-    var userService = Parrot.Create<IUserService>(callLog, "👤");
-    var emailService = Parrot.Create<IEmailService>(callLog, "📧");
+    // Set up multiple services with different emojis - simplified syntax
+    var authService = parrot.Create<IAuthService>("🔐");
+    var userService = parrot.Create<IUserService>("👤");
+    var emailService = parrot.Create<IEmailService>("📧");
     
     var factory = ObjectFactory.Instance();
     factory.SetOne<IAuthService>(authService);
@@ -774,8 +800,9 @@ When you are creating tests for an untested sub system you may find that multipl
 [SpecRecLogs]
 public async Task TestMultipleScenarios(CallLog callLog)
 {
-    var reader = Parrot.Create<IInputReader>(callLog);
-    var calculator = Parrot.Create<ICalculatorService>(callLog);
+    var parrot = new Parrot(callLog);
+    var reader = parrot.Create<IInputReader>();
+    var calculator = parrot.Create<ICalculatorService>();
 
     var result = ProcessInput(reader, calculator);
 
@@ -788,7 +815,8 @@ public async Task TestMultipleScenarios(CallLog callLog)
 [SpecRecLogs]
 public async Task TestWithUserData(CallLog callLog, string userName, bool isAdmin, int age)
 {
-    var service = Parrot.Create<IUserService>(callLog);
+    var parrot = new Parrot(callLog);
+    var service = parrot.Create<IUserService>();
     
     var user = service.CreateUser(userName, isAdmin, age);
     
@@ -905,7 +933,8 @@ SpecRecLogs supports default parameter values, allowing you to omit common param
 [SpecRecLogs]
 public async Task TestUser(CallLog callLog, string userName = "John Doe", bool isAdmin = false, int age = 34)
 {
-    var service = Parrot.Create<IUserService>(callLog);
+    var parrot = new Parrot(callLog);
+    var service = parrot.Create<IUserService>();
     
     var user = service.CreateUser(userName, isAdmin, age);
     

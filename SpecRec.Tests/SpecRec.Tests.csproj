@@ -224,6 +224,9 @@
     <None Update="ParrotTests.ExceptionHandling.CallMismatch_ShouldThrowParrotCallMismatchException.verified.txt">
       <DependentUpon>ParrotTests.cs</DependentUpon>
     </None>
+    <None Update="ParrotTests.NewConstructorSyntax.ParrotInstanceSyntax_ShouldSimplifyMultipleCreations.verified.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

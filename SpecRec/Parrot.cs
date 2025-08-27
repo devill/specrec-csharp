@@ -48,8 +48,13 @@ namespace SpecRec
 
     }
 
-    public static class Parrot
+    public class Parrot(CallLog callLog, ObjectFactory? objectFactory = null)
     {
+        public T Create<T>(string emoji = "🦜") where T : class
+        {
+            return Create<T>(callLog, emoji, objectFactory);
+        }
+
         public static T Create<T>(CallLog callLog, string emoji = "🦜", ObjectFactory? objectFactory = null) where T : class
         {
             var stub = ParrotStub<T>.Create(callLog);
