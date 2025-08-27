@@ -194,7 +194,8 @@ namespace SpecRec
                     catch (Exception ex)
                     {
                         throw new InvalidOperationException(
-                            $"Failed to convert preamble parameter '{paramName}' of value '{valueStr}' to type {paramType.Name}: {ex.Message}", ex);
+                            $"Failed to convert preamble parameter '{paramName}' of value '{valueStr}' to type {paramType.Name}. " +
+                            $"Original error: {ex.GetType().Name}: {ex.Message}", ex);
                     }
                 }
                 else

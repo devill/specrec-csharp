@@ -8,7 +8,7 @@ namespace SpecRec
     {
         public static object? ParseTypedValue(string valueStr, Type targetType, ObjectFactory? objectFactory = null)
         {
-            if (valueStr == "null") return null;
+            if (string.Equals(valueStr, "null", StringComparison.OrdinalIgnoreCase)) return null;
             if (valueStr == "<missing_value>") return "<missing_value>"; // Special placeholder
             
             // Handle object ID format
@@ -103,9 +103,11 @@ namespace SpecRec
         
         private static object ParseByFormat(string valueStr)
         {
-            // Apply strict format rules for fallback parsing
-            if (valueStr == "True") return true;
-            if (valueStr == "False") return false;
+            // Apply more forgiving format rules for fallback parsing
+            if (string.Equals(valueStr, "True", StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(valueStr, "true", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(valueStr, "False", StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(valueStr, "false", StringComparison.OrdinalIgnoreCase)) return false;
             
             // Handle quoted strings
             if (valueStr.StartsWith("\"") && valueStr.EndsWith("\"") && valueStr.Length >= 2)
@@ -144,11 +146,13 @@ namespace SpecRec
         
         public static bool ParseBoolean(string valueStr)
         {
-            if (valueStr == "True") return true;
-            if (valueStr == "False") return false;
+            if (string.Equals(valueStr, "True", StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(valueStr, "true", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(valueStr, "False", StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(valueStr, "false", StringComparison.OrdinalIgnoreCase)) return false;
             
             throw new ParrotTypeConversionException(
-                $"Boolean values must be 'True' or 'False' (case-sensitive). Got: '{valueStr}'");
+                $"Boolean values must be 'True', 'true', 'False', or 'false'. Got: '{valueStr}'");
         }
         
         public static int ParseInt(string valueStr)
