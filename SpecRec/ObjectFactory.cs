@@ -14,6 +14,8 @@ namespace SpecRec
         private readonly Dictionary<object, string> _registeredIdsByObject = new Dictionary<object, string>();
         private int _autoIdCounter = 1;
         private readonly object _registryLock = new object();
+        
+        private readonly Dictionary<Type, (CallLog CallLog, string Icon)> _autoParrotConfigs = new Dictionary<Type, (CallLog, string)>();
 
         public ObjectFactory()
         {
@@ -57,6 +59,12 @@ namespace SpecRec
             if (_alwaysObjects.ContainsKey(interfaceType))
             {
                 return (I)_alwaysObjects[interfaceType];
+            }
+            
+            // Check for auto-substitute configuration
+            if (_autoParrotConfigs.ContainsKey(interfaceType))
+            {
+                return (I)CreateAutoSubstitute(interfaceType);
             }
             
             return (T)Activator.CreateInstance(typeof(T), args)!;
@@ -215,6 +223,7 @@ namespace SpecRec
             var type = typeof(T);
             _alwaysObjects.Remove(type);
             _queuedObjects.Remove(type);
+            _autoParrotConfigs.Remove(type);
             
             // Remove from registry all objects of this type
             lock (_registryLock)
@@ -236,6 +245,7 @@ namespace SpecRec
         {
             _alwaysObjects.Clear();
             _queuedObjects.Clear();
+            _autoParrotConfigs.Clear();
             lock (_registryLock)
             {
                 _registeredObjectsById.Clear();
@@ -286,6 +296,53 @@ namespace SpecRec
             {
                 return _registeredIdsByObject.ContainsKey(obj);
             }
+        }
+
+        public void SetAutoParrot<T>(CallLog callLog, string icon) where T : class
+        {
+            var type = typeof(T);
+            _autoParrotConfigs[type] = (callLog, icon);
+        }
+
+        public bool HasAutoParrot<T>() where T : class
+        {
+            return _autoParrotConfigs.ContainsKey(typeof(T));
+        }
+
+        public void ClearAutoParrot<T>() where T : class
+        {
+            _autoParrotConfigs.Remove(typeof(T));
+        }
+
+        private object CreateAutoSubstitute(Type interfaceType)
+        {
+            var config = _autoParrotConfigs[interfaceType];
+            var callLog = config.CallLog;
+            var icon = config.Icon;
+            
+            // Use reflection to call Parrot.Create<T>(callLog, icon, this)
+            var createMethod = typeof(Parrot).GetMethod("Create", new[] { typeof(CallLog), typeof(string), typeof(ObjectFactory) });
+            if (createMethod == null)
+                throw new InvalidOperationException("Could not find Parrot.Create method");
+                
+            var genericCreateMethod = createMethod.MakeGenericMethod(interfaceType);
+            var parrot = genericCreateMethod.Invoke(null, new object[] { callLog, icon, this });
+            
+            if (parrot == null)
+                throw new InvalidOperationException($"Failed to create parrot for {interfaceType.Name}");
+            
+            // Generate a unique ID and register it
+            var autoId = GenerateAutoId(interfaceType);
+            lock (_registryLock)
+            {
+                if (!_registeredObjectsById.ContainsKey(autoId))
+                {
+                    _registeredObjectsById[autoId] = parrot;
+                    _registeredIdsByObject[parrot] = autoId;
+                }
+            }
+            
+            return parrot;
         }
 
         private string GenerateAutoId(Type objectType)
