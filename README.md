@@ -321,13 +321,12 @@ Constructor call format:
 
 #### Shared SpecBook
 
-Sometimes you may want to add your own logs to the SpecBook. Just create a string builder and pass it in:
+Sometimes you may want to add your own logs to the SpecBook. You can access the CallLog's SpecBook directly:
 
 ```csharp
-var sharedSpecBook = new StringBuilder();
-var logger = new CallLogger(sharedSpecBook);
+var logger = new CallLogger();
 
-sharedSpecBook.AppendLine("🧪 Test: User Authentication Flow");
+logger.SpecBook.AppendLine("🧪 Test: User Authentication Flow");
 
 var wrappedAuth = logger.Wrap<IAuthService>(authService, "🔐");
 var wrappedUser = logger.Wrap<IUserService>(userService, "👤");
@@ -336,7 +335,7 @@ var wrappedUser = logger.Wrap<IUserService>(userService, "👤");
 wrappedAuth.Login("user", "pass");
 wrappedUser.GetProfile(userId);
 
-sharedSpecBook.AppendLine("✅ Authentication completed");
+logger.SpecBook.AppendLine("✅ Authentication completed");
 ```
 
 
@@ -397,7 +396,7 @@ logger.withArgument("user123", "userId")
     .withArgument(true, "isActive")
     .withNote("Validates user permissions")
     .withReturn("authorized")
-    .log("CheckUserAccess");
+    .log("🔧", "CheckUserAccess");
 
 var spec = logger.SpecBook.ToString();
 ```
