@@ -28,7 +28,9 @@ namespace SpecRec.Tests
             
             // Act 
             await SpecRecExecutor.ExecuteTestAsync(
-                async (_) => { return "Return value"; },
+                (Func<Context, Task<string>>)(async (_) => {
+                    return "Return value";
+                }),
                 ctx);
 
             Assert.NotEqual(testDouble, ObjectFactory.Instance().Create<FlightServiceStub>());
@@ -47,8 +49,9 @@ namespace SpecRec.Tests
             var ctx = new Context(callLog, ObjectFactory.Instance());
             // Act & Assert: Should swallow exception
             await SpecRecExecutor.ExecuteTestAsync(
-                async (_) => { throw new InvalidOperationException("Test exception"); },
-                ctx);
+                (Func<Context, Task<string>>)(async (_) => {
+                    throw new InvalidOperationException("Test exception");
+                }), ctx);
 
             Assert.NotEqual(testDouble, ObjectFactory.Instance().Create<FlightServiceStub>());
         }
@@ -94,7 +97,7 @@ namespace SpecRec.Tests
             var ctx = new Context(callLog, ObjectFactory.Instance());
 
             // Act
-            await SpecRecExecutor.ExecuteTestWithParametersAsync(testMethod, ctx, new object[] { 42, "TestUser", true });
+            await SpecRecExecutor.ExecuteTestAsync(testMethod, ctx, 42, "TestUser", true);
         }
         
         [Fact]
@@ -113,7 +116,7 @@ namespace SpecRec.Tests
             var ctx = new Context(callLog, ObjectFactory.Instance());
 
             // Act - should use defaults for age=30 and isAdmin=false
-            await SpecRecExecutor.ExecuteTestWithParametersAsync(testMethod, ctx, new object[] { "John", 30, false });
+            await SpecRecExecutor.ExecuteTestAsync(testMethod, ctx, "John", 30, false);
         }
     }
 

@@ -6,76 +6,57 @@ namespace SpecRec
     {
         /// <summary>
         /// Executes a SpecRec test method with the unified execution flow.
-        /// Handles Context setup, return value capture, exception handling, and cleanup.
+        /// Handles Context setup, optional parameters, return value capture, exception handling, and cleanup.
         /// </summary>
-        public static async Task ExecuteTestAsync(Func<Context, Task<string>> testMethod, Context ctx)
+        public static async Task ExecuteTestAsync(Delegate testMethod, Context ctx, params object[] additionalParameters)
         {
             try 
             {
-                // Execute user method with Context
-                var result = await testMethod(ctx);
-                ctx.CallLog.AppendLine($"Returns: {ValueParser.FormatValue(result)}");
+                object? result;
                 
-            }
-            catch (ParrotException)
-            {
-                // Re-throw ParrotMissingReturnValueException without modification
-                throw;
-            }
-            catch (Exception ex) 
-            {
-                ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
-                // Swallow the exception (don't rethrow regular exceptions)
-            }
-            finally 
-            {
-                await ctx.CallLog.Verify();
-                ctx.Factory.ClearAll();
-            }
-        }
-
-        /// <summary>
-        /// Executes a SpecRec test method with parameters using the unified execution flow.
-        /// Handles Context setup, parameter passing, return value capture, exception handling, and cleanup.
-        /// </summary>
-        public static async Task ExecuteTestWithParametersAsync(Delegate testMethod, Context ctx, object[] parameters)
-        {
-            try 
-            {
-                // Build full parameters array with Context as first parameter
-                var fullParams = new object[parameters.Length + 1];
-                fullParams[0] = ctx;
-                Array.Copy(parameters, 0, fullParams, 1, parameters.Length);
+                // If no additional parameters, call directly (avoid DynamicInvoke overhead)
+                if (additionalParameters.Length == 0 && testMethod is Func<Context, Task<string>> simpleMethod)
+                {
+                    result = await simpleMethod(ctx);
+                }
+                else
+                {
+                    // Build full parameters array with Context as first parameter
+                    var fullParams = new object[additionalParameters.Length + 1];
+                    fullParams[0] = ctx;
+                    Array.Copy(additionalParameters, 0, fullParams, 1, additionalParameters.Length);
+                    
+                    // Execute user method with Context and parameters
+                    var task = testMethod.DynamicInvoke(fullParams);
+                    if (task is Task<string> typedTask)
+                    {
+                        result = await typedTask;
+                    }
+                    else if (task is Task untypedTask)
+                    {
+                        await untypedTask;
+                        result = null;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Test method must return Task or Task<string>, got {task?.GetType()}");
+                    }
+                }
                 
-                // Execute user method with Context and parameters
-                var result = await (Task<string>)testMethod.DynamicInvoke(fullParams)!;
-                ctx.CallLog.AppendLine($"Returns: {ValueParser.FormatValue(result)}");
+                if (result != null)
+                {
+                    ctx.CallLog.AppendLine($"Returns: {ValueParser.FormatValue(result)}");
+                }
             }
             catch (TargetInvocationException tie) when (tie.InnerException != null)
             {
                 // Unwrap TargetInvocationException from DynamicInvoke
                 var ex = tie.InnerException;
-                
-                if (ex is ParrotException)
-                {
-                    // Re-throw Parrot exceptions without modification
-                    throw ex;
-                }
-                else
-                {
-                    ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
-                    // Swallow the exception (don't rethrow regular exceptions)
-                }
+                HandleException(ex, ctx);
             }
-            catch (ParrotException)
+            catch (Exception ex)
             {
-                // Re-throw ParrotMissingReturnValueException without modification
-                throw;
-            }
-            catch (Exception ex) 
-            {
-                ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
-                // Swallow the exception (don't rethrow regular exceptions)
+                HandleException(ex, ctx);
             }
             finally 
             {
@@ -83,6 +64,16 @@ namespace SpecRec
                 ctx.Factory.ClearAll();
             }
         }
-
+        
+        private static void HandleException(Exception ex, Context ctx)
+        {
+            if (ex is ParrotException)
+            {
+                throw ex;
+            }
+            
+            ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
+            // Swallow non-Parrot exceptions
+        }
     }
 }
