@@ -1,7 +1,5 @@
-﻿🧪 Test started
-🔧 Calculate:
+﻿🔧 Calculate:
   🔸 a: 10
   🔸 b: 20
   🔹 Returns: 30
 
-🧪 Test ended

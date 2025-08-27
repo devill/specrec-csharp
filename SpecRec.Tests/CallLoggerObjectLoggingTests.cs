@@ -336,9 +336,7 @@ public static class CallLoggerTestExtensions
 {
     public static string TestFormatValue(this CallLogger callLogger, object? value)
     {
-        var formatValueMethod = typeof(CallLogger).GetMethod("FormatValue", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        
-        return (string)formatValueMethod!.Invoke(callLogger, new[] { value })!;
+        // Use the CallLogger's public FormatValue method
+        return callLogger.FormatValue(value);
     }
 }

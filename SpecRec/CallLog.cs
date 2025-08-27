@@ -215,9 +215,29 @@ namespace SpecRec
             _content.AppendLine();
         }
         
-        private string FormatValue(object? value)
+        public string FormatValue(object? value)
         {
             if (value == null) return "null";
+
+            // Check if object is registered first
+            if (_objectFactory != null && IsComplexObject(value))
+            {
+                var registeredId = _objectFactory.GetRegisteredId(value);
+                if (registeredId != null)
+                    return $"<id:{registeredId}>";
+                else
+                    return $"<unknown:{value.GetType().Name}>";
+            }
+
+            if (TryFormatCollection(value, out var collectionResult))
+                return collectionResult;
+
+            if (TryFormatNumericType(value, out var numericResult))
+                return numericResult;
+
+            if (TryFormatDateTime(value, out var dateResult))
+                return dateResult;
+
             if (value is string str)
             {
                 // Special placeholders should not be quoted
@@ -225,11 +245,97 @@ namespace SpecRec
                     return str;
                 return $"\"{str}\"";
             }
-            if (value is bool b) return b ? "True" : "False";
-            if (value is decimal d) return d.ToString(CultureInfo.InvariantCulture);
-            if (value is double db) return db.ToString(CultureInfo.InvariantCulture);
-            if (value is float f) return f.ToString(CultureInfo.InvariantCulture);
+
             return value.ToString() ?? "null";
+        }
+
+        private bool IsComplexObject(object value)
+        {
+            // Returns true for objects that should be tracked by ID
+            // Returns false for primitives, strings, collections that should use existing formatting
+            var type = value.GetType();
+            
+            // Exclude primitives
+            if (type.IsPrimitive) return false;
+            
+            // Exclude common value types that should use existing formatting
+            if (type == typeof(string)) return false;
+            if (type == typeof(DateTime)) return false;
+            if (type == typeof(decimal)) return false;
+            if (type == typeof(Guid)) return false;
+            
+            // Exclude collections (let existing collection formatting handle them)
+            if (value is System.Collections.IEnumerable && !(value is string))
+                return false;
+                
+            // Everything else is a complex object that should be tracked
+            return true;
+        }
+
+        private bool TryFormatCollection(object value, out string result)
+        {
+            result = string.Empty;
+            
+            // Handle dictionaries specially
+            if (value is System.Collections.IDictionary dict)
+            {
+                var pairs = new List<string>();
+                foreach (System.Collections.DictionaryEntry entry in dict)
+                {
+                    var key = FormatValue(entry.Key);
+                    var val = FormatValue(entry.Value);
+                    pairs.Add($"{key}: {val}");
+                }
+                result = $"{{{string.Join(", ", pairs)}}}";
+                return true;
+            }
+            
+            if (value is System.Collections.IEnumerable enumerable && !(value is string))
+            {
+                var items = new List<string>();
+                foreach (var item in enumerable)
+                {
+                    items.Add(FormatValue(item));
+                }
+                result = $"[{string.Join(",", items)}]";
+                return true;
+            }
+            return false;
+        }
+
+        private bool TryFormatNumericType(object value, out string result)
+        {
+            result = string.Empty;
+
+            switch (value)
+            {
+                case bool b:
+                    result = b ? "True" : "False";
+                    return true;
+                case decimal dec:
+                    result = dec.ToString(CultureInfo.InvariantCulture);
+                    return true;
+                case double d:
+                    result = d.ToString(CultureInfo.InvariantCulture);
+                    return true;
+                case float f:
+                    result = f.ToString(CultureInfo.InvariantCulture);
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private bool TryFormatDateTime(object value, out string result)
+        {
+            result = string.Empty;
+            
+            if (value is DateTime dt)
+            {
+                result = dt.ToString("dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+                return true;
+            }
+            return false;
         }
 
         private void ParseVerifiedContent(string content)

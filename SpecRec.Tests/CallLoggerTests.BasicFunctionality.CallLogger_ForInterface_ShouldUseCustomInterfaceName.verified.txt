@@ -1,4 +1,4 @@
-﻿ TestMethod:
+﻿TestMethod CallLogger_ForInterface_ShouldUseCustomInterfaceName:
   🔸 param1: "test"
   🔹 Returns: "result"
 

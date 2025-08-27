@@ -58,7 +58,7 @@ namespace SpecRec
         public static T Create<T>(CallLog callLog, string emoji = "🦜", ObjectFactory? objectFactory = null) where T : class
         {
             var stub = ParrotStub<T>.Create(callLog);
-            var callLogger = new CallLogger(callLog.SpecBook, emoji, objectFactory);
+            var callLogger = new CallLogger(callLog, objectFactory);
             return callLogger.Wrap<T>(stub, emoji);
         }
     }

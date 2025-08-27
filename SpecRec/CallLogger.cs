@@ -102,7 +102,7 @@ namespace SpecRec
 
         private void SetupContextForTarget(object?[] args)
         {
-            CallLogFormatterContext.SetCurrentLogger(new CallLogger(_logger._specbook, _emoji, _logger._objectFactory));
+            CallLogFormatterContext.SetCurrentLogger(new CallLogger(_logger.CallLog, _logger._objectFactory));
             CallLogFormatterContext.SetCurrentMethodName("ConstructorCalledWith");
         }
 
@@ -139,11 +139,11 @@ namespace SpecRec
 
         private void LogConstructorCall(string interfaceName, ConstructorParameterInfo[] parameters)
         {
-            var callLogger = new CallLogger(_logger._specbook, _emoji, _logger._objectFactory);
+            var callLogger = new CallLogger(_logger.CallLog, _logger._objectFactory);
             callLogger.forInterface(interfaceName);
 
             AddConstructorArguments(callLogger, parameters);
-            callLogger.log("ConstructorCalledWith");
+            callLogger.log(_emoji, "ConstructorCalledWith");
         }
 
         private void AddConstructorArguments(CallLogger callLogger, ConstructorParameterInfo[] parameters)
@@ -215,8 +215,7 @@ namespace SpecRec
 
         private CallLogger CreateCallLogger()
         {
-            var sb = new StringBuilder();
-            return new CallLogger(sb, _emoji, _logger._objectFactory);
+            return new CallLogger(_logger.CallLog, _logger._objectFactory);
         }
 
         private void SetupLoggingContext(CallLogger callLogger, string methodName)
@@ -252,8 +251,7 @@ namespace SpecRec
             }
             
             callLogger.withNote($"Exception: {ex.Message}");
-            callLogger.log(methodName);
-            _logger._specbook.Append(callLogger._specbook.ToString());
+            callLogger.log(_emoji, methodName);
             CallLogFormatterContext.ClearCurrentLogger();
         }
 
@@ -274,8 +272,7 @@ namespace SpecRec
             
             LogOutputParameters(callLogger, targetMethod, args);
             
-            callLogger.log(methodName);
-            _logger._specbook.Append(callLogger._specbook.ToString());
+            callLogger.log(_emoji, methodName);
         }
 
         private void LogInputArguments(CallLogger callLogger, MethodInfo targetMethod, object?[]? args, string methodName)
@@ -337,7 +334,7 @@ namespace SpecRec
             }
         }
 
-        public static T Create(T target, CallLogger logger, string emoji, ObjectFactory? objectFactory = null)
+        public static T Create(T target, CallLogger logger, string emoji)
         {
             var proxy = Create<T, CallLoggerProxy<T>>() as CallLoggerProxy<T>;
             proxy!._target = target;
@@ -349,8 +346,7 @@ namespace SpecRec
 
     public class CallLogger
     {
-        internal readonly StringBuilder _specbook;
-        private readonly string _emoji;
+        private readonly CallLog _callLog;
         internal readonly ObjectFactory? _objectFactory;
         private object? _returnValue;
         private string? _note;
@@ -365,21 +361,45 @@ namespace SpecRec
         internal readonly HashSet<string> _ignoredReturnValues = new();
 
         /// <summary>
-        /// Gets the StringBuilder containing all logged call information (read-only access).
+        /// Gets the StringBuilder containing all logged call information (backward compatibility).
         /// </summary>
-        public StringBuilder SpecBook => _specbook;
+        public StringBuilder SpecBook => _callLog.SpecBook;
 
-        public CallLogger(StringBuilder? specbook = null, string emoji = "", ObjectFactory? objectFactory = null)
+        /// <summary>
+        /// Gets the internal CallLog for advanced usage.
+        /// </summary>
+        internal CallLog CallLog => _callLog;
+
+        /// <summary>
+        /// Formats a value using the same logic as internal logging.
+        /// </summary>
+        public string FormatValue(object? value) => _callLog.FormatValue(value);
+
+        public CallLogger(StringBuilder? specbook = null, ObjectFactory? objectFactory = null)
         {
-            _specbook = specbook ?? new StringBuilder();
-            _emoji = emoji;
+            _objectFactory = objectFactory ?? ObjectFactory.Instance();
+            _callLog = new CallLog(objectFactory: _objectFactory);
+            
+            // For backward compatibility, if a StringBuilder was provided, we need to sync it
+            if (specbook != null && specbook.Length > 0)
+            {
+                _callLog.Append(specbook.ToString());
+                specbook.Clear(); // Prevent duplication
+            }
+        }
+
+        /// <summary>
+        /// Constructor for internal use with specific CallLog.
+        /// </summary>
+        internal CallLogger(CallLog callLog, ObjectFactory? objectFactory = null)
+        {
+            _callLog = callLog;
             _objectFactory = objectFactory ?? ObjectFactory.Instance();
         }
 
-        public T Wrap<T>(T target, string emoji = "🔧", ObjectFactory? objectFactory = null) where T : class
+        public T Wrap<T>(T target, string emoji = "🔧") where T : class
         {
-            var factory = objectFactory ?? _objectFactory;
-            return CallLoggerProxy<T>.Create(target, this, emoji, factory);
+            return CallLoggerProxy<T>.Create(target, this, emoji);
         }
 
         public CallLogger withReturn(object? returnValue, string? description = null)
@@ -414,17 +434,17 @@ namespace SpecRec
             return this;
         }
 
-        public void log([CallerMemberName] string? methodName = null)
+        public void log(string emoji = "🔧", [CallerMemberName] string? methodName = null)
         {
             _methodName = methodName;
 
             if (_methodName == "ConstructorCalledWith")
             {
-                LogConstructorCall();
+                LogConstructorCall(emoji);
             }
             else
             {
-                LogMethodCall();
+                LogMethodCall(emoji);
             }
 
             // Clear parameters for next call
@@ -434,42 +454,42 @@ namespace SpecRec
             _forcedInterfaceName = null;
         }
 
-        private void LogConstructorCall()
+        private void LogConstructorCall(string emoji)
         {
             var interfaceName = _forcedInterfaceName ?? GetInterfaceName();
-            _specbook.AppendLine($"{_emoji} {interfaceName} constructor called with:");
+            _callLog.AppendLine($"{emoji} {interfaceName} constructor called with:");
 
-            foreach (var (name, value, emoji) in _parameters)
+            foreach (var (name, value, paramEmoji) in _parameters)
             {
-                _specbook.AppendLine($"  {emoji} {name}: {value}");
+                _callLog.AppendLine($"  {paramEmoji} {name}: {value}");
             }
 
-            _specbook.AppendLine();
+            _callLog.AppendLine();
         }
 
-        private void LogMethodCall()
+        private void LogMethodCall(string emoji)
         {
             // Use detailed format for all calls
-            _specbook.AppendLine($"{_emoji} {_methodName}:");
+            _callLog.AppendLine($"{emoji} {_methodName}:");
 
-            foreach (var (name, value, emoji) in _parameters)
+            foreach (var (name, value, paramEmoji) in _parameters)
             {
-                var formattedValue = FormatValue(value);
-                _specbook.AppendLine($"  {emoji} {name}: {formattedValue}");
+                var formattedValue = _callLog.FormatValue(value);
+                _callLog.AppendLine($"  {paramEmoji} {name}: {formattedValue}");
             }
 
             if (!string.IsNullOrEmpty(_note))
             {
-                _specbook.AppendLine($"  🗒️ {_note}");
+                _callLog.AppendLine($"  🗒️ {_note}");
             }
 
             if (_returnValue != null)
             {
-                var formattedReturn = FormatValue(_returnValue);
-                _specbook.AppendLine($"  🔹 Returns: {formattedReturn}");
+                var formattedReturn = _callLog.FormatValue(_returnValue);
+                _callLog.AppendLine($"  🔹 Returns: {formattedReturn}");
             }
 
-            _specbook.AppendLine();
+            _callLog.AppendLine();
         }
 
 
@@ -491,124 +511,5 @@ namespace SpecRec
         }
 
 
-        private string FormatValue(object? value)
-        {
-            if (value == null) return "null";
-
-            // NEW: Check if object is registered first
-            if (_objectFactory != null && IsComplexObject(value))
-            {
-                var registeredId = _objectFactory.GetRegisteredId(value);
-                if (registeredId != null)
-                    return $"<id:{registeredId}>";
-                else
-                    return $"<unknown:{value.GetType().Name}>";
-            }
-
-            if (TryFormatCollection(value, out var collectionResult))
-                return collectionResult;
-
-            if (TryFormatNumericType(value, out var numericResult))
-                return numericResult;
-
-            if (TryFormatDateTime(value, out var dateResult))
-                return dateResult;
-
-            if (value is string str)
-            {
-                // Special placeholders should not be quoted
-                if (str == "<missing_value>")
-                    return str;
-                return $"\"{str}\"";
-            }
-
-            return value.ToString() ?? "null";
-        }
-
-        private bool IsComplexObject(object value)
-        {
-            // Returns true for objects that should be tracked by ID
-            // Returns false for primitives, strings, collections that should use existing formatting
-            var type = value.GetType();
-            
-            // Exclude primitives
-            if (type.IsPrimitive) return false;
-            
-            // Exclude common value types that should use existing formatting
-            if (type == typeof(string)) return false;
-            if (type == typeof(DateTime)) return false;
-            if (type == typeof(decimal)) return false;
-            if (type == typeof(Guid)) return false;
-            
-            // Exclude collections (let existing collection formatting handle them)
-            if (value is System.Collections.IEnumerable && !(value is string))
-                return false;
-                
-            // Everything else is a complex object that should be tracked
-            return true;
-        }
-
-        private bool TryFormatCollection(object value, out string result)
-        {
-            result = string.Empty;
-            
-            // Handle dictionaries specially
-            if (value is System.Collections.IDictionary dict)
-            {
-                var pairs = new List<string>();
-                foreach (System.Collections.DictionaryEntry entry in dict)
-                {
-                    var key = FormatValue(entry.Key);
-                    var val = FormatValue(entry.Value);
-                    pairs.Add($"{key}: {val}");
-                }
-                result = $"{{{string.Join(", ", pairs)}}}";
-                return true;
-            }
-            
-            if (value is System.Collections.IEnumerable enumerable && !(value is string))
-            {
-                var items = new List<string>();
-                foreach (var item in enumerable)
-                {
-                    items.Add(FormatValue(item));
-                }
-                result = $"[{string.Join(",", items)}]";
-                return true;
-            }
-            return false;
-        }
-
-        private bool TryFormatNumericType(object value, out string result)
-        {
-            result = string.Empty;
-
-            switch (value)
-            {
-                case decimal dec:
-                    result = dec.ToString(CultureInfo.InvariantCulture);
-                    return true;
-                case double d:
-                    result = d.ToString(CultureInfo.InvariantCulture);
-                    return true;
-                case float f:
-                    result = f.ToString(CultureInfo.InvariantCulture);
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        private bool TryFormatDateTime(object value, out string result)
-        {
-            result = string.Empty;
-            
-            if (value is DateTime dt)
-            {
-                result = dt.ToString("dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
-                return true;
-            }
-            return false;
-        }
     }
 }

@@ -1,4 +1,4 @@
-﻿ ITestService constructor called with:
-  🔸 arg1: param1
-  🔸 arg2: param2
+﻿ConstructorCalledWith CallLogger_LogConstructorCall_ShouldFormatCorrectly:
+  🔸 arg1: "param1"
+  🔸 arg2: "param2"
 

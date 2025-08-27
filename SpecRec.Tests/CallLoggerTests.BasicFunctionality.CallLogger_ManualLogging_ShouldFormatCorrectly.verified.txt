@@ -1,4 +1,4 @@
-﻿ ManualMethod:
+﻿ManualMethod CallLogger_ManualLogging_ShouldFormatCorrectly:
   🔸 firstParam: "value1"
   🔸 secondParam: "value2"
   🗒️ Manual logging test
