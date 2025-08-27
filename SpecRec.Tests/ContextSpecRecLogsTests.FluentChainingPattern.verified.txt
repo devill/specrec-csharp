@@ -1,0 +1,15 @@
+﻿📋 <Test Inputs>
+  🔸 userName: "john.doe"
+  🔸 isAdmin: False
+
+🔐 IAuthService constructor called with:
+
+🔐 Authenticate:
+  🔸 userName: "john.doe"
+  🔹 Returns: True
+
+🔐 GetUserRoles:
+  🔸 userName: "john.doe"
+  🔹 Returns: ["user","viewer"]
+
+Returns: User registered with ID 42

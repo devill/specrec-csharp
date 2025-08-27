@@ -227,6 +227,9 @@
     <None Update="ParrotTests.NewConstructorSyntax.ParrotInstanceSyntax_ShouldSimplifyMultipleCreations.verified.txt">
       <DependentUpon>ParrotTests.cs</DependentUpon>
     </None>
+    <None Update="ContextSpecRecLogsTests.ParrotCreationPattern.received.txt">
+      <DependentUpon>ContextSpecRecLogsTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

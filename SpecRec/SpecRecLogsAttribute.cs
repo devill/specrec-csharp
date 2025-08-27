@@ -162,7 +162,21 @@ namespace SpecRec
         {
             var methodParams = testMethod.GetParameters().ToArray();
             var paramValues = new object[methodParams.Length];
-            paramValues[0] = callLog; // First parameter is always CallLog
+            
+            // Detect first parameter type and create appropriate object
+            var firstParamType = methodParams[0].ParameterType.ToRuntimeType();
+            if (firstParamType == typeof(Context))
+            {
+                // Create Context with CallLog, ObjectFactory, and TestCaseName
+                var factory = ObjectFactory.Instance();
+                var context = new Context(callLog, factory, callLog.TestCaseName);
+                paramValues[0] = context;
+            }
+            else
+            {
+                // Assume CallLog for backward compatibility
+                paramValues[0] = callLog;
+            }
             
             // Match remaining parameters to preamble values by name
             for (int i = 1; i < methodParams.Length; i++)
@@ -185,7 +199,7 @@ namespace SpecRec
                 }
                 else
                 {
-                    // For methods with only CallLog parameter, skip preamble matching
+                    // For methods with only CallLog or Context parameter, skip preamble matching
                     if (methodParams.Length == 1)
                     {
                         break;
@@ -226,7 +240,7 @@ namespace SpecRec
             var sb = new StringBuilder();
             sb.AppendLine("📋 <Test Inputs>");
             
-            // Skip the first parameter (CallLog) and generate placeholders for the rest
+            // Skip the first parameter (CallLog or Context) and generate placeholders for the rest
             for (int i = 1; i < methodParams.Length; i++)
             {
                 var paramInfo = methodParams[i];

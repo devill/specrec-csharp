@@ -1,0 +1,10 @@
+﻿📋 <Test Inputs>
+  🔸 input: "test-data"
+  🔸 strictMode: False
+
+✅ Validate:
+  🔸 input: "test-data"
+  🔸 strictMode: False
+  🔹 Returns: True
+
+Returns: Valid

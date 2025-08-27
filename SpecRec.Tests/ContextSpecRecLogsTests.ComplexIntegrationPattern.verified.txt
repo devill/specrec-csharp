@@ -1,0 +1,18 @@
+📋 <Test Inputs>
+  🔸 orderType: "premium"
+  🔸 quantity: 2
+
+📋 IOrderValidator constructor called with:
+
+💳 IPaymentGateway constructor called with:
+
+📋 ValidateOrder:
+  🔸 orderType: "premium"
+  🔸 quantity: 2
+  🔹 Returns: True
+
+💳 ProcessPayment:
+  🔸 amount: 99.99
+  🔹 Returns: "Success - Payment Processed"
+
+Returns: Order processed: 2x premium for 99,99 €

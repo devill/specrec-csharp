@@ -1,0 +1,5 @@
+﻿📋 <Test Inputs>
+  🔸 testScenario: "simple_scenario"
+
+Test scenario: simple_scenario
+Context display name: SimpleTest

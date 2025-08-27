@@ -153,7 +153,7 @@ try
     var result = await InvokeUserMethod("BookFlight", ctx, passengerCount, airlineCode);
     if (result != null)
     {
-        callLog.AppendLine($"🔹 Returns: {ValueParser.FormatValue(result)}");
+        callLog.AppendLine($"Returns: {ValueParser.FormatValue(result)}");
     }
 }
 catch (ParrotMissingReturnValueException)

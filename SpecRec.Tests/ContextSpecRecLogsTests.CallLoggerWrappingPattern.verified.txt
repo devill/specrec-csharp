@@ -1,0 +1,9 @@
+﻿📋 <Test Inputs>
+  🔸 endpoint: "/api/data"
+  🔸 retryCount: 3
+
+🔗 Get:
+  🔸 endpoint: "/api/data"
+  🔹 Returns: "API response data"
+
+Returns: API response data

@@ -1,0 +1,5 @@
+﻿📋 <Test Inputs>
+  🔸 amount: 100.50
+  🔸 currency: "USD"
+
+Returns: Processing stubbed

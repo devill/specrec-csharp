@@ -971,6 +971,172 @@ Created user: John Doe (Admin: True, Age: 34)
 
 This eliminates repetition when many test cases share the same base values, while still allowing full customization when needed.
 
+## Alternative Context Syntax (Recommended)
+
+SpecRec now supports an enhanced Context-first syntax that provides a unified, fluent API for all SpecRec operations. This is the **recommended approach** for new tests, while the CallLog-first syntax remains fully supported for backward compatibility.
+
+### Context-First vs CallLog-First Syntax
+
+**New Context-first syntax (recommended):**
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task BookFlight(Context ctx, int passengerCount, string airlineCode = "UA") 
+{
+    ctx.Substitute<IBookingRepository>("💾")
+       .Substitute<IFlightService>("✈️");
+
+    var coordinator = new BookingCoordinator();
+    var result = coordinator.BookFlight(passengerCount, airlineCode);
+    
+    ctx.CallLog.AppendLine($"🔹 Returns: {result}");
+    await ctx.CallLog.Verify();
+}
+```
+
+**Traditional CallLog-first syntax (still supported):**
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task BookFlight(CallLog callLog, int passengerCount, string airlineCode = "UA")
+{
+    var parrot = new Parrot(callLog);
+    var bookingRepo = parrot.Create<IBookingRepository>("💾");
+    var flightService = parrot.Create<IFlightService>("✈️");
+    
+    ObjectFactory.Instance().SetOne<IBookingRepository>(bookingRepo);
+    ObjectFactory.Instance().SetOne<IFlightService>(flightService);
+
+    var coordinator = new BookingCoordinator();
+    var result = coordinator.BookFlight(passengerCount, airlineCode);
+    
+    callLog.AppendLine($"🔹 Returns: {result}");
+    await callLog.Verify();
+}
+```
+
+### Context API Methods
+
+The Context class provides a unified, fluent interface for all SpecRec operations:
+
+#### Substitute Pattern (Recommended)
+Automatically sets up ObjectFactory to create parrots when `Create<T>()` is called:
+
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task ProcessPayment(Context ctx, decimal amount, string currency = "USD") 
+{
+    ctx.Substitute<IPaymentProcessor>("💳")
+       .Substitute<ILogger>("📝");
+
+    var service = new PaymentService(); // Uses ObjectFactory.Create<T>() internally
+    var result = service.ProcessPayment(amount, currency);
+    
+    ctx.CallLog.AppendLine($"🔹 Returns: {result}");
+    await ctx.CallLog.Verify();
+}
+```
+
+#### Object Registration
+Register existing objects with the ObjectFactory:
+
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task ComplexIntegration(Context ctx, string orderType, int quantity = 1)
+{
+    var inventoryService = new InventoryServiceStub();
+    var priceCalculator = new PriceCalculatorStub();
+    
+    ctx.Substitute<IOrderValidator>("📋")
+       .Substitute<IPaymentGateway>("💳")
+       .SetAlways<IInventoryService>(inventoryService, "inventory")
+       .SetOne<IPriceCalculator>(priceCalculator, "calculator");
+
+    var orderProcessor = new OrderProcessor();
+    var result = orderProcessor.ProcessOrder(orderType, quantity);
+    
+    ctx.CallLog.AppendLine($"🔹 Returns: {result}");
+    await ctx.CallLog.Verify();
+}
+```
+
+#### Call Logger Wrapping
+Wrap existing objects to track their method calls:
+
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task TrackExternalCalls(Context ctx, string endpoint, int retryCount = 3) 
+{
+    var apiClient = new HttpApiClient();
+    var trackedClient = ctx.Wrap(apiClient, "🔗");
+
+    var service = new ExternalService(trackedClient);
+    var result = service.FetchDataWithRetries(endpoint, retryCount);
+    
+    ctx.CallLog.AppendLine($"🔹 Returns: {result}");
+    await ctx.CallLog.Verify();
+}
+```
+
+#### Direct Parrot Creation
+Create parrot test doubles directly (not registered with ObjectFactory):
+
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task ValidateInput(Context ctx, string input, bool strictMode = false) 
+{
+    var validator = ctx.Parrot<IValidator>("✅");
+    
+    var service = new ValidationService(validator);
+    var result = service.ValidateUserInput(input, strictMode);
+    
+    ctx.CallLog.AppendLine($"Returns: {result}");
+    await ctx.CallLog.Verify();
+}
+```
+
+### Migration Strategy
+
+You can gradually migrate from CallLog-first to Context-first syntax:
+
+1. **Keep existing tests unchanged** - CallLog-first syntax continues to work
+2. **Use Context-first for new tests** - Get the benefits of the improved API
+3. **Migrate critical tests when convenient** - No rush, both syntaxes coexist
+
+### Verified File Compatibility
+
+Both syntaxes use the same verified file format, making migration seamless:
+
+**BookFlight.EventCreation.verified.txt:**
+```
+📋 <Test Inputs>
+  🔸 passengerCount: 2
+  🔸 airlineCode: "AA"
+
+💾 IsAvailable:
+  🔸 airlineCode: "AA"
+  🔸 passengerCount: 2
+  🔹 Returns: True
+
+✈️ CalculatePrice:
+  🔸 airlineCode: "AA"
+  🔸 passengerCount: 2
+  🔹 Returns: 450.00
+
+💾 CreateReservation:
+  🔸 airlineCode: "AA"
+  🔸 passengerCount: 2
+  🔹 Returns: 12345
+
+Returns: "Booked flight AA for 2 passengers, reservation #12345, price: $450.00"
+```
+
+This file works identically with both Context-first and CallLog-first test methods.
+
 ## Planned Components
 
 - **Automated test discovery**: Generates call logs automatically to create 100% branch coverage of SUT

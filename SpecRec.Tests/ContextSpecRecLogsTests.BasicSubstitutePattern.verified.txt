@@ -1,0 +1,24 @@
+﻿📋 <Test Inputs>
+  🔸 passengerCount: 1
+  🔸 airlineCode: "UA"
+
+💾 IBookingRepository constructor called with:
+
+✈️ IFlightService constructor called with:
+
+💾 IsAvailable:
+  🔸 airlineCode: "UA"
+  🔸 passengerCount: 1
+  🔹 Returns: True
+
+✈️ CalculatePrice:
+  🔸 airlineCode: "UA"
+  🔸 passengerCount: 1
+  🔹 Returns: 299.99
+
+💾 CreateReservation:
+  🔸 airlineCode: "UA"
+  🔸 passengerCount: 1
+  🔹 Returns: 54321
+
+Returns: Booked flight UA for 1 passengers, reservation #54321, price: 299,99 €

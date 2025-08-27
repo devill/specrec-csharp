@@ -2,7 +2,7 @@ namespace SpecRec
 {
     public class Context
     {
-        internal CallLog CallLog { get; }
+        public CallLog CallLog { get; }
         internal ObjectFactory Factory { get; }
         internal CallLogger CallLogger { get; }
         internal Parrot ParrotFactory { get; }
