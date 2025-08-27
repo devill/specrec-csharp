@@ -19,17 +19,19 @@ This document outlines the design for a unified `[SpecRec]` test interface that 
 ```csharp
 public class Context
 {
-    // Substitute - creates a parrot and registers in factory
-    public Context Substitute<T>(char icon, string? id = null) where T : class;
+    // Substitute - sets up ObjectFactory to create new parrots automatically for T
+    // Every time ObjectFactory.Create<T>() is called, creates a new parrot and registers it with a unique ID
+    public Context Substitute<T>(string icon = "🔧") where T : class;
+    
+    // CallLogger operations - work with existing objects (simple delegators)
+    public T Wrap<T>(T obj, string icon = "🔧") where T : class;   // Wraps but doesn't register
+    public T Parrot<T>(string icon = "🦜") where T : class;        // Creates parrot but doesn't register
 
     // ObjectFactory operations - register existing objects
     public Context SetAlways<T>(T obj, string? id = null) where T : class;
     public Context SetOne<T>(T obj, string? id = null) where T : class;
-
-    // CallLogger operations - work with existing objects
-    public T Wrap<T>(T obj, char? icon = '🔧') where T : class;         // Wraps but doesn't register
-    public T CreateParrot<T>(char? icon = '🦜') where T : class;        // Creates but doesn't register
-
+    public Context Register<T>(T obj, string id) where T : class;
+    
     // Display name for test parameters
     public override string ToString() => TestCaseName ?? "DefaultCase";
 
@@ -37,6 +39,8 @@ public class Context
     internal string? TestCaseName { get; set; }
     internal CallLog CallLog { get; set; }
     internal ObjectFactory Factory { get; set; }
+    internal CallLogger CallLogger { get; set; } // Instantiated with CallLog and Factory
+    internal Parrot Parrot { get; set; }  // Instantiated with CallLog and Factory
 }
 ```
 
@@ -56,8 +60,8 @@ public class SpecRecAttribute : TheoryAttribute
 [SpecRec]
 public async Task BookFlight(Context ctx, int passengerCount, string airlineCode = "UA") 
 {
-    ctx.Substitute<IBookingRepository>('💾')
-       .Substitute<IFlightService>('✈️', "flightServiceId");
+    ctx.Substitute<IBookingRepository>("💾")
+       .Substitute<IFlightService>("✈️");
 
     var coordinator = new BookingCoordinator();
     return coordinator.BookFlight(passengerCount, airlineCode);
@@ -88,7 +92,7 @@ public async Task ProcessPayment(Context ctx, decimal amount, string currency = 
 public async Task TrackExternalCalls(Context ctx, string endpoint, int retryCount = 3) 
 {
     var apiClient = new HttpApiClient();
-    var trackedClient = ctx.Wrap(apiClient, '🔗');
+    var trackedClient = ctx.Wrap(apiClient, "🔗");
 
     var service = new ExternalService(trackedClient);
     return service.FetchDataWithRetries(endpoint, retryCount);
@@ -100,7 +104,7 @@ public async Task TrackExternalCalls(Context ctx, string endpoint, int retryCoun
 [SpecRec]
 public async Task ValidateInput(Context ctx, string input, bool strictMode = false) 
 {
-    var validator = ctx.CreateParrot<IValidator>('✅');
+    var validator = ctx.Parrot<IValidator>("✅");
     
     var service = new ValidationService(validator);
     return service.ValidateUserInput(input, strictMode);
@@ -112,8 +116,8 @@ public async Task ValidateInput(Context ctx, string input, bool strictMode = fal
 [SpecRec]
 public async Task ValidateInput(Context ctx, string input, bool strictMode = false) 
 {
-    var validator = ctx.CreateParrot<IValidator>('✅');
-    ctx.Register(validator, 'PaymentValidator')
+    var validator = ctx.Parrot<IValidator>("✅");
+    ctx.Register(validator, "PaymentValidator");
     
     var service = new ValidationService(validator);
     return service.ValidateUserInput(input, strictMode);
@@ -127,7 +131,7 @@ public async Task ValidateInput(Context ctx, string input, bool strictMode = fal
 [SpecRec]
 public async Task BookFlight(Context ctx, int passengerCount, string airlineCode = "UA") 
 {
-    ctx.Substitute<IBookingRepository>('💾');
+    ctx.Substitute<IBookingRepository>("💾");
     var coordinator = new BookingCoordinator();
     return coordinator.BookFlight(passengerCount, airlineCode);
 }
@@ -176,6 +180,42 @@ finally
 - **Resource Safety**: Automatic cleanup prevents test interference
 - **Consistency**: Single API for all SpecRec operations
 - **Migration Path**: Can coexist with existing test patterns
+
+## ObjectFactory Extensions Required
+
+To support the `Substitute<T>()` functionality, the ObjectFactory needs to be extended with new capabilities:
+
+```csharp
+public class ObjectFactory 
+{
+    // Existing methods...
+    
+    // New method: Set up automatic parrot substitution for type T
+    public void SetAutoParrot<T>(CallLog callLog, string icon) where T : class
+    {
+        // When Create<T>() is called, automatically:
+        // 1. Create a new Parrot<T> with the specified icon
+        // 2. Generate a unique ID (e.g., "T_1", "T_2", etc.)
+        // 3. Register the parrot with the generated ID
+        // 4. Return the parrot instance
+    }
+    
+    // Enhanced Create method that checks for auto-substitutes
+    public T Create<T>(params object[] args) where T : class
+    {
+        // Check if T has auto-substitute configured
+        if (HasAutoSubstitute<T>())
+        {
+            return CreateAutoSubstitute<T>();
+        }
+        
+        // Fall back to normal creation logic
+        return base.Create<T>(args);
+    }
+}
+```
+
+This enables the seamless `ctx.Substitute<IService>("🔧")` followed by normal `ObjectFactory.Create<IService>()` calls in the system under test.
 
 ## Technical Considerations
 
