@@ -17,10 +17,6 @@ namespace SpecRec
         
         private readonly Dictionary<Type, (CallLog CallLog, string Icon)> _autoParrotConfigs = new Dictionary<Type, (CallLog, string)>();
 
-        public ObjectFactory()
-        {
-        }
-
         public static ObjectFactory Instance()
         {
             if (_instance == null)
