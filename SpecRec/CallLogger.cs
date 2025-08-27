@@ -374,7 +374,8 @@ namespace SpecRec
         /// Formats a value using the same logic as internal logging.
         /// </summary>
         public string FormatValue(object? value) => _callLog.FormatValue(value);
-
+        
+        [Obsolete("Use CallLogger() or CallLogger(CallLog, ObjectFactory) instead. StringBuilder-based constructor is deprecated.")]
         public CallLogger(StringBuilder? specbook = null, ObjectFactory? objectFactory = null)
         {
             _objectFactory = objectFactory ?? ObjectFactory.Instance();
@@ -391,7 +392,7 @@ namespace SpecRec
         /// <summary>
         /// Constructor for internal use with specific CallLog.
         /// </summary>
-        internal CallLogger(CallLog callLog, ObjectFactory? objectFactory = null)
+        public CallLogger(CallLog callLog, ObjectFactory? objectFactory = null)
         {
             _callLog = callLog;
             _objectFactory = objectFactory ?? ObjectFactory.Instance();
