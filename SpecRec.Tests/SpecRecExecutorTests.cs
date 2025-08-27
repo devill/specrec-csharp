@@ -75,6 +75,46 @@ namespace SpecRec.Tests
 
             Assert.NotEqual(testDouble, ObjectFactory.Instance().Create<FlightServiceStub>());
         }
+
+        [Fact]
+        public async Task ExecuteAsync_WithTestInputParameters_ShouldPassParametersToMethod()
+        {
+            // Arrange: Method that uses test input parameters
+            Func<Context, int, string, bool, Task<string>> testMethod = async (Context ctx, int count, string name, bool isActive) =>
+            {
+                return $"Count: {count}, Name: {name}, Active: {isActive}";
+            };
+
+            var callLog = CallLog.FromVerifiedFile();
+            // Set up preamble parameters that would normally come from the verified file
+            callLog.PreambleParameters["count"] = "42";
+            callLog.PreambleParameters["name"] = "\"TestUser\"";
+            callLog.PreambleParameters["isActive"] = "True";
+            
+            var ctx = new Context(callLog, ObjectFactory.Instance());
+
+            // Act
+            await SpecRecExecutor.ExecuteTestWithParametersAsync(testMethod, ctx, new object[] { 42, "TestUser", true });
+        }
+        
+        [Fact]
+        public async Task ExecuteAsync_WithDefaultParameters_ShouldUseDefaultsWhenNotInPreamble()
+        {
+            // Arrange: Method with default parameters
+            Func<Context, string, int, bool, Task<string>> testMethod = async (Context ctx, string name, int age, bool isAdmin) =>
+            {
+                return $"Name: {name}, Age: {age}, Admin: {isAdmin}";
+            };
+
+            var callLog = CallLog.FromVerifiedFile();
+            // Only set name in preamble, let others use defaults
+            callLog.PreambleParameters["name"] = "\"John\"";
+            
+            var ctx = new Context(callLog, ObjectFactory.Instance());
+
+            // Act - should use defaults for age=30 and isAdmin=false
+            await SpecRecExecutor.ExecuteTestWithParametersAsync(testMethod, ctx, new object[] { "John", 30, false });
+        }
     }
 
 

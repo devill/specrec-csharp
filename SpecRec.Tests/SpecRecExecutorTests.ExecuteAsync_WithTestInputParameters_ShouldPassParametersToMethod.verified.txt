@@ -1,0 +1,6 @@
+﻿📋 <Test Inputs>
+  🔸 count: 42
+  🔸 name: "TestUser"
+  🔸 isActive: True
+
+Returns: "Count: 42, Name: TestUser, Active: True"

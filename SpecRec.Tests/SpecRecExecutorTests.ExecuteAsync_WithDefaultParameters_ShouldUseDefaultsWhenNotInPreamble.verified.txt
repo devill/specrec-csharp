@@ -1,0 +1,4 @@
+﻿📋 <Test Inputs>
+  🔸 name: "John"
+
+Returns: "Name: John, Age: 30, Admin: False"
