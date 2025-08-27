@@ -14,7 +14,7 @@ namespace SpecRec.Tests
         /// Basic substitute pattern - demonstrates auto-parrot creation via ctx.Substitute()
         /// </summary>
         [SpecRec]
-        public async Task BookFlight(Context ctx, int passengerCount, string airlineCode = "UA")
+        public async Task<string> BookFlight(Context ctx, int passengerCount, string airlineCode = "UA")
         {
             ctx.Substitute<IBookingRepository>("💾")
                .Substitute<IFlightService>("✈️");
@@ -27,7 +27,7 @@ namespace SpecRec.Tests
         /// Object registration pattern - mix of real objects and parrots
         /// </summary>
         [SpecRec]
-        public async Task ProcessPayment(Context ctx, decimal amount, string currency = "USD")
+        public async Task<string> ProcessPayment(Context ctx, decimal amount, string currency = "USD")
         {
             var paymentProcessor = new PaymentProcessorStub();
             var logger = new FakeLogger();
@@ -36,7 +36,7 @@ namespace SpecRec.Tests
                .SetOne<ILogger>(logger, "logger1")
                .Substitute<IAuditService>("📊");
 
-            var service = new PaymentService();
+            var service = new EnhancedPaymentService();
             return service.ProcessPayment(amount, currency);
         }
 
@@ -44,7 +44,7 @@ namespace SpecRec.Tests
         /// CallLogger wrapping pattern - track existing object method calls
         /// </summary>
         [SpecRec]
-        public async Task TrackExternalCalls(Context ctx, string endpoint, int retryCount = 3)
+        public async Task<string> TrackExternalCalls(Context ctx, string endpoint, int retryCount = 3)
         {
             var apiClient = new HttpApiClientStub();
             var trackedClient = ctx.Wrap<IHttpApiClient>(apiClient, "🔗");
@@ -57,7 +57,7 @@ namespace SpecRec.Tests
         /// Direct parrot creation pattern - create parrot without registering with ObjectFactory
         /// </summary>
         [SpecRec]
-        public async Task ValidateInput(Context ctx, string input, bool strictMode = false)
+        public async Task<string> ValidateInput(Context ctx, string input, bool strictMode = false)
         {
             var validator = ctx.Parrot<IValidator>("✅");
             
@@ -69,7 +69,7 @@ namespace SpecRec.Tests
         /// Complex integration pattern - multiple dependency patterns combined
         /// </summary>
         [SpecRec]
-        public async Task ProcessOrder(Context ctx, string orderType, int quantity = 1)
+        public async Task<string> ProcessOrder(Context ctx, string orderType, int quantity = 1)
         {
             var inventoryService = new InventoryServiceStub();
             var priceCalculator = new PriceCalculatorStub();
@@ -87,7 +87,7 @@ namespace SpecRec.Tests
         /// Fluent chaining with registration - demonstrates ctx.Register() method
         /// </summary>
         [SpecRec]
-        public async Task RegisterUser(Context ctx, string userName, bool isAdmin = false)
+        public async Task<string> RegisterUser(Context ctx, string userName, bool isAdmin = false)
         {
             var userService = new UserServiceStub();
             var logger = new FakeLogger();
@@ -105,12 +105,18 @@ namespace SpecRec.Tests
         /// Test with minimal parameters - just Context, no additional params
         /// </summary>
         [SpecRec]
-        public async Task SimpleOperation(Context ctx)
+        public async Task<string> SimpleOperation(Context ctx)
         {
-            ctx.Substitute<IEmailService>("📧");
+            // For now, manually call SpecRecExecutor to test the discovery logic
+            await SpecRecExecutor.ExecuteTestAsync((Func<Context, Task<string>>)(async (ctx) =>
+            {
+                ctx.Substitute<IEmailService>("📧");
+                
+                var service = Create<IEmailService>();
+                return service.SendWelcomeEmail("test@example.com", "Welcome!");
+            }), ctx);
             
-            var service = Create<IEmailService>();
-            return service.SendWelcomeEmail("test@example.com", "Welcome!");
+            return "Test completed"; // This won't be reached due to SpecRecExecutor
         }
 
         /// <summary>
@@ -129,7 +135,7 @@ namespace SpecRec.Tests
         /// Missing return value test - ParrotMissingReturnValueException should be re-thrown
         /// </summary>
         [SpecRec]
-        public async Task MissingReturnValue(Context ctx, int count = 5)
+        public async Task<string> MissingReturnValue(Context ctx, int count = 5)
         {
             var validator = ctx.Parrot<IValidator>("✅");
             
@@ -157,7 +163,7 @@ namespace SpecRec.Tests
         /// Context display name test - verify ctx.ToString() shows test case name
         /// </summary>
         [SpecRec]
-        public async Task ContextDisplayName(Context ctx, string testScenario = "default")
+        public async Task<string> ContextDisplayName(Context ctx, string testScenario = "default")
         {
             ctx.CallLog.AppendLine($"Test scenario: {testScenario}");
             ctx.CallLog.AppendLine($"Context display name: {ctx}");
@@ -168,7 +174,7 @@ namespace SpecRec.Tests
         /// Test with complex object parameters and array return
         /// </summary>
         [SpecRec]
-        public async Task ProcessOrderBatch(Context ctx, string[] orderIds, bool urgent = false)
+        public async Task<string> ProcessOrderBatch(Context ctx, string[] orderIds, bool urgent = false)
         {
             ctx.Substitute<IBatchProcessor>("🔄")
                .Substitute<INotificationService>("🔔");
@@ -181,7 +187,7 @@ namespace SpecRec.Tests
         /// Test that returns null to verify null handling
         /// </summary>
         [SpecRec]
-        public async Task FindOptionalData(Context ctx, string searchTerm = "missing")
+        public async Task<string?> FindOptionalData(Context ctx, string searchTerm = "missing")
         {
             ctx.Substitute<IDataService>("🔍");
             
@@ -193,7 +199,7 @@ namespace SpecRec.Tests
         /// Test with DateTime parameters to verify date formatting
         /// </summary>
         [SpecRec]
-        public async Task ScheduleTask(Context ctx, DateTime scheduleTime, bool recurring = false)
+        public async Task<string> ScheduleTask(Context ctx, DateTime scheduleTime, bool recurring = false)
         {
             ctx.Substitute<IScheduler>("⏰");
             
@@ -206,7 +212,7 @@ namespace SpecRec.Tests
         /// This test should generate multiple test cases, one for each verified file found
         /// </summary>
         [SpecRec]
-        public async Task ProcessMultipleScenarios(Context ctx, string scenario, int count = 1)
+        public async Task<string> ProcessMultipleScenarios(Context ctx, string scenario, int count = 1)
         {
             ctx.Substitute<IScenarioProcessor>("📊")
                .Substitute<IMetricsCollector>("📈");
@@ -272,8 +278,8 @@ namespace SpecRec.Tests
         int GetProcessedCount();
     }
 
-    // Enhanced PaymentService that uses audit service
-    public class PaymentService
+    // Enhanced PaymentService that uses audit service for SpecRec tests
+    public class EnhancedPaymentService
     {
         public string ProcessPayment(decimal amount, string currency)
         {
