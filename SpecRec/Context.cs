@@ -7,7 +7,7 @@ namespace SpecRec
         internal CallLogger CallLogger { get; }
         internal Parrot ParrotFactory { get; }
         internal string? TestCaseName { get; }
-
+        
         public Context(CallLog callLog, ObjectFactory factory, string? testCaseName = null)
         {
             CallLog = callLog ?? throw new ArgumentNullException(nameof(callLog));

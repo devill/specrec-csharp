@@ -13,12 +13,16 @@ namespace SpecRec
         private readonly List<(string methodName, object?[] args, object? returnValue)> _loggedCalls;
         private readonly ObjectFactory? _objectFactory;
         private readonly string? _sourceFilePath;
+        private readonly string? _sourceTestName;
+        private readonly string? _sourceTestFilePath;
 
         public StringBuilder SpecBook => _content;
         public Dictionary<string, string> PreambleParameters { get; private set; } = new();
         public string? TestCaseName { get; internal set; }
+        internal string? SourceTestName => _sourceTestName;
+        internal string? SourceTestFilePath => _sourceTestFilePath;
 
-        public CallLog(string? verifiedContent = null, ObjectFactory? objectFactory = null, string? sourceFilePath = null)
+        public CallLog(string? verifiedContent = null, ObjectFactory? objectFactory = null, string? sourceFilePath = null, string? sourceTestName = null, string? sourceTestFilePath = null)
         {
             _content = new StringBuilder();
             _parsedCalls = new List<ParsedCall>();
@@ -26,6 +30,8 @@ namespace SpecRec
             _loggedCalls = new List<(string, object?[], object?)>();
             _objectFactory = objectFactory;
             _sourceFilePath = sourceFilePath;
+            _sourceTestName = sourceTestName;
+            _sourceTestFilePath = sourceTestFilePath;
 
             if (!string.IsNullOrEmpty(verifiedContent))
             {
@@ -33,13 +39,13 @@ namespace SpecRec
             }
         }
 
-        public static CallLog FromFile(string filePath, ObjectFactory? objectFactory = null)
+        public static CallLog FromFile(string filePath, ObjectFactory? objectFactory = null, string? sourceTestName = null, string? sourceTestFilePath = null)
         {
             if (!File.Exists(filePath))
-                return new CallLog(objectFactory: objectFactory, sourceFilePath: filePath); // Return empty CallLog if no verified file exists yet
+                return new CallLog(objectFactory: objectFactory, sourceFilePath: filePath, sourceTestName: sourceTestName, sourceTestFilePath: sourceTestFilePath); // Return empty CallLog if no verified file exists yet
 
             var content = File.ReadAllText(filePath);
-            return new CallLog(content, objectFactory, filePath);
+            return new CallLog(content, objectFactory, filePath, sourceTestName, sourceTestFilePath);
         }
 
         public static CallLog FromVerifiedFile(ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
@@ -55,11 +61,11 @@ namespace SpecRec
             
             if (File.Exists(expectedFilePath))
             {
-                return FromFile(expectedFilePath, objectFactory);
+                return FromFile(expectedFilePath, objectFactory, testName, sourceFilePath);
             }
 
             // If no file found, return empty CallLog (will cause missing return value exceptions)
-            return new CallLog(objectFactory: objectFactory);
+            return new CallLog(objectFactory: objectFactory, sourceTestName: testName, sourceTestFilePath: sourceFilePath);
         }
 
 

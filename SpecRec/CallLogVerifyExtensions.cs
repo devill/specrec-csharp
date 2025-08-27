@@ -9,10 +9,14 @@ namespace SpecRec
             [CallerFilePath] string? sourceFilePath = null,
             params object[] parameters)
         {
-            if (string.IsNullOrEmpty(methodName) || string.IsNullOrEmpty(sourceFilePath))
+            // Prefer stored source information from when CallLog was created
+            var actualMethodName = callLog.SourceTestName ?? methodName;
+            var actualSourceFilePath = callLog.SourceTestFilePath ?? sourceFilePath;
+            
+            if (string.IsNullOrEmpty(actualMethodName) || string.IsNullOrEmpty(actualSourceFilePath))
                 throw new ArgumentException("Could not determine test name or source file path");
 
-            var testDirectory = Path.GetDirectoryName(sourceFilePath);
+            var testDirectory = Path.GetDirectoryName(actualSourceFilePath);
             if (string.IsNullOrEmpty(testDirectory))
                 throw new ArgumentException("Could not determine test directory from source file path");
 
@@ -30,13 +34,13 @@ namespace SpecRec
             {
                 // Use test case specific filename for SpecRecTheory tests  
                 // Build the base name directly without the .verified.txt extension
-                var regularBaseName = FilenameGenerator.GetBaseFileName(methodName, sourceFilePath);
+                var regularBaseName = FilenameGenerator.GetBaseFileName(actualMethodName, actualSourceFilePath);
                 baseFileName = $"{regularBaseName}.{currentTestCase}";
             }
             else
             {
                 // Use regular base filename for normal tests
-                baseFileName = FilenameGenerator.GetBaseFileName(methodName, sourceFilePath, parameters);
+                baseFileName = FilenameGenerator.GetBaseFileName(actualMethodName, actualSourceFilePath, parameters);
             }
             
             var settings = new VerifySettings();
@@ -47,53 +51,6 @@ namespace SpecRec
             var contentToVerify = callLog.ToString();
             
             return Verifier.Verify(contentToVerify, settings);
-        }
-
-        private static string StripPreambleFromOutput(string content)
-        {
-            var lines = content.Split(new[] { Environment.NewLine, "\n", "\r\n" }, StringSplitOptions.None);
-            var outputLines = new List<string>();
-            bool inPreamble = false;
-
-            foreach (var line in lines)
-            {
-                var trimmedLine = line.Trim();
-                
-                // Check for preamble start
-                if (trimmedLine.StartsWith("📋 <Test Inputs>"))
-                {
-                    inPreamble = true;
-                    continue;
-                }
-
-                // Skip preamble lines
-                if (inPreamble)
-                {
-                    if (trimmedLine.StartsWith("🔸 "))
-                    {
-                        continue;
-                    }
-                    else if (!string.IsNullOrEmpty(trimmedLine))
-                    {
-                        // End of preamble (non-empty, non-parameter line)
-                        inPreamble = false;
-                    }
-                    else
-                    {
-                        // Empty line in preamble, skip it
-                        continue;
-                    }
-                }
-
-                // Add non-preamble lines to output
-                if (!inPreamble)
-                {
-                    outputLines.Add(line);
-                }
-            }
-
-            var result = string.Join("\n", outputLines);
-            return result.TrimEnd('\r', '\n') + (result.Length > 0 ? "\n" : "");
         }
     }
 }
