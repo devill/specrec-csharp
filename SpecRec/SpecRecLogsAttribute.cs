@@ -53,7 +53,7 @@ namespace SpecRec
                 if (allFiles.Length == 0)
                 {
                     // No verified files found - create empty CallLog with simple pattern as default
-                    var emptyCallLog = new CallLog();
+                    var emptyCallLog = new CallLog(null, null, null, methodName, GetTestSourceFilePath(testMethod));
                     emptyCallLog.TestCaseName = ""; // Use empty string for simple pattern
                     testCases.Add(CreateTestCaseData(testMethod, emptyCallLog));
                 }
@@ -66,7 +66,7 @@ namespace SpecRec
 
                         // Load verified file content and create CallLog
                         var content = File.ReadAllText(filePath);
-                        var callLog = new CallLog(content);
+                        var callLog = new CallLog(content, null, null, methodName, GetTestSourceFilePath(testMethod));
                         callLog.TestCaseName = testCaseName;
                         
                         testCases.Add(CreateTestCaseData(testMethod, callLog, filePath));
@@ -77,7 +77,7 @@ namespace SpecRec
             {
                 diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Error discovering test data for {testMethod.Name}: {ex.Message}"));
                 // Fallback to default test case
-                var fallbackCallLog = new CallLog();
+                var fallbackCallLog = new CallLog(null, null, null, testMethod.Name, GetTestSourceFilePath(testMethod));
                 fallbackCallLog.TestCaseName = "";
                 testCases.Add(CreateTestCaseData(testMethod, fallbackCallLog));
             }
@@ -125,6 +125,17 @@ namespace SpecRec
         {
             var type = testMethod.Type.ToRuntimeType();
             return FilenameGenerator.GetFullClassName(type);
+        }
+
+        private string GetTestSourceFilePath(IMethodInfo testMethod)
+        {
+            // Get the test directory where the source file should be located
+            var testDirectory = GetTestDirectory(testMethod);
+            var className = GetClassName(testMethod);
+            
+            // For nested classes like MultiFixture, the source file is typically named after the top-level class
+            var topLevelClassName = className.Split('.')[0];
+            return Path.Combine(testDirectory, $"{topLevelClassName}.cs");
         }
 
         private string ExtractTestCaseFromFileName(string fileName, string className, string methodName)
@@ -189,7 +200,7 @@ namespace SpecRec
                 {
                     try
                     {
-                        paramValues[i] = ValueParser.ParseTypedValue(valueStr, paramType, null); // ObjectFactory not available at this level
+                        paramValues[i] = ValueParser.ParseTypedValue(valueStr, paramType, null) ?? DBNull.Value; // ObjectFactory not available at this level
                     }
                     catch (Exception ex)
                     {
@@ -214,7 +225,7 @@ namespace SpecRec
                     if (runtimeParam?.HasDefaultValue == true)
                     {
                         // Use the default value from the method signature
-                        paramValues[i] = runtimeParam.DefaultValue;
+                        paramValues[i] = runtimeParam.DefaultValue ?? DBNull.Value;
                     }
                     else
                     {

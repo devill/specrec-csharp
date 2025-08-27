@@ -79,44 +79,27 @@ namespace SpecRec.Tests
             Assert.NotEqual(testDouble, ObjectFactory.Instance().Create<FlightServiceStub>());
         }
 
-        [Fact]
-        public async Task ExecuteAsync_WithTestInputParameters_ShouldPassParametersToMethod()
+        [Theory]
+        [SpecRecLogs]
+        public async Task ExecuteAsync_WithTestInputParameters_ShouldPassParametersToMethod(
+            Context ctx, int count, string name, bool isActive ) 
         {
-            // Arrange: Method that uses test input parameters
-            Func<Context, int, string, bool, Task<string>> testMethod = async (Context ctx, int count, string name, bool isActive) =>
+            // Act
+            await SpecRecExecutor.ExecuteTestAsync((Func<Context, int, string, bool, Task<string>>)(async (Context ctx1, int count, string name, bool isActive) =>
             {
                 return $"Count: {count}, Name: {name}, Active: {isActive}";
-            };
-
-            var callLog = CallLog.FromVerifiedFile();
-            // Set up preamble parameters that would normally come from the verified file
-            callLog.PreambleParameters["count"] = "42";
-            callLog.PreambleParameters["name"] = "\"TestUser\"";
-            callLog.PreambleParameters["isActive"] = "True";
-            
-            var ctx = new Context(callLog, ObjectFactory.Instance());
-
-            // Act
-            await SpecRecExecutor.ExecuteTestAsync(testMethod, ctx, 42, "TestUser", true);
+            }), ctx, 42, "TestUser", true);
         }
         
-        [Fact]
-        public async Task ExecuteAsync_WithDefaultParameters_ShouldUseDefaultsWhenNotInPreamble()
+        [Theory]
+        [SpecRecLogs]
+        public async Task ExecuteAsync_WithDefaultParameters_ShouldUseDefaultsWhenNotInPreamble(Context ctx, string name, int age = 30, bool isAdmin = false)
         {
-            // Arrange: Method with default parameters
-            Func<Context, string, int, bool, Task<string>> testMethod = async (Context ctx, string name, int age, bool isAdmin) =>
-            {
-                return $"Name: {name}, Age: {age}, Admin: {isAdmin}";
-            };
-
-            var callLog = CallLog.FromVerifiedFile();
-            // Only set name in preamble, let others use defaults
-            callLog.PreambleParameters["name"] = "\"John\"";
-            
-            var ctx = new Context(callLog, ObjectFactory.Instance());
-
             // Act - should use defaults for age=30 and isAdmin=false
-            await SpecRecExecutor.ExecuteTestAsync(testMethod, ctx, "John", 30, false);
+            await SpecRecExecutor.ExecuteTestAsync((Func<Context, string, int, bool, Task<string>>)(async (Context ctx1, string name1, int age1, bool isAdmin1) =>
+            {
+                return $"Name: {name1}, Age: {age1}, Admin: {isAdmin1}";
+            }), ctx, "John", 30, false);
         }
     }
 
