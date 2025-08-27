@@ -1,0 +1,16 @@
+📋 <Test Inputs>
+  🔸 scenario: "problematic"
+
+📈 RecordScenarioStart:
+  🔸 scenario: "problematic"
+
+📊 ProcessScenario:
+  🔸 scenario: "problematic"
+  🔸 count: 1
+  🔹 Returns: "failed validation"
+
+📈 RecordScenarioEnd:
+  🔸 scenario: "problematic"
+  🔸 result: "failed validation"
+
+Returns: "Scenario 'problematic' processed 1 times with result: failed validation"

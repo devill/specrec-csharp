@@ -1,0 +1,17 @@
+📋 <Test Inputs>
+  🔸 scenario: "optimized"
+  🔸 count: 5
+
+📈 RecordScenarioStart:
+  🔸 scenario: "optimized"
+
+📊 ProcessScenario:
+  🔸 scenario: "optimized"
+  🔸 count: 5
+  🔹 Returns: "completed quickly"
+
+📈 RecordScenarioEnd:
+  🔸 scenario: "optimized"
+  🔸 result: "completed quickly"
+
+Returns: "Scenario 'optimized' processed 5 times with result: completed quickly"

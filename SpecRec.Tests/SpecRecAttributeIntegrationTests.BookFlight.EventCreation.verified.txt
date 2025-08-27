@@ -1,0 +1,20 @@
+📋 <Test Inputs>
+  🔸 passengerCount: 2
+  🔸 airlineCode: "AA"
+
+💾 IsAvailable:
+  🔸 airlineCode: "AA"
+  🔸 passengerCount: 2
+  🔹 Returns: True
+
+✈️ CalculatePrice:
+  🔸 airlineCode: "AA"
+  🔸 passengerCount: 2
+  🔹 Returns: 450.00
+
+💾 CreateReservation:
+  🔸 airlineCode: "AA"
+  🔸 passengerCount: 2
+  🔹 Returns: 12345
+
+Returns: "Booked flight AA for 2 passengers, reservation #12345, price: $450.00"

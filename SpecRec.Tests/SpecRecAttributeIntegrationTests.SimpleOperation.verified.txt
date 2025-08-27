@@ -1,0 +1,6 @@
+📧 SendWelcomeEmail:
+  🔸 recipient: "test@example.com"
+  🔸 message: "Welcome!"
+  🔹 Returns: "Email sent successfully"
+
+Returns: "Email sent successfully"

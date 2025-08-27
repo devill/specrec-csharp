@@ -1,0 +1,12 @@
+📋 <Test Inputs>
+  🔸 amount: 199.99
+  🔸 currency: "EUR"
+
+📊 LogTransaction:
+  🔸 amount: 199.99
+  🔸 currency: "EUR"
+
+📊 GetTransactionId:
+  🔹 Returns: "TXN-789"
+
+Returns: "Payment Processing stubbed - Transaction: TXN-789"

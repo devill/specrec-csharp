@@ -1,0 +1,17 @@
+📋 <Test Inputs>
+  🔸 scenario: "complex"
+  🔸 count: 2
+
+📈 RecordScenarioStart:
+  🔸 scenario: "complex"
+
+📊 ProcessScenario:
+  🔸 scenario: "complex"
+  🔸 count: 2
+  🔹 Returns: "completed with analysis"
+
+📈 RecordScenarioEnd:
+  🔸 scenario: "complex"
+  🔸 result: "completed with analysis"
+
+Returns: "Scenario 'complex' processed 2 times with result: completed with analysis"
