@@ -26,26 +26,16 @@ namespace SpecRec
             
             try
             {
-                var testDirectory = GetTestDirectory(testMethod);
-                var className = GetClassName(testMethod);
+                var testDirectory = FileDiscoveryService.GetTestDirectory(testMethod);
+                var className = FileDiscoveryService.GetClassName(testMethod);
                 var methodName = testMethod.Name;
 
-                // Look for both patterns:
-                // 1. {ClassName}.{MethodName}.verified.txt (simple pattern)
-                // 2. {ClassName}.{MethodName}.{TestCaseName}.verified.txt (with test case)
-                var simplePattern = $"{className}.{methodName}.verified.txt";
-                var complexPattern = $"{className}.{methodName}.*.verified.txt";
-                
-                var simpleFiles = Directory.GetFiles(testDirectory, simplePattern);
-                var complexFiles = Directory.GetFiles(testDirectory, complexPattern);
-                
-                // Combine both patterns, ensuring no duplicates
-                var allFiles = simpleFiles.Concat(complexFiles).Distinct().ToArray();
+                var allFiles = FileDiscoveryService.DiscoverVerifiedFiles(testDirectory, className, methodName);
                 
                 if (allFiles.Length == 0)
                 {
                     // No verified files found - create empty CallLog with simple pattern as default
-                    var emptyCallLog = new CallLog(null, null, null, methodName, GetTestSourceFilePath(testMethod));
+                    var emptyCallLog = new CallLog(null, null, null, methodName, FileDiscoveryService.GetTestSourceFilePath(testMethod));
                     emptyCallLog.TestCaseName = ""; // Use empty string for simple pattern
                     testCases.Add(CreateTestCaseData(testMethod, emptyCallLog));
                 }
@@ -54,11 +44,11 @@ namespace SpecRec
                     foreach (var filePath in allFiles)
                     {
                         var fileName = Path.GetFileNameWithoutExtension(filePath);
-                        var testCaseName = ExtractTestCaseFromFileName(fileName, className, methodName);
+                        var testCaseName = FileDiscoveryService.ExtractTestCaseFromFileName(fileName, className, methodName);
 
                         // Load verified file content and create CallLog
                         var content = File.ReadAllText(filePath);
-                        var callLog = new CallLog(content, null, null, methodName, GetTestSourceFilePath(testMethod));
+                        var callLog = new CallLog(content, null, null, methodName, FileDiscoveryService.GetTestSourceFilePath(testMethod));
                         callLog.TestCaseName = testCaseName;
                         
                         testCases.Add(CreateTestCaseData(testMethod, callLog, filePath));
@@ -69,7 +59,7 @@ namespace SpecRec
             {
                 diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Error discovering test data for {testMethod.Name}: {ex.Message}"));
                 // Fallback to default test case
-                var fallbackCallLog = new CallLog(null, null, null, testMethod.Name, GetTestSourceFilePath(testMethod));
+                var fallbackCallLog = new CallLog(null, null, null, testMethod.Name, FileDiscoveryService.GetTestSourceFilePath(testMethod));
                 fallbackCallLog.TestCaseName = "";
                 testCases.Add(CreateTestCaseData(testMethod, fallbackCallLog));
             }
