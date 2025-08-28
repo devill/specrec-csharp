@@ -33,35 +33,27 @@ Install-Package Verify.Xunit
 
 ## The Complete Picture
 
-Here's what a finished SpecRec test looks like - clean, fast, and comprehensive:
+Here's what a finished SpecRec test looks like:
 
 ```csharp
-[Fact]
-public async Task UserRegistration_ShouldWork()
+[Theory]
+[SpecRecLogs]
+public async Task UserRegistration(Context ctx, string email, string name = "John Doe")
 {
-    using static GlobalObjectFactory;
-    
-    // Initialize a CallLog and Parrot factory
-    var callLog = CallLog.FromVerifiedFile();
-    var parrot = new Parrot(callLog);
- 
-    // Set up test doubles - simplified syntax
-    var emailParrot = parrot.Create<IEmailService>("📧");
-    var dbParrot = parrot.Create<IDatabaseService>("🗃️");
-    
-    // Inject the test doubles
-    SetOne<IEmailService>(emailParrot, "email");
-    SetOne<IDatabaseService>(dbParrot, "userDb");
-    
-    // Act: call your legacy code
-    (new UserService()).RegisterNewUser("john@example.com", "John Doe");
-    
-    // Verify the call log
-    await callLog.Verify();
+    await ctx.Verify(async () =>
+    {
+        // Set up test doubles automatically
+        ctx.Substitute<IEmailService>("📧")
+           .Substitute<IDatabaseService>("🗃️");
+        
+        // Call your legacy code
+        var userService = new UserService();
+        return userService.RegisterNewUser(email, name);
+    });
 }
 ```
 
-**That's it!** When the test runs it creates a log of all interactions you can approve by coping the `.received.txt` file to the corresponding `.verified.txt`.
+When the test runs it creates a log of all interactions you can approve by coping the `.received.txt` file to the corresponding `.verified.txt`.
 
 **UserRegistration_ShouldWork.verified.txt:**
 ```
@@ -76,16 +68,17 @@ public async Task UserRegistration_ShouldWork()
   🔹 Returns: 42
 ```
 
-## How to Get There: The 6-Step SpecRec Workflow
+## How to Get There: The 7-Step SpecRec Workflow
+
+For SpecRec to work you will need to make some fairly simple and mostly automated changes to your codebase, but you get a comprehensive test suite in return.
 
 1. **Identify dependencies** - Find objects outside your system under test that need test doubles
 2. **Break the dependencies** - Change `new EmailService()` to `factory.Create<EmailService>()` so you can control what gets created
-3. **Create the test doubles** - SpecRec uses a Spy called Parrot to log all interactions
-4. **Run the test** - It will fail with "missing return value" exceptions
-5. **Fix return values** - Copy `.received.txt` to `.verified.txt` and fill in expected return values
-6. **Repeat until green** - Each run reveals the next missing return value until your test passes
-
-**Result:** A fast, reliable characterization test that documents exactly what your legacy code does.
+3. **Configure the test doubles** - SpecRec uses a Spy called Parrot to log all interactions
+4. **Act** - Call your system under test as you normally would
+5. **Run the test** - It will fail with "missing return value" exceptions
+6. **Fix return values** - Copy `.received.txt` to `.verified.txt` and fill in expected return values
+7. **Repeat until green** - Each run reveals the next missing return value until your test passes
 
 ## How It Works
 
@@ -94,6 +87,8 @@ SpecRec has three main components that work together:
 1. **ObjectFactory** - Makes dependencies controllable for testing
 2. **CallLogger** - Records method calls and return values
 3. **Parrot** - Replays recorded interactions as test doubles  
+
+These three components are provided as a context for your test.
 
 ## ObjectFactory: Breaking Dependencies
 
@@ -134,6 +129,20 @@ class MyService
 ```
 
 Now you can easily inject a test double:
+
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task UserRegistration(Context ctx, string email, string name = "John Doe")
+{
+    await ctx.Verify(async () =>
+    {
+        ctx.SetOne<IRepository>(fakeRepo);
+    }
+}
+````
+
+In case you want to use the Object Factory in regular tests use this syntax:
 
 ```csharp
 public class MyServiceTests : IDisposable
@@ -197,16 +206,6 @@ var result = Create<MyClass>();
 
 // Always return the same object
 ObjectFactory.Instance().SetAlways<MyClass>(mockObj);
-```
-
-#### Global Factory (Static Access)
-
-```csharp
-using static SpecRec.GlobalObjectFactory;
-
-// Use anywhere without creating factory instances
-var obj = Create<MyClass>("arg1", 42);
-var obj = Create<IMyInterface, MyImplementation>();
 ```
 
 #### Constructor Parameter Logging
@@ -423,27 +422,6 @@ wrappedUserService.SendWelcomeEmail(emailService); // Logs as <id:emailSvc>
 Console.WriteLine(logger.SpecBook.ToString());
 ```
 
-### Migrating Existing Tests
-
-No changes required for existing tests. Object tracking is opt-in:
-
-```csharp
-// Before (still works)
-var logger = new CallLogger();
-
-// After (with object tracking)
-var factory = ObjectFactory.Instance();
-factory.Register(myService, "myService");
-var logger = new CallLogger();
-```
-
-### Best Practices
-
-1. **Use descriptive IDs**: `"userDb"`, `"emailSvc"` instead of `"obj1"`, `"obj2"`
-2. **Register before wrapping**: Register all objects before creating wrapped services
-3. **Consistent ObjectFactory**: Use the same ObjectFactory instance for logging and replay
-4. **Auto-generated IDs**: Let ObjectFactory generate descriptive IDs with `SetOne()` and `SetAlways()`
-
 ### How It Works
 
 When you register objects with the global ObjectFactory:
@@ -576,20 +554,6 @@ The parser requires the target type to be known, eliminating guesswork:
 - **Immediate error validation**: Invalid formats like `<unknown>` or empty object IDs fail immediately during file loading
 - **Type compatibility checking**: Object ID resolution validates that resolved objects can be assigned to the expected type
 
-### Enhanced Error Messages
-
-When objects aren't registered in the ObjectFactory, SpecRec now provides helpful type information:
-
-**Before**: `<unknown>`  
-**After**: `<unknown:EmailService>`
-
-This improvement makes it easier to identify which objects need to be registered for tests to work properly.
-
-### Backward Compatibility
-
-The parsing system maintains compatibility with existing verified files while enforcing stricter rules for new content. Legacy `<unknown>` markers are still supported but will be gradually replaced with the enhanced `<unknown:TypeName>` format for better debugging.
-
-
 ## Parrot: Intelligent Test Doubles
 
 Provides intelligent test doubles that replay method calls and return values from verified specification files. Parrot eliminates the tedious work of manually setting up stubs by automatically replaying the exact interactions from your verified specification files.
@@ -679,40 +643,11 @@ Now the test passes! Parrot replays the exact return values from the verified fi
 #### Creating Parrot Test Doubles
 
 ```csharp
-// Basic usage with default parrot emoji
-var parrot = Parrot.Create<IMyService>(callLog);
-
-// Custom emoji for better visual distinction
-var parrot = Parrot.Create<IMyService>(callLog, "🎭");
-
-// New simplified syntax - reusable parrot factory
-var callLog = CallLog.FromFile("path/to/verified.txt");
-var parrotFactory = new Parrot(callLog);
-var service = parrotFactory.Create<IMyService>("🔧");
-```
-
-#### Simplified Instance Syntax (New!)
-
-When creating multiple parrot test doubles with the same CallLog, the new instance-based constructor eliminates repetition:
-
-```csharp
-// Traditional approach - repetitive
-var emailParrot = Parrot.Create<IEmailService>(callLog, "📧");
-var dbParrot = Parrot.Create<IDatabaseService>(callLog, "🗃️");
-var authParrot = Parrot.Create<IAuthService>(callLog, "🔐");
-
-// New simplified approach - reusable parrot factory
 var parrot = new Parrot(callLog);
 var emailParrot = parrot.Create<IEmailService>("📧");
 var dbParrot = parrot.Create<IDatabaseService>("🗃️");
 var authParrot = parrot.Create<IAuthService>("🔐");
 ```
-
-**Benefits:**
-- **Less repetition**: No need to pass `callLog` to every `Create()` call
-- **Cleaner tests**: Especially useful when creating many test doubles
-- **Backwards compatible**: Static methods remain unchanged
-- **ObjectFactory integration**: Pass ObjectFactory once to constructor, used by all created parrots
 
 #### Automatic Verified File Discovery
 
@@ -797,30 +732,32 @@ When you are creating tests for an untested sub system you may find that multipl
 ```csharp
 [Theory]
 [SpecRecLogs]
-public async Task TestMultipleScenarios(CallLog callLog)
+public async Task TestMultipleScenarios(Context ctx)
 {
-    var parrot = new Parrot(callLog);
-    var reader = parrot.Create<IInputReader>();
-    var calculator = parrot.Create<ICalculatorService>();
-
-    var result = ProcessInput(reader, calculator);
-
-    callLog.AppendLine($"Result was: {result}");
-    await callLog.Verify();
+    await ctx.Verify(async () =>
+    {
+        ctx.Substitute<IInputReader>()
+           .Substitute<ICalculatorService>();
+        
+        var reader = Create<IInputReader>();
+        var calculator = Create<ICalculatorService>();
+        return ProcessInput(reader, calculator);
+    });
 }
 
 // With test input parameters
 [Theory]
 [SpecRecLogs]
-public async Task TestWithUserData(CallLog callLog, string userName, bool isAdmin, int age)
+public async Task TestWithUserData(Context ctx, string userName, bool isAdmin, int age)
 {
-    var parrot = new Parrot(callLog);
-    var service = parrot.Create<IUserService>();
-    
-    var user = service.CreateUser(userName, isAdmin, age);
-    
-    callLog.AppendLine($"Created user: {userName} (Admin: {isAdmin}, Age: {age})");
-    await callLog.Verify();
+    await ctx.Verify(async () =>
+    {
+        ctx.Substitute<IUserService>();
+        
+        var service = Create<IUserService>();
+        var user = service.CreateUser(userName, isAdmin, age);
+        return $"Created user: {userName} (Admin: {isAdmin}, Age: {age})";
+    });
 }
 
 private int ProcessInput(IInputReader reader, ICalculatorService calculator)
@@ -849,8 +786,6 @@ For example:
 - `MultiFixture.TestMultipleScenarios.AddTwoNumbers.verified.txt`
 - `MultiFixture.TestMultipleScenarios.MultiplyNumbers.verified.txt`
 - `MultiFixture.TestMultipleScenarios.AddZeroes.verified.txt`
-
-#### Test Case Generation
 
 Each verified file becomes a separate test case:
 
@@ -930,19 +865,20 @@ SpecRecLogs supports default parameter values, allowing you to omit common param
 ```csharp
 [Theory]
 [SpecRecLogs]
-public async Task TestUser(CallLog callLog, string userName = "John Doe", bool isAdmin = false, int age = 34)
+public async Task TestUser(Context ctx, string userName = "John Doe", bool isAdmin = false, int age = 34)
 {
-    var parrot = new Parrot(callLog);
-    var service = parrot.Create<IUserService>();
-    
-    var user = service.CreateUser(userName, isAdmin, age);
-    
-    callLog.AppendLine($"Created user: {userName} (Admin: {isAdmin}, Age: {age})");
-    await callLog.Verify();
+    await ctx.Verify(async () =>
+    {
+        ctx.Substitute<IUserService>();
+        
+        var service = Create<IUserService>();
+        var user = service.CreateUser(userName, isAdmin, age);
+        return $"Created user: {userName} (Admin: {isAdmin}, Age: {age})";
+    });
 }
 ```
 
-**Verified files can now omit parameters with defaults:**
+**Verified files can omit parameters with defaults:**
 
 **AllDefaults.verified.txt** (uses all default values):
 ```
@@ -969,173 +905,43 @@ Created user: John Doe (Admin: False, Age: 34)
 Created user: John Doe (Admin: True, Age: 34)
 ```
 
-This eliminates repetition when many test cases share the same base values, while still allowing full customization when needed.
+## Context API
 
-## Alternative Context Syntax (Recommended)
-
-SpecRec now supports an enhanced Context-first syntax that provides a unified, fluent API for all SpecRec operations. This is the **recommended approach** for new tests, while the CallLog-first syntax remains fully supported for backward compatibility.
-
-### Context-First vs CallLog-First Syntax
-
-**New Context-first syntax (recommended):**
-```csharp
-[Theory]
-[SpecRecLogs]
-public async Task BookFlight(Context ctx, int passengerCount, string airlineCode = "UA") 
-{
-    ctx.Substitute<IBookingRepository>("💾")
-       .Substitute<IFlightService>("✈️");
-
-    var coordinator = new BookingCoordinator();
-    var result = coordinator.BookFlight(passengerCount, airlineCode);
-    
-    ctx.CallLog.AppendLine($"🔹 Returns: {result}");
-    await ctx.CallLog.Verify();
-}
-```
-
-**Traditional CallLog-first syntax (still supported):**
-```csharp
-[Theory]
-[SpecRecLogs]
-public async Task BookFlight(CallLog callLog, int passengerCount, string airlineCode = "UA")
-{
-    var parrot = new Parrot(callLog);
-    var bookingRepo = parrot.Create<IBookingRepository>("💾");
-    var flightService = parrot.Create<IFlightService>("✈️");
-    
-    ObjectFactory.Instance().SetOne<IBookingRepository>(bookingRepo);
-    ObjectFactory.Instance().SetOne<IFlightService>(flightService);
-
-    var coordinator = new BookingCoordinator();
-    var result = coordinator.BookFlight(passengerCount, airlineCode);
-    
-    callLog.AppendLine($"🔹 Returns: {result}");
-    await callLog.Verify();
-}
-```
-
-### Context API Methods
-
-The Context class provides a unified, fluent interface for all SpecRec operations:
-
-#### Substitute Pattern (Recommended)
-Automatically sets up ObjectFactory to create parrots when `Create<T>()` is called:
+The Context class provides a unified API for all SpecRec operations through the `ctx.Verify()` pattern:
 
 ```csharp
 [Theory]
 [SpecRecLogs]
-public async Task ProcessPayment(Context ctx, decimal amount, string currency = "USD") 
+public async Task YourTest(Context ctx, /* optional parameters */)
 {
-    ctx.Substitute<IPaymentProcessor>("💳")
-       .Substitute<ILogger>("📝");
-
-    var service = new PaymentService(); // Uses ObjectFactory.Create<T>() internally
-    var result = service.ProcessPayment(amount, currency);
-    
-    ctx.CallLog.AppendLine($"🔹 Returns: {result}");
-    await ctx.CallLog.Verify();
+    await ctx.Verify(async () =>
+    {
+        // Set up test doubles
+        ctx.Substitute<IService>("🔧");  // Auto-creates parrots
+        
+        // Execute your code
+        var result = YourCode();
+        
+        // Return value (optional for void methods)
+        return result;
+    });
 }
 ```
 
-#### Object Registration
-Register existing objects with the ObjectFactory:
+The `ctx.Verify()` method:
+- Automatically logs return values
+- Handles exceptions properly
+- Calls verification
+- Cleans up the ObjectFactory
 
-```csharp
-[Theory]
-[SpecRecLogs]
-public async Task ComplexIntegration(Context ctx, string orderType, int quantity = 1)
-{
-    var inventoryService = new InventoryServiceStub();
-    var priceCalculator = new PriceCalculatorStub();
-    
-    ctx.Substitute<IOrderValidator>("📋")
-       .Substitute<IPaymentGateway>("💳")
-       .SetAlways<IInventoryService>(inventoryService, "inventory")
-       .SetOne<IPriceCalculator>(priceCalculator, "calculator");
+### Context Methods
 
-    var orderProcessor = new OrderProcessor();
-    var result = orderProcessor.ProcessOrder(orderType, quantity);
-    
-    ctx.CallLog.AppendLine($"🔹 Returns: {result}");
-    await ctx.CallLog.Verify();
-}
-```
-
-#### Call Logger Wrapping
-Wrap existing objects to track their method calls:
-
-```csharp
-[Theory]
-[SpecRecLogs]
-public async Task TrackExternalCalls(Context ctx, string endpoint, int retryCount = 3) 
-{
-    var apiClient = new HttpApiClient();
-    var trackedClient = ctx.Wrap(apiClient, "🔗");
-
-    var service = new ExternalService(trackedClient);
-    var result = service.FetchDataWithRetries(endpoint, retryCount);
-    
-    ctx.CallLog.AppendLine($"🔹 Returns: {result}");
-    await ctx.CallLog.Verify();
-}
-```
-
-#### Direct Parrot Creation
-Create parrot test doubles directly (not registered with ObjectFactory):
-
-```csharp
-[Theory]
-[SpecRecLogs]
-public async Task ValidateInput(Context ctx, string input, bool strictMode = false) 
-{
-    var validator = ctx.Parrot<IValidator>("✅");
-    
-    var service = new ValidationService(validator);
-    var result = service.ValidateUserInput(input, strictMode);
-    
-    ctx.CallLog.AppendLine($"Returns: {result}");
-    await ctx.CallLog.Verify();
-}
-```
-
-### Migration Strategy
-
-You can gradually migrate from CallLog-first to Context-first syntax:
-
-1. **Keep existing tests unchanged** - CallLog-first syntax continues to work
-2. **Use Context-first for new tests** - Get the benefits of the improved API
-3. **Migrate critical tests when convenient** - No rush, both syntaxes coexist
-
-### Verified File Compatibility
-
-Both syntaxes use the same verified file format, making migration seamless:
-
-**BookFlight.EventCreation.verified.txt:**
-```
-📋 <Test Inputs>
-  🔸 passengerCount: 2
-  🔸 airlineCode: "AA"
-
-💾 IsAvailable:
-  🔸 airlineCode: "AA"
-  🔸 passengerCount: 2
-  🔹 Returns: True
-
-✈️ CalculatePrice:
-  🔸 airlineCode: "AA"
-  🔸 passengerCount: 2
-  🔹 Returns: 450.00
-
-💾 CreateReservation:
-  🔸 airlineCode: "AA"
-  🔸 passengerCount: 2
-  🔹 Returns: 12345
-
-Returns: "Booked flight AA for 2 passengers, reservation #12345, price: $450.00"
-```
-
-This file works identically with both Context-first and CallLog-first test methods.
+- **`ctx.Substitute<T>(icon)`** - Sets up auto-parrot creation for type T
+- **`ctx.Wrap<T>(obj, icon)`** - Wraps an existing object with CallLogger
+- **`ctx.Parrot<T>(icon)`** - Creates a parrot directly
+- **`ctx.SetOne<T>(obj, id)`** - Registers an object for one-time use
+- **`ctx.SetAlways<T>(obj, id)`** - Registers an object for repeated use
+- **`ctx.Register<T>(obj, id)`** - Registers an object with a specific ID
 
 ## Planned Components
 
