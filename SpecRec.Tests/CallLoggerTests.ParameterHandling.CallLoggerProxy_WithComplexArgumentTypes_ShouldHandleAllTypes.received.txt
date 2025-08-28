@@ -1,5 +1,0 @@
-﻿🧩 ComplexMethod:
-  🔸 dict: {"key": "value"}
-  🔸 nullValue: null
-  🔸 timestamp: 2025-07-03 12:42:11
-

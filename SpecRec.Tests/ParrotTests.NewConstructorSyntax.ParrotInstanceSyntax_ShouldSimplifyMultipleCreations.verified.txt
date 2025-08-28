@@ -14,4 +14,4 @@
   🔹 Returns: True
 
 📅 GetCurrentTime:
-  🔹 Returns: 15-06-2024 14:30:00
+  🔹 Returns: 2024-06-15 14:30:00

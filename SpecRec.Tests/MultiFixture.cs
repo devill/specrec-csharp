@@ -45,7 +45,7 @@ namespace SpecRec.Tests
             
             var eventId = eventService.CreateEvent(eventName, eventDate);
             
-            callLog.AppendLine($"Created event '{eventName}' on {eventDate:dd-MM-yyyy HH:mm:ss} with ID: {eventId}");
+            callLog.AppendLine($"Created event '{eventName}' on {eventDate:yyyy-MM-dd HH:mm:ss} with ID: {eventId}");
             await callLog.Verify();
         }
 

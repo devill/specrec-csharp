@@ -251,7 +251,7 @@ namespace SpecRec.Tests
                 var formattedTime = dateTimeService.FormatDateTime(currentTime);
                 
                 Assert.Equal(new DateTime(2024, 6, 15, 14, 30, 0), currentTime);
-                Assert.Equal("Current time: 15-06-2024 14:30:00", formattedTime);
+                Assert.Equal("Current time: 2024-06-15 14:30:00", formattedTime);
                 
                 await Verify(callLog.ToString());
             }

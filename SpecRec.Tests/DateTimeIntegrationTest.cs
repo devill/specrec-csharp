@@ -21,11 +21,11 @@ namespace SpecRec.Tests
             
             // Assert: Check the logged output has correct DateTime formatting
             var logOutput = logger.SpecBook.ToString();
-            Assert.Contains("🔸 date: 15-03-2024 10:30:45", logOutput);
+            Assert.Contains("🔸 date: 2024-03-15 10:30:45", logOutput);
             Assert.Contains("🔹 Returns: \"Friday, March 15, 2024\"", logOutput);
             
             // Test parsing the logged DateTime value back
-            var parsedDate = ValueParser.ParseTypedValue("15-03-2024 10:30:45", typeof(DateTime));
+            var parsedDate = ValueParser.ParseTypedValue("2024-03-15 10:30:45", typeof(DateTime));
             Assert.Equal(inputDate, parsedDate);
         }
     }
