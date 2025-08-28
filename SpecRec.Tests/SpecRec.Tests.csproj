@@ -242,12 +242,9 @@
     <None Update="ContextSpecRecLogsTests.VerifyContext.verified.txt">
       <DependentUpon>ContextSpecRecLogsTests.cs</DependentUpon>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="MultiFixture.cs">
-      <DependentUpon>ContextSpecRecLogsTests.cs</DependentUpon>
-    </Compile>
+    <None Update="ParrotTests.ConstructorWithMethodCallsTests.ParrotWithConstructorCalls_ShouldIgnoreConstructorsAndReplayMethods.received.txt">
+      <DependentUpon>ParrotTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
 </Project>

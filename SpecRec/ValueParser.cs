@@ -202,12 +202,12 @@ namespace SpecRec
         
         public static DateTime ParseDateTime(string valueStr)
         {
-            // Parse using the same format that CallLogger uses for formatting
-            if (DateTime.TryParseExact(valueStr, "dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTimeVal))
+            // Parse using ISO 8601-like format for better readability
+            if (DateTime.TryParseExact(valueStr, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateTimeVal))
                 return dateTimeVal;
                 
             throw new ParrotTypeConversionException(
-                $"Cannot parse '{valueStr}' as DateTime. Expected format: dd-MM-yyyy HH:mm:ss");
+                $"Cannot parse '{valueStr}' as DateTime. Expected format: yyyy-MM-dd HH:mm:ss");
         }
 
 
@@ -535,7 +535,7 @@ namespace SpecRec
             
             // Handle DateTime
             if (value is DateTime dt)
-                return dt.ToString("dd-MM-yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+                return dt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
             
             // Use invariant culture for numbers
             if (value is decimal dec)

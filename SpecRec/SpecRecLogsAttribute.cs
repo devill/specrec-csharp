@@ -200,7 +200,17 @@ namespace SpecRec
                 {
                     try
                     {
-                        paramValues[i] = ValueParser.ParseTypedValue(valueStr, paramType, null) ?? DBNull.Value; // ObjectFactory not available at this level
+                        var parsedValue = ValueParser.ParseTypedValue(valueStr, paramType, null);
+                        
+                        // Use null instead of DBNull.Value for nullable types
+                        if (parsedValue == null && IsNullableType(paramType))
+                        {
+                            paramValues[i] = null;
+                        }
+                        else
+                        {
+                            paramValues[i] = parsedValue ?? DBNull.Value;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -225,7 +235,17 @@ namespace SpecRec
                     if (runtimeParam?.HasDefaultValue == true)
                     {
                         // Use the default value from the method signature
-                        paramValues[i] = runtimeParam.DefaultValue ?? DBNull.Value;
+                        var defaultValue = runtimeParam.DefaultValue;
+                        
+                        // Use null for nullable types instead of DBNull.Value
+                        if (defaultValue == null && IsNullableType(paramType))
+                        {
+                            paramValues[i] = null;
+                        }
+                        else
+                        {
+                            paramValues[i] = defaultValue ?? DBNull.Value;
+                        }
                     }
                     else
                     {
@@ -266,6 +286,11 @@ namespace SpecRec
             return sb.ToString();
         }
         
+        private bool IsNullableType(Type type)
+        {
+            return Nullable.GetUnderlyingType(type) != null;
+        }
+        
         private string GetPlaceholderValue(Type paramType)
         {
             if (paramType == typeof(string))
@@ -282,6 +307,8 @@ namespace SpecRec
                 return "3.14";
             if (paramType == typeof(float))
                 return "3.14";
+            if (paramType == typeof(DateTime))
+                return "2025-01-01 12:00:00";
             if (paramType.IsArray)
             {
                 var elementType = paramType.GetElementType();

@@ -421,7 +421,7 @@ SpecRec enforces strict formatting in verified files:
 
 - **Strings**: Must use quotes: `"hello"`
 - **Booleans**: Case-sensitive: `True` or `False`
-- **DateTime**: Format `dd-MM-yyyy HH:mm:ss`: `25-12-2023 14:30:45`
+- **DateTime**: Format `yyyy-MM-dd HH:mm:ss`: `2023-12-25 14:30:45`
 - **Arrays**: No spaces: `[1,2,3]` or `["a","b","c"]`
 - **Objects**: Use IDs: `<id:myObject>`
 - **Null**: Lowercase: `null`
