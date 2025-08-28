@@ -1,3 +1,4 @@
+using System.Globalization;
 using Xunit;
 using static SpecRec.GlobalObjectFactory;
 
@@ -218,7 +219,7 @@ namespace SpecRec.Tests
             var price = flightService.CalculatePrice(airlineCode, passengerCount);
             var reservationId = repository.CreateReservation(airlineCode, passengerCount);
             
-            return $"Booked flight {airlineCode} for {passengerCount} passengers, reservation #{reservationId}, price: {price:F2}";
+            return $"Booked flight {airlineCode} for {passengerCount} passengers, reservation #{reservationId}, price: {price.ToString("F2", CultureInfo.InvariantCulture)}";
         }
     }
 
@@ -337,7 +338,7 @@ namespace SpecRec.Tests
             if (paymentResult.StartsWith("Success"))
             {
                 inventory.ReserveItems(orderType, quantity);
-                return $"Order processed: {quantity}x {orderType} for {price:F2}";
+                return $"Order processed: {quantity}x {orderType} for {price.ToString("F2", CultureInfo.InvariantCulture)}";
             }
             
             return "Payment failed";

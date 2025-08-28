@@ -15,4 +15,4 @@
   🔸 amount: 99.99
   🔹 Returns: "Success - Payment Processed"
 
-Returns: Order processed: 2x premium for 99,99
+Returns: Order processed: 2x premium for 99.99
