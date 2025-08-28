@@ -21,4 +21,4 @@
   🔸 passengerCount: 2
   🔹 Returns: 12345
 
-Returns: "Booked flight AA for 2 passengers, reservation #12345, price: 450,00 €"
+Returns: "Booked flight AA for 2 passengers, reservation #12345, price: 450,00"

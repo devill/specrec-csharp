@@ -218,7 +218,7 @@ namespace SpecRec.Tests
             var price = flightService.CalculatePrice(airlineCode, passengerCount);
             var reservationId = repository.CreateReservation(airlineCode, passengerCount);
             
-            return $"Booked flight {airlineCode} for {passengerCount} passengers, reservation #{reservationId}, price: {price:C}";
+            return $"Booked flight {airlineCode} for {passengerCount} passengers, reservation #{reservationId}, price: {price:F2}";
         }
     }
 
@@ -337,7 +337,7 @@ namespace SpecRec.Tests
             if (paymentResult.StartsWith("Success"))
             {
                 inventory.ReserveItems(orderType, quantity);
-                return $"Order processed: {quantity}x {orderType} for {price:C}";
+                return $"Order processed: {quantity}x {orderType} for {price:F2}";
             }
             
             return "Payment failed";
