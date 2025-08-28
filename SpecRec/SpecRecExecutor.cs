@@ -13,30 +13,14 @@ namespace SpecRec
             [CallerMemberName] string? testName = null, 
             [CallerFilePath] string? sourceFilePath = null)
         {
-            // Set the correct source information in the CallLog to ensure proper file naming
-            ctx.CallLog.SetSourceTestInfo(testName, sourceFilePath);
-            
-            try
-            {
-                object? result;
-
-                result = await testMethod();
-                ctx.CallLog.AppendLine($"Returns: {ValueParser.FormatValue(result)}");
-            }
-            catch (ParrotException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
-                // Swallow non-Parrot exceptions
-            }
-            finally 
-            {
-                await ctx.CallLog.Verify(testName, sourceFilePath);
-                ctx.Factory.ClearAll();
-            }
+            await ExecuteCoreAsync(
+                async () => {
+                    var result = await testMethod();
+                    ctx.CallLog.AppendLine($"Returns: {ValueParser.FormatValue(result)}");
+                },
+                ctx,
+                testName,
+                sourceFilePath);
         }
 
         /// <summary>
@@ -47,13 +31,17 @@ namespace SpecRec
             [CallerMemberName] string? testName = null, 
             [CallerFilePath] string? sourceFilePath = null)
         {
-            // Set the correct source information in the CallLog to ensure proper file naming
+            await ExecuteCoreAsync(testMethod, ctx, testName, sourceFilePath);
+        }
+
+        private static async Task ExecuteCoreAsync(Func<Task> testAction, Context ctx,
+            string? testName, string? sourceFilePath)
+        {
             ctx.CallLog.SetSourceTestInfo(testName, sourceFilePath);
             
             try
             {
-                await testMethod();
-                // No return value to log for void operations
+                await testAction();
             }
             catch (ParrotException)
             {
@@ -62,7 +50,6 @@ namespace SpecRec
             catch (Exception ex)
             {
                 ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
-                // Swallow non-Parrot exceptions
             }
             finally 
             {

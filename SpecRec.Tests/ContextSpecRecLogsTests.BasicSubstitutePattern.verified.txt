@@ -21,4 +21,4 @@
   🔸 passengerCount: 1
   🔹 Returns: 54321
 
-Returns: Booked flight UA for 1 passengers, reservation #54321, price: 299,99 €
+Returns: "Booked flight UA for 1 passengers, reservation #54321, price: 299,99 €"

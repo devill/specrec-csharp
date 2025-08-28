@@ -16,14 +16,14 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task BookFlight(Context ctx, int passengerCount, string airlineCode = "UA")
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 ctx.Substitute<IBookingRepository>("💾")
                    .Substitute<IFlightService>("✈️");
 
                 var coordinator = new BookingCoordinator();
                 return coordinator.BookFlight(passengerCount, airlineCode);
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task ProcessPayment(Context ctx, decimal amount, string currency = "USD")
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 var paymentProcessor = new PaymentProcessorStub();
                 var logger = new FakeLogger();
@@ -44,7 +44,7 @@ namespace SpecRec.Tests
 
                 var service = new EnhancedPaymentService();
                 return service.ProcessPayment(amount, currency);
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -54,14 +54,14 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task TrackExternalCalls(Context ctx, string endpoint, int retryCount = 3)
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 var apiClient = new HttpApiClientStub();
                 var trackedClient = ctx.Wrap<IHttpApiClient>(apiClient, "🔗");
 
                 var service = new ExternalService(trackedClient);
                 return service.FetchDataWithRetries(endpoint, retryCount);
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -71,13 +71,13 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task ValidateInput(Context ctx, string input, bool strictMode = false)
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 var validator = ctx.Parrot<IValidator>("✅");
                 
                 var service = new ValidationService(validator);
                 return service.ValidateUserInput(input, strictMode);
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task ProcessOrder(Context ctx, string orderType, int quantity = 1)
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 var inventoryService = new InventoryServiceStub();
                 var priceCalculator = new PriceCalculatorStub();
@@ -99,7 +99,7 @@ namespace SpecRec.Tests
 
                 var orderProcessor = new OrderProcessor();
                 return orderProcessor.ProcessOrder(orderType, quantity);
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task RegisterUser(Context ctx, string userName, bool isAdmin = false)
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 var userService = new UserServiceStub();
                 var logger = new FakeLogger();
@@ -121,7 +121,7 @@ namespace SpecRec.Tests
 
                 var coordinator = new UserCoordinator();
                 return coordinator.RegisterUser(userName, isAdmin);
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -131,13 +131,13 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task SimpleOperation(Context ctx)
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 ctx.Substitute<IEmailService>("📧");
                 
                 var service = Create<IEmailService>();
                 return service.SendWelcomeEmail("test@example.com", "Welcome!");
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -147,13 +147,13 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task HandleException(Context ctx, string input = "invalid")
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 ctx.Substitute<IValidator>("✅");
                 
                 // This should throw an exception that gets logged but not re-thrown
                 throw new InvalidOperationException($"Test exception with input: {input}");
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task MissingReturnValue(Context ctx, int count = 5)
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 var validator = ctx.Parrot<IValidator>("✅");
                 
@@ -171,7 +171,7 @@ namespace SpecRec.Tests
                 validator.Validate("test input", true);
                 
                 return $"Validated {count} items";
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task VoidOperation(Context ctx, string message = "Hello")
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 ctx.Substitute<ILogger>("📝");
                 
@@ -189,7 +189,7 @@ namespace SpecRec.Tests
                 logger.Log(message);
                 
                 // No return value - should complete without "Returns:" line
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -199,12 +199,12 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task ContextDisplayName(Context ctx, string testScenario = "default")
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 ctx.CallLog.AppendLine($"Test scenario: {testScenario}");
                 ctx.CallLog.AppendLine($"Context display name: {ctx}");
                 return $"Scenario: {testScenario}, Context: {ctx}";
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -214,14 +214,14 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task ProcessOrderBatch(Context ctx, string[] orderIds, bool urgent = false)
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 ctx.Substitute<IBatchProcessor>("🔄")
                    .Substitute<INotificationService>("🔔");
 
                 var processor = Create<IBatchProcessor>();
                 return processor.ProcessBatch(orderIds, urgent);
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -231,13 +231,13 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task FindOptionalData(Context ctx, string searchTerm = "missing")
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 ctx.Substitute<IDataService>("🔍");
                 
                 var service = Create<IDataService>();
                 return service.FindData(searchTerm);
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -247,13 +247,13 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task ScheduleTask(Context ctx, DateTime scheduleTime, bool recurring = false)
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 ctx.Substitute<IScheduler>("⏰");
                 
                 var scheduler = Create<IScheduler>();
                 return scheduler.ScheduleTask("Important Task", scheduleTime, recurring);
-            }, ctx);
+            });
         }
 
         /// <summary>
@@ -264,7 +264,7 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task ProcessMultipleScenarios(Context ctx, string scenario, int count = 1)
         {
-            await SpecRecExecutor.ExecuteTestAsync(async () =>
+            await ctx.Verify(async () =>
             {
                 ctx.Substitute<IScenarioProcessor>("📊")
                    .Substitute<IMetricsCollector>("📈");
@@ -277,7 +277,7 @@ namespace SpecRec.Tests
                 metrics.RecordScenarioEnd(scenario, result);
                 
                 return $"Scenario '{scenario}' processed {count} times with result: {result}";
-            }, ctx);
+            });
         }
     }
 

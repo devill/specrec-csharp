@@ -9,14 +9,14 @@ namespace SpecRec.Tests
         [SpecRecLogs]
         public async Task BasicSubstitutePattern(Context ctx, int passengerCount, string airlineCode = "UA")
         {
-            ctx.Substitute<IBookingRepository>("💾")
-               .Substitute<IFlightService>("✈️");
+            await ctx.Verify(async () =>
+            {
+                ctx.Substitute<IBookingRepository>("💾")
+                   .Substitute<IFlightService>("✈️");
 
-            var coordinator = new BookingCoordinator();
-            var result = coordinator.BookFlight(passengerCount, airlineCode);
-            
-            ctx.CallLog.AppendLine($"Returns: {result}");
-            await ctx.CallLog.Verify();
+                var coordinator = new BookingCoordinator();
+                return coordinator.BookFlight(passengerCount, airlineCode);
+            });
         }
 
         [Theory]
@@ -120,6 +120,19 @@ namespace SpecRec.Tests
             ctx.CallLog.AppendLine($"Test scenario: {testScenario}");
             ctx.CallLog.AppendLine($"Context display name: {ctx}");
             await ctx.CallLog.Verify();
+        }
+        
+        // Test to verify Context.ToString() provides clean test names
+        [Theory]
+        [SpecRecLogs]
+        public async Task VerifyContext(Context ctx, string testScenario = "default")
+        {
+            await ctx.Verify(async () =>
+            {
+                ctx.CallLog.AppendLine($"Test scenario: {testScenario}");
+                ctx.CallLog.AppendLine($"Context display name: {ctx}");
+                await Task.CompletedTask;
+            });
         }
     }
 
