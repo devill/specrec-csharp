@@ -20,19 +20,6 @@ namespace SpecRec
             var simpleFiles = Directory.GetFiles(testDirectory, simplePattern);
             var complexFiles = Directory.GetFiles(testDirectory, complexPattern);
             
-            // DEBUG: Write to a temporary file for debugging
-            var debugInfo = $"DEBUG FileDiscovery:\n";
-            debugInfo += $"  testDirectory: {testDirectory}\n";
-            debugInfo += $"  className: {className}\n";
-            debugInfo += $"  methodName: {methodName}\n";
-            debugInfo += $"  simplePattern: {simplePattern}\n";
-            debugInfo += $"  complexPattern: {complexPattern}\n";
-            debugInfo += $"  simpleFiles.Length: {simpleFiles.Length}\n";
-            debugInfo += $"  complexFiles.Length: {complexFiles.Length}\n";
-            if (complexFiles.Length > 0)
-                debugInfo += $"  complexFiles: {string.Join(", ", complexFiles)}\n";
-            File.WriteAllText(Path.Combine(testDirectory, "debug_file_discovery.txt"), debugInfo);
-            
             // Logic:
             // - If simple file exists: run ALL files (simple + complex)
             // - If no simple file BUT complex files exist: run ONLY complex files
@@ -40,12 +27,6 @@ namespace SpecRec
             var allFiles = simpleFiles.Length > 0 
                 ? simpleFiles.Concat(complexFiles).Distinct().ToArray()
                 : complexFiles;
-            
-            // DEBUG: Add return info to debug file
-            debugInfo += $"  selectedFiles.Length: {allFiles.Length}\n";
-            if (allFiles.Length > 0)
-                debugInfo += $"  selectedFiles: {string.Join(", ", allFiles.Take(3))}...\n";
-            File.WriteAllText(Path.Combine(testDirectory, "debug_file_discovery.txt"), debugInfo);
             
             return allFiles;
         }

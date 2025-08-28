@@ -57,8 +57,18 @@ namespace SpecRec
             }
             catch (Exception ex)
             {
+                // For parameter conversion errors, provide clear error message instead of silent fallback
+                if (ex is InvalidOperationException && ex.Message.Contains("Failed to convert preamble parameter"))
+                {
+                    var errorMsg = $"SpecRec parameter parsing failed in {testMethod.Type.Name}.{testMethod.Name}: {ex.Message}";
+                    diagnosticMessageSink.OnMessage(new DiagnosticMessage(errorMsg));
+                    throw new InvalidOperationException(errorMsg, ex);
+                }
+                
+                // For other errors, log and create fallback as before
                 diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Error discovering test data for {testMethod.Name}: {ex.Message}"));
-                // Fallback to default test case
+                
+                // Fallback to default test case only for non-parsing errors
                 var fallbackCallLog = new CallLog(null, null, null, testMethod.Name, FileDiscoveryService.GetTestSourceFilePath(testMethod));
                 fallbackCallLog.TestCaseName = "";
                 testCases.Add(CreateTestCaseData(testMethod, fallbackCallLog));
