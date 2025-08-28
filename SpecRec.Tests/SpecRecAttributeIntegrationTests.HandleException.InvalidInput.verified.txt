@@ -1,4 +1,0 @@
-📋 <Test Inputs>
-  🔸 input: "corrupted-data"
-
-❌ Exception InvalidOperationException: Test exception with input: corrupted-data

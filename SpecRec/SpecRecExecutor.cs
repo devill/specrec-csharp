@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace SpecRec
 {
@@ -8,72 +9,66 @@ namespace SpecRec
         /// Executes a SpecRec test method with the unified execution flow.
         /// Handles Context setup, optional parameters, return value capture, exception handling, and cleanup.
         /// </summary>
-        public static async Task ExecuteTestAsync(Delegate testMethod, Context ctx, params object[] additionalParameters)
+        public static async Task ExecuteTestAsync<T>(Func<Task<T>> testMethod, Context ctx, 
+            [CallerMemberName] string? testName = null, 
+            [CallerFilePath] string? sourceFilePath = null)
         {
-            try 
+            // Set the correct source information in the CallLog to ensure proper file naming
+            ctx.CallLog.SetSourceTestInfo(testName, sourceFilePath);
+            
+            try
             {
                 object? result;
-                
-                // If no additional parameters, call directly (avoid DynamicInvoke overhead)
-                if (additionalParameters.Length == 0 && testMethod is Func<Context, Task<string>> simpleMethod)
-                {
-                    result = await simpleMethod(ctx);
-                }
-                else
-                {
-                    // Build full parameters array with Context as first parameter
-                    var fullParams = new object[additionalParameters.Length + 1];
-                    fullParams[0] = ctx;
-                    Array.Copy(additionalParameters, 0, fullParams, 1, additionalParameters.Length);
-                    
-                    // Execute user method with Context and parameters
-                    var task = testMethod.DynamicInvoke(fullParams);
-                    if (task is Task<string> typedTask)
-                    {
-                        result = await typedTask;
-                    }
-                    else if (task is Task untypedTask)
-                    {
-                        await untypedTask;
-                        result = null;
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Test method must return Task or Task<string>, got {task?.GetType()}");
-                    }
-                }
-                
-                if (result != null)
-                {
-                    ctx.CallLog.AppendLine($"Returns: {ValueParser.FormatValue(result)}");
-                }
+
+                result = await testMethod();
+                ctx.CallLog.AppendLine($"Returns: {ValueParser.FormatValue(result)}");
             }
-            catch (TargetInvocationException tie) when (tie.InnerException != null)
+            catch (ParrotException)
             {
-                // Unwrap TargetInvocationException from DynamicInvoke
-                var ex = tie.InnerException;
-                HandleException(ex, ctx);
+                throw;
             }
             catch (Exception ex)
             {
-                HandleException(ex, ctx);
+                ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
+                // Swallow non-Parrot exceptions
             }
             finally 
             {
-                await ctx.CallLog.Verify();
+                await ctx.CallLog.Verify(testName, sourceFilePath);
                 ctx.Factory.ClearAll();
             }
         }
-        
-        private static void HandleException(Exception ex, Context ctx)
+
+        /// <summary>
+        /// Executes a SpecRec test method with the unified execution flow for void operations.
+        /// Handles Context setup, optional parameters, exception handling, and cleanup.
+        /// </summary>
+        public static async Task ExecuteTestAsync(Func<Task> testMethod, Context ctx,
+            [CallerMemberName] string? testName = null, 
+            [CallerFilePath] string? sourceFilePath = null)
         {
-            if (ex is ParrotException)
-            {
-                throw ex;
-            }
+            // Set the correct source information in the CallLog to ensure proper file naming
+            ctx.CallLog.SetSourceTestInfo(testName, sourceFilePath);
             
-            ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
-            // Swallow non-Parrot exceptions
+            try
+            {
+                await testMethod();
+                // No return value to log for void operations
+            }
+            catch (ParrotException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
+                // Swallow non-Parrot exceptions
+            }
+            finally 
+            {
+                await ctx.CallLog.Verify(testName, sourceFilePath);
+                ctx.Factory.ClearAll();
+            }
         }
     }
 }

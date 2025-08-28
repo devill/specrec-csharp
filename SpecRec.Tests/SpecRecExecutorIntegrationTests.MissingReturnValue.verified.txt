@@ -1,0 +1,6 @@
+✅ Validate:
+  🔸 input: "test input"
+  🔸 strictMode: True
+  🔹 Returns: True
+
+Returns: "Validated 5 items"

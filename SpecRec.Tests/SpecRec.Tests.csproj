@@ -233,6 +233,12 @@
     <None Update="SpecRecExecutorTests.ExecuteAsync_RegularMethodCall_ShouldLogReturnValue.verified.txt">
       <DependentUpon>SpecRecExecutorTests.cs</DependentUpon>
     </None>
+    <None Update="SpecRecExecutorIntegrationTests.MissingReturnValue.verified.txt">
+      <DependentUpon>SpecRecExecutorIntegrationTests.cs</DependentUpon>
+    </None>
+    <None Update="SpecRecExecutorIntegrationTests.ContextDisplayName.verified.txt">
+      <DependentUpon>SpecRecExecutorIntegrationTests.cs</DependentUpon>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

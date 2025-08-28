@@ -1,5 +1,9 @@
-📋 <Test Inputs>
+﻿📋 <Test Inputs>
   🔸 scenario: "problematic"
+
+📊 IScenarioProcessor constructor called with:
+
+📈 IMetricsCollector constructor called with:
 
 📈 RecordScenarioStart:
   🔸 scenario: "problematic"

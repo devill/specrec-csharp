@@ -1,0 +1,7 @@
+﻿📋 <Test Inputs>
+  🔸 message: "System startup complete"
+
+📝 ILogger constructor called with:
+
+📝 Log:
+  🔸 message: "System startup complete"

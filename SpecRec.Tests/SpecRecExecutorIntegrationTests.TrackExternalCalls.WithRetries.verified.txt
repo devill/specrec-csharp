@@ -1,4 +1,4 @@
-📋 <Test Inputs>
+﻿📋 <Test Inputs>
   🔸 endpoint: "https://api.example.com/data"
   🔸 retryCount: 2
 

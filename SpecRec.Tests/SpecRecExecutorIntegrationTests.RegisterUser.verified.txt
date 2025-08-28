@@ -1,0 +1,5 @@
+﻿📋 <Test Inputs>
+  🔸 userName: "john.doe"
+  🔸 isAdmin: False
+
+❌ Exception MissingMethodException: Constructor on type 'SpecRec.Tests.IAuthService' not found.

@@ -1,6 +1,10 @@
-📋 <Test Inputs>
+﻿📋 <Test Inputs>
   🔸 scenario: "complex"
   🔸 count: 2
+
+📊 IScenarioProcessor constructor called with:
+
+📈 IMetricsCollector constructor called with:
 
 📈 RecordScenarioStart:
   🔸 scenario: "complex"

@@ -1,6 +1,10 @@
-📋 <Test Inputs>
+﻿📋 <Test Inputs>
   🔸 scenario: "optimized"
   🔸 count: 5
+
+📊 IScenarioProcessor constructor called with:
+
+📈 IMetricsCollector constructor called with:
 
 📈 RecordScenarioStart:
   🔸 scenario: "optimized"

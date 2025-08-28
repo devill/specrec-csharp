@@ -79,8 +79,13 @@ namespace SpecRec
 
         private static Type GetTestClassContainingMethod(string methodName, string sourceFilePath)
         {
-            // Look through all loaded assemblies to find the test type with the method
+            // Extract the expected class name from the source file path
+            // e.g., "/path/to/SpecRecExecutorIntegrationTests.cs" -> "SpecRecExecutorIntegrationTests"
+            var fileName = Path.GetFileNameWithoutExtension(sourceFilePath);
+            
+            // Look through all loaded assemblies to find the test type that matches both filename and has the method
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            Type? bestMatch = null;
             
             foreach (var assembly in assemblies)
             {
@@ -94,7 +99,17 @@ namespace SpecRec
                         var typeWithMethod = FindTypeWithMethod(type, methodName);
                         if (typeWithMethod != null)
                         {
-                            return typeWithMethod;
+                            // Prefer types that match the source filename
+                            if (typeWithMethod.Name == fileName)
+                            {
+                                return typeWithMethod;
+                            }
+                            
+                            // Keep the first match as fallback, but prefer filename matches
+                            if (bestMatch == null)
+                            {
+                                bestMatch = typeWithMethod;
+                            }
                         }
                     }
                 }
@@ -103,6 +118,11 @@ namespace SpecRec
                     // Skip assemblies that can't be loaded
                     continue;
                 }
+            }
+            
+            if (bestMatch != null)
+            {
+                return bestMatch;
             }
             
             throw new InvalidOperationException($"Could not find test class containing method '{methodName}' for file: {sourceFilePath}");

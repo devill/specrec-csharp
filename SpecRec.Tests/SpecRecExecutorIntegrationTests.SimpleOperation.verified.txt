@@ -1,3 +1,5 @@
+﻿📧 IEmailService constructor called with:
+
 📧 SendWelcomeEmail:
   🔸 recipient: "test@example.com"
   🔸 message: "Welcome!"

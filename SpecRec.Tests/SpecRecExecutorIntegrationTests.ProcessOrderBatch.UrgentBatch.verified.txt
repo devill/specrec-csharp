@@ -1,0 +1,12 @@
+﻿📋 <Test Inputs>
+  🔸 orderIds: ["ORD-001","ORD-002","ORD-003"]
+  🔸 urgent: True
+
+🔄 IBatchProcessor constructor called with:
+
+🔄 ProcessBatch:
+  🔸 orderIds: ["ORD-001","ORD-002","ORD-003"]
+  🔸 urgent: True
+  🔹 Returns: "Batch processed: 3 urgent orders completed"
+
+Returns: "Batch processed: 3 urgent orders completed"

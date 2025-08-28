@@ -13,8 +13,8 @@ namespace SpecRec
         private readonly List<(string methodName, object?[] args, object? returnValue)> _loggedCalls;
         private readonly ObjectFactory? _objectFactory;
         private readonly string? _sourceFilePath;
-        private readonly string? _sourceTestName;
-        private readonly string? _sourceTestFilePath;
+        private string? _sourceTestName;
+        private string? _sourceTestFilePath;
 
         public StringBuilder SpecBook => _content;
         public Dictionary<string, string> PreambleParameters { get; private set; } = new();
@@ -79,6 +79,12 @@ namespace SpecRec
         {
             _content.AppendLine(value);
             return this;
+        }
+
+        public void SetSourceTestInfo(string? testName, string? sourceFilePath)
+        {
+            _sourceTestName = testName;
+            _sourceTestFilePath = sourceFilePath;
         }
 
         public override string ToString()

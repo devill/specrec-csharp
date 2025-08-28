@@ -1,6 +1,8 @@
-📋 <Test Inputs>
+﻿📋 <Test Inputs>
   🔸 amount: 199.99
   🔸 currency: "EUR"
+
+📊 IAuditService constructor called with:
 
 📊 LogTransaction:
   🔸 amount: 199.99
