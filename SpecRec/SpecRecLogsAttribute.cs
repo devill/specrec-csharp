@@ -172,7 +172,7 @@ namespace SpecRec
         private object[] CreateTestCaseData(IMethodInfo testMethod, CallLog callLog, string? verifiedFilePath = null)
         {
             var methodParams = testMethod.GetParameters().ToArray();
-            var paramValues = new object[methodParams.Length];
+            var paramValues = new object?[methodParams.Length];
             
             // Detect first parameter type and create appropriate object
             var firstParamType = methodParams[0].ParameterType.ToRuntimeType();
@@ -205,7 +205,7 @@ namespace SpecRec
                         // Use null instead of DBNull.Value for nullable types
                         if (parsedValue == null && IsNullableType(paramType))
                         {
-                            paramValues[i] = null;
+                            paramValues[i] = null!;
                         }
                         else
                         {
@@ -240,7 +240,7 @@ namespace SpecRec
                         // Use null for nullable types instead of DBNull.Value
                         if (defaultValue == null && IsNullableType(paramType))
                         {
-                            paramValues[i] = null;
+                            paramValues[i] = null!;
                         }
                         else
                         {
@@ -264,7 +264,7 @@ namespace SpecRec
                 }
             }
             
-            return paramValues;
+            return (object[])paramValues;
         }
         
         private string GenerateSuggestedPreamble(IParameterInfo[] methodParams)
