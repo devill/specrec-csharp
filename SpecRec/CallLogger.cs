@@ -375,14 +375,14 @@ namespace SpecRec
         /// </summary>
         public string FormatValue(object? value) => _callLog.FormatValue(value);
         
-        [Obsolete("Use CallLogger() or CallLogger(CallLog, ObjectFactory) instead. StringBuilder-based constructor is deprecated.")]
-        public CallLogger(StringBuilder? specbook = null, ObjectFactory? objectFactory = null)
+        [Obsolete("StringBuilder-based constructor is deprecated. Use CallLogger() instead.")]
+        public CallLogger(StringBuilder specbook, ObjectFactory? objectFactory = null)
         {
             _objectFactory = objectFactory ?? ObjectFactory.Instance();
             _callLog = new CallLog(objectFactory: _objectFactory);
             
             // For backward compatibility, if a StringBuilder was provided, we need to sync it
-            if (specbook != null && specbook.Length > 0)
+            if (specbook.Length > 0)
             {
                 _callLog.Append(specbook.ToString());
                 specbook.Clear(); // Prevent duplication
@@ -392,10 +392,10 @@ namespace SpecRec
         /// <summary>
         /// Constructor for internal use with specific CallLog.
         /// </summary>
-        public CallLogger(CallLog callLog, ObjectFactory? objectFactory = null)
+        public CallLogger(CallLog? callLog = null, ObjectFactory? objectFactory = null)
         {
-            _callLog = callLog;
             _objectFactory = objectFactory ?? ObjectFactory.Instance();
+            _callLog = callLog ?? new CallLog(objectFactory: _objectFactory);
         }
 
         public T Wrap<T>(T target, string emoji = "🔧") where T : class
