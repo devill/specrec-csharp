@@ -1,5 +1,5 @@
 ﻿🔧 IServiceWithConstructor constructor called with:
-  🔸 connectionString: connectionString
+  🔸 connectionString: "connectionString"
   🔸 retryCount: 42
 
 🔧 DoSomething:

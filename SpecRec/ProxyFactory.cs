@@ -6,48 +6,29 @@ namespace SpecRec
     {
         public static T CreateLoggingProxy<T>(T target, CallLogger logger, string emoji, string? interfaceName = null) where T : class
         {
-            // Prioritize DispatchProxy for interfaces (backward compatibility)
-            if (typeof(T).IsInterface)
+            if (!UnifiedProxyFactory.CanCreateProxy(typeof(T)))
             {
-                return CallLoggerProxy<T>.Create(target, logger, emoji);
+                throw new ArgumentException($"Cannot create proxy for type {typeof(T).Name}. " +
+                    "Type must be an interface, or a non-sealed class with virtual members and accessible constructor.", nameof(T));
             }
             
-            // Use Castle DynamicProxy for concrete classes
-            if (CastleProxyFactory.CanCreateProxy(typeof(T)))
-            {
-                return CastleProxyFactory.CreateLoggingProxy<T>(target, logger, emoji);
-            }
-            
-            throw new ArgumentException($"Cannot create proxy for type {typeof(T).Name}. " +
-                "Type must be an interface, or a non-sealed class with virtual members and accessible constructor.", nameof(T));
+            return UnifiedProxyFactory.CreateProxy<T>(logger, emoji, target);
         }
 
         public static T CreateParrotProxy<T>(CallLogger logger, string emoji, string? interfaceName = null) where T : class
         {
-            // Prioritize DispatchProxy for interfaces (backward compatibility)
-            if (typeof(T).IsInterface)
+            if (!UnifiedProxyFactory.CanCreateProxy(typeof(T)))
             {
-                return CallLoggerProxy<T>.Create(default(T)!, logger, emoji);
+                throw new ArgumentException($"Cannot create parrot proxy for type {typeof(T).Name}. " +
+                    "Type must be an interface, or a non-sealed class with virtual members and accessible constructor.", nameof(T));
             }
             
-            // Use Castle DynamicProxy for concrete classes  
-            if (CastleProxyFactory.CanCreateProxy(typeof(T)))
-            {
-                return CastleProxyFactory.CreateParrotProxy<T>(logger.CallLog, emoji);
-            }
-            
-            throw new ArgumentException($"Cannot create parrot proxy for type {typeof(T).Name}. " +
-                "Type must be an interface, or a non-sealed class with virtual members and accessible constructor.", nameof(T));
+            return UnifiedProxyFactory.CreateProxy<T>(logger, emoji, null);
         }
 
         public static bool CanCreateProxyForType(Type type)
         {
-            // Check Castle DynamicProxy support first (more capable)
-            if (CastleProxyFactory.CanCreateProxy(type))
-                return true;
-                
-            // Fallback to DispatchProxy for interfaces
-            return type.IsInterface;
+            return UnifiedProxyFactory.CanCreateProxy(type);
         }
 
         private static bool HasParameterlessConstructor(Type type)

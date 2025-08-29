@@ -70,8 +70,14 @@ namespace SpecRec
         {
             if (obj is IConstructorCalledWith constructorLogger)
             {
+                // Pass the interface name through context so the proxy can use it
+                CallLogFormatterContext.SetCurrentInterfaceName(typeof(I).Name);
+                
                 var parameterInfos = ExtractParameterInfo<T>(args);
                 constructorLogger.ConstructorCalledWith(parameterInfos);
+                
+                // Clear the context after use
+                CallLogFormatterContext.ClearCurrentInterfaceName();
             }
         }
 

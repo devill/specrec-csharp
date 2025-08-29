@@ -11,6 +11,7 @@ namespace SpecRec
         private static readonly ThreadLocal<string?> _currentMethodName = new(() => null);
         private static readonly ThreadLocal<string[]?> _constructorArgNames = new(() => null);
         private static readonly ThreadLocal<object?> _lastReturnValue = new(() => null);
+        private static readonly ThreadLocal<string?> _currentInterfaceName = new(() => null);
 
         public static void SetCurrentLogger(CallLogger logger)
         {
@@ -43,6 +44,21 @@ namespace SpecRec
         internal static string[]? GetConstructorArgumentNames()
         {
             return _constructorArgNames.Value;
+        }
+
+        public static void SetCurrentInterfaceName(string interfaceName)
+        {
+            _currentInterfaceName.Value = interfaceName;
+        }
+
+        internal static string? GetCurrentInterfaceName()
+        {
+            return _currentInterfaceName.Value;
+        }
+
+        internal static void ClearCurrentInterfaceName()
+        {
+            _currentInterfaceName.Value = null;
         }
 
         public static void IgnoreCall()

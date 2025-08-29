@@ -1,5 +1,5 @@
 ﻿🦜 ITestConstructorService constructor called with:
-  🔸 arg0: connectionString
+  🔸 arg0: "connectionString"
   🔸 arg1: 42
 
 🦜 DoSomething:
