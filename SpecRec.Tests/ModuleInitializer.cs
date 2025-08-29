@@ -15,9 +15,8 @@ public static class ModuleInitializer
         var isClaudeCode = Environment.GetEnvironmentVariable("CLAUDECODE");
         if (!string.IsNullOrEmpty(isClaudeCode))
         {
-            // Set Verify environment variable to disable diff tool
-            Environment.SetEnvironmentVariable("Verify_DisableDiff", "true");
-            VerifierSettings.AutoVerify(false);
+            // Set DiffEngine environment variable to disable diff tool
+            Environment.SetEnvironmentVariable("DiffEngine_Disabled", "true");
         }
         
         // Force initial cleanup to ensure clean state
