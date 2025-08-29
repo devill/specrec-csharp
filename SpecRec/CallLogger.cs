@@ -255,6 +255,12 @@ namespace SpecRec
 
         private object? InvokeTargetMethod(MethodInfo targetMethod, object?[]? args, CallLogger callLogger, string methodName)
         {
+            // If _target is null, we're in "parrot mode" - get return values from CallLog
+            if (_target == null)
+            {
+                return InvokeInParrotMode(targetMethod, args, methodName);
+            }
+            
             try
             {
                 return targetMethod.Invoke(_target, args);
@@ -268,6 +274,29 @@ namespace SpecRec
             {
                 HandleMethodException(callLogger, ex, methodName);
                 throw;
+            }
+        }
+
+        private object? InvokeInParrotMode(MethodInfo targetMethod, object?[]? args, string methodName)
+        {
+            var methodArgs = args ?? new object[0];
+            var hasReturnValue = targetMethod.ReturnType != typeof(void);
+            
+            try
+            {
+                var returnValue = _logger.CallLog.GetNextReturnValue(methodName, methodArgs, hasReturnValue, hasReturnValue ? targetMethod.ReturnType : null);
+                
+                if (!hasReturnValue)
+                {
+                    return null;
+                }
+
+                return returnValue; // Already parsed to correct type by GetNextReturnValue
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new ParrotCallMismatchException(
+                    $"CallLoggerProxy<{typeof(T).Name}> call to {methodName} failed in parrot mode.\n{ex.Message}", ex);
             }
         }
 

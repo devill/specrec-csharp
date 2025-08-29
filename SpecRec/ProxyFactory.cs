@@ -12,9 +12,8 @@ namespace SpecRec
 
         public static T CreateParrotProxy<T>(CallLogger logger, string emoji, string? interfaceName = null) where T : class
         {
-            // For parrots, we would need a different approach since the original Create expects a target
-            // For now, fall back to the original mechanism
-            throw new NotSupportedException("Parrot proxy creation through ProxyFactory is not yet supported. Use Parrot.Create<T>() instead.");
+            // Create a CallLoggerProxy with null target for parrot mode
+            return CallLoggerProxy<T>.Create(default(T)!, logger, emoji);
         }
 
         public static bool CanCreateProxyForType(Type type)
