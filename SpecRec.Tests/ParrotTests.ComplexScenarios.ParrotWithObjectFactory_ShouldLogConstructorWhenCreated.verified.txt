@@ -4,4 +4,4 @@
 
 🦜 DoSomething:
   🔸 input: "test"
-  🔹 Returns: "result"
+  🔹 Returns: "Processed: test"
