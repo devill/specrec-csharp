@@ -10,6 +10,7 @@ namespace SpecRec
         private static readonly ThreadLocal<CallLogger?> _currentCallLogger = new(() => null);
         private static readonly ThreadLocal<string?> _currentMethodName = new(() => null);
         private static readonly ThreadLocal<string[]?> _constructorArgNames = new(() => null);
+        private static readonly ThreadLocal<object?> _lastReturnValue = new(() => null);
 
         public static void SetCurrentLogger(CallLogger logger)
         {
@@ -26,6 +27,7 @@ namespace SpecRec
             _currentCallLogger.Value = null;
             _currentMethodName.Value = null;
             _constructorArgNames.Value = null;
+            _lastReturnValue.Value = null;
         }
 
         public static void AddNote(string note)
@@ -79,6 +81,30 @@ namespace SpecRec
             {
                 _currentCallLogger.Value._ignoredReturnValues.Add(methodName);
             }
+        }
+
+        public static T? LoggedReturnValue<T>()
+        {
+            var returnValue = _lastReturnValue.Value;
+            if (returnValue == null)
+                return default(T);
+
+            if (returnValue is T directValue)
+                return directValue;
+
+            try
+            {
+                return (T)Convert.ChangeType(returnValue, typeof(T), CultureInfo.InvariantCulture);
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException($"Cannot convert return value '{returnValue}' to type {typeof(T).Name}", ex);
+            }
+        }
+
+        public static void SetLastReturnValue(object? value)
+        {
+            _lastReturnValue.Value = value;
         }
     }
 
@@ -188,6 +214,7 @@ namespace SpecRec
 
                 LogMethodCall(callLogger, targetMethod, args, result, methodName);
                 
+                CallLogFormatterContext.SetLastReturnValue(result);
                 CallLogFormatterContext.ClearCurrentLogger();
                 return result;
             }
@@ -198,6 +225,7 @@ namespace SpecRec
                 {
                     LogMethodCall(callLogger, targetMethod, args, "<missing_value>", methodName);
                 }
+                CallLogFormatterContext.SetLastReturnValue("<missing_value>");
                 CallLogFormatterContext.ClearCurrentLogger();
                 throw;
             }
@@ -208,6 +236,7 @@ namespace SpecRec
                 {
                     LogMethodCall(callLogger, targetMethod, args, "<missing_value>", methodName);
                 }
+                CallLogFormatterContext.SetLastReturnValue("<missing_value>");
                 CallLogFormatterContext.ClearCurrentLogger();
                 throw;
             }
