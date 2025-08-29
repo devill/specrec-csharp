@@ -10,7 +10,7 @@ namespace SpecRec.Tests
         // that we handle concrete classes appropriately
         
         [Fact]
-        public void Parrot_Create_WithConcreteClass_ShouldThrowOrHandleGracefully()
+        public void Parrot_Create_WithConcreteClass_ShouldWorkWithCastleProxy()
         {
             var verifiedContent = """
                 🎲 Next:
@@ -25,11 +25,11 @@ namespace SpecRec.Tests
             
             var callLog = new CallLog(verifiedContent);
             
-            // Random is a concrete class, not an interface
-            // DispatchProxy cannot create proxies for concrete classes
-            // This should either throw a helpful exception or handle gracefully
+            var randomParrot = Parrot.Create<Random>(callLog, "🎲");
             
-            Assert.Throws<ArgumentException>(() => Parrot.Create<Random>(callLog, "🎲"));
+            Assert.NotNull(randomParrot);
+            Assert.Equal(42, randomParrot.Next());
+            Assert.Equal(50, randomParrot.Next(1, 100));
         }
 
         [Fact]
@@ -55,40 +55,25 @@ namespace SpecRec.Tests
         }
 
         [Fact]
-        public void CallLogger_Wrap_WithConcreteClass_OriginalBehaviorTest()
+        public void CallLogger_Wrap_WithConcreteClass_ShouldWorkWithCastleProxy()
         {
-            // Test what actually happens when we try to wrap a concrete class
+            // Test wrapping a concrete class with virtual methods using Castle DynamicProxy
             var callLog = new CallLog();
             var logger = new CallLogger(callLog);
             var random = new Random(12345); // Seeded for predictability
             
-            // Test the current behavior - this might be a regression
-            try
-            {
-                var wrapped = logger.Wrap<Random>(random, "🎲");
-                
-                // If we get here, wrapping succeeded - let's see if we can use it
-                var value = wrapped.Next(100);
-                
-                // If this works, then concrete class wrapping is actually supported
-                // and my assumption about the regression might be wrong
-                Assert.NotNull(wrapped);
-                Assert.InRange(value, 0, 99);
-                
-                // Check if the call was logged
-                var log = callLog.ToString();
-                Console.WriteLine($"Call log: {log}");
-                
-                // This would be the expected behavior if wrapping actually worked
-                Assert.Contains("Next", log);
-            }
-            catch (ArgumentException ex)
-            {
-                // If this throws ArgumentException, then concrete classes are not supported
-                // which confirms the behavior we documented in tests
-                Assert.Contains("interface", ex.Message.ToLower());
-                Console.WriteLine($"Confirmed: Concrete classes not supported - {ex.Message}");
-            }
+            // With Castle DynamicProxy, this should now work for concrete classes
+            var wrapped = logger.Wrap<Random>(random, "🎲");
+            
+            // Use the wrapped object
+            var value = wrapped.Next(100);
+            
+            Assert.NotNull(wrapped);
+            Assert.InRange(value, 0, 99);
+            
+            // Check if the call was logged
+            var log = callLog.ToString();
+            Assert.Contains("Next", log);
         }
 
         [Fact]
@@ -154,19 +139,25 @@ namespace SpecRec.Tests
         }
 
         [Fact]
-        public void DocumentConcreteClassLimitation()
+        public void DocumentConcreteClassSupport()
         {
-            // This test documents the limitation with concrete classes
+            // Document what types can now be proxied with Castle DynamicProxy
             
-            // DispatchProxy only supports interfaces
-            Assert.False(ProxyFactory.CanCreateProxyForType(typeof(Random)));
-            Assert.False(ProxyFactory.CanCreateProxyForType(typeof(DateTime)));
-            Assert.False(ProxyFactory.CanCreateProxyForType(typeof(StringBuilder)));
-            
-            // But interfaces work fine
+            // Interfaces work via Castle DynamicProxy and DispatchProxy fallback
             Assert.True(ProxyFactory.CanCreateProxyForType(typeof(IDisposable)));
             Assert.True(ProxyFactory.CanCreateProxyForType(typeof(IComparable)));
             Assert.True(ProxyFactory.CanCreateProxyForType(typeof(IRandomService)));
+            
+            // Concrete classes with virtual members now work via Castle DynamicProxy
+            Assert.True(ProxyFactory.CanCreateProxyForType(typeof(Random)));
+            Assert.True(ProxyFactory.CanCreateProxyForType(typeof(TestCalculator)));
+            
+            // Sealed classes still don't work
+            Assert.False(ProxyFactory.CanCreateProxyForType(typeof(string)));
+            Assert.False(ProxyFactory.CanCreateProxyForType(typeof(int)));
+            
+            // Classes without virtual members still have limitations
+            Assert.False(ProxyFactory.CanCreateProxyForType(typeof(DateTime)));
         }
 
         [Fact]
@@ -266,6 +257,81 @@ namespace SpecRec.Tests
             Assert.NotNull(substitute);
             
             objectFactory.ClearAll();
+        }
+
+        [Fact]
+        public void CustomConcreteClass_ShouldWorkWithCastleParrot()
+        {
+            var verifiedContent = """
+                🧮 Calculate:
+                  🔸 x: 5
+                  🔸 y: 3
+                  🔹 Returns: 8
+
+                🧮 GetDescription:
+                  🔹 Returns: "Test Calculator"
+
+                """;
+            
+            var callLog = new CallLog(verifiedContent);
+            
+            // Create parrot for custom concrete class
+            var calculatorParrot = Parrot.Create<TestCalculator>(callLog, "🧮");
+            
+            Assert.NotNull(calculatorParrot);
+            Assert.Equal(8, calculatorParrot.Calculate(5, 3));
+            Assert.Equal("Test Calculator", calculatorParrot.GetDescription());
+        }
+
+        [Fact]
+        public void CustomConcreteClass_ShouldWorkWithCallLoggerWrap()
+        {
+            var callLog = new CallLog();
+            var logger = new CallLogger(callLog);
+            var calculator = new TestCalculator();
+            
+            // Wrap concrete class with virtual methods using Castle DynamicProxy
+            var wrapped = logger.Wrap<TestCalculator>(calculator, "🧮");
+            
+            var result = wrapped.Calculate(2, 3);
+            var description = wrapped.GetDescription();
+            
+            Assert.Equal(5, result); // Real implementation result
+            Assert.Equal("Real Calculator", description);
+            
+            // Verify logging occurred
+            var log = callLog.ToString();
+            Assert.Contains("Calculate", log);
+            Assert.Contains("GetDescription", log);
+        }
+
+        // Test concrete class with virtual methods for Moq testing
+        public class TestCalculator
+        {
+            public virtual int Calculate(int x, int y)
+            {
+                return x + y;
+            }
+
+            public virtual string GetDescription()
+            {
+                return "Real Calculator";
+            }
+
+            // Non-virtual method to test limitations
+            public int NonVirtualMethod()
+            {
+                return 42;
+            }
+        }
+
+        [Fact]
+        public void SealedClass_ShouldStillNotWork()
+        {
+            var callLog = new CallLog();
+            
+            // Sealed classes should still fail gracefully with a helpful message
+            Assert.Throws<ArgumentException>(() => Parrot.Create<string>(callLog, "📝"));
         }
     }
 }

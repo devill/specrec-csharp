@@ -458,7 +458,7 @@ namespace SpecRec
 
         public T Wrap<T>(T target, string emoji = "🔧") where T : class
         {
-            return CallLoggerProxy<T>.Create(target, this, emoji);
+            return ProxyFactory.CreateLoggingProxy<T>(target, this, emoji);
         }
 
         public CallLogger withReturn(object? returnValue, string? description = null)

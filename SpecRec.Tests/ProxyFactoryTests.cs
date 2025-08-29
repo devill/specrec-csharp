@@ -57,10 +57,12 @@ namespace SpecRec.Tests
         }
 
         [Fact]
-        public void CanCreateProxyForType_WithClassWithoutParameterlessConstructor_ShouldReturnFalse()
+        public void CanCreateProxyForType_WithClassWithoutParameterlessConstructor_ShouldReturnTrue()
         {
+            // With Castle.Core DynamicProxy, classes with virtual methods can be proxied
+            // even without parameterless constructors
             var result = ProxyFactory.CanCreateProxyForType(typeof(NoParameterlessConstructor));
-            Assert.False(result);
+            Assert.True(result);
         }
 
         [Fact]
@@ -72,11 +74,11 @@ namespace SpecRec.Tests
         }
 
         [Fact]
-        public void CanCreateProxyForType_WithClassWithVirtualMethods_ShouldReturnFalse()
+        public void CanCreateProxyForType_WithClassWithVirtualMethods_ShouldReturnTrue()
         {
-            // DispatchProxy only supports interfaces, not classes (even with virtual methods)
+            // With Castle.Core DynamicProxy, classes with virtual methods can be proxied
             var result = ProxyFactory.CanCreateProxyForType(typeof(VirtualClass));
-            Assert.False(result);
+            Assert.True(result);
         }
 
         [Fact]
