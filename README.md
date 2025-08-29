@@ -400,6 +400,64 @@ public class MyService : IMyService
 }
 ```
 
+#### Manual Test Doubles with LoggedReturnValue
+
+Use `CallLogFormatterContext.LoggedReturnValue<T>()` to access parsed return values from verified files within your manual stubs.
+
+```csharp
+public class ManualEmailServiceStub : IEmailService
+{
+    public bool SendEmail(string to, string subject)
+    {
+        // Your custom logic here
+        Console.WriteLine($"Sending email to {to}: {subject}");
+        
+        // Return the value from verified specification file
+        return CallLogFormatterContext.LoggedReturnValue<bool>();
+    }
+    
+    public List<string> GetPendingEmails()
+    {
+        // Custom processing logic
+        ProcessPendingQueue();
+        
+        // Return parsed value from specification, with fallback
+        return CallLogFormatterContext.LoggedReturnValue<List<string>>() ?? new List<string>();
+    }
+}
+```
+
+Use with verified specification files:
+
+```
+📧 SendEmail:
+  🔸 to: "user@example.com"
+  🔸 subject: "Welcome!"
+  🔹 Returns: True
+
+📧 GetPendingEmails:
+  🔹 Returns: ["email1@test.com", "email2@test.com"]
+```
+
+```csharp
+[Theory]
+[SpecRecLogs]
+public async Task TestWithManualStub(Context ctx)
+{
+    await ctx.Verify(async () =>
+    {
+        // Register your manual stub instead of auto-generated parrot
+        var customStub = new ManualEmailServiceStub();
+        ctx.Substitute<IEmailService>("📧", customStub);
+        
+        var service = Create<IEmailService>();
+        var result = service.SendEmail("user@example.com", "Welcome!");
+        
+        return result; // Returns True from verified file
+    });
+}
+```
+
 #### Constructor Parameter Tracking
 
 Track how objects are constructed:
