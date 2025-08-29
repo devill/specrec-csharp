@@ -184,14 +184,14 @@ namespace SpecRec.Tests
             
             // Use it in place of Random
             var result = UseRandomService(parrot);
-            Assert.Equal("Random: 42, Double: 0,7", result); // Note: culture-specific decimal separator
+            Assert.Equal("Random: 42, Double: 0.7", result); // Culture-invariant decimal separator
         }
 
         private string UseRandomService(IRandomService random)
         {
             var num = random.GetRandomNumber(1, 100);
             var dbl = random.GetRandomDouble();
-            return $"Random: {num}, Double: {dbl}";
+            return $"Random: {num}, Double: {dbl.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}";
         }
 
         // Interface abstraction for Random functionality
