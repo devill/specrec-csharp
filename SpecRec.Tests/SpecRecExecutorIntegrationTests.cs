@@ -225,7 +225,7 @@ namespace SpecRec.Tests
         }
         
         /// <summary>
-        /// Test with complex object parameters and array return
+        /// Wrappers also consume the CallLog, and do not break Parrot operations
         /// </summary>
         [Theory]
         [SpecRecLogs]
