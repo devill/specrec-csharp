@@ -1,53 +1,5 @@
-using System.Reflection;
-
 namespace SpecRec
 {
-    public class ParrotStub<T> : DispatchProxy, IConstructorCalledWith where T : class
-    {
-        private CallLog _callLog = null!;
-
-        public static T Create(CallLog callLog)
-        {
-            var proxy = Create<T, ParrotStub<T>>() as ParrotStub<T>;
-            proxy!._callLog = callLog;
-            return (proxy as T)!;
-        }
-
-        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
-        {
-            if (targetMethod == null)
-                throw new ArgumentNullException(nameof(targetMethod));
-
-            var methodName = targetMethod.Name;
-            var methodArgs = args ?? new object[0];
-
-            var hasReturnValue = targetMethod.ReturnType != typeof(void);
-            
-            try
-            {
-                var returnValue = _callLog.GetNextReturnValue(methodName, methodArgs, hasReturnValue, hasReturnValue ? targetMethod.ReturnType : null);
-                
-                if (!hasReturnValue)
-                {
-                    return null;
-                }
-
-                return returnValue; // Already parsed to correct type by GetNextReturnValue
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw new ParrotCallMismatchException(
-                    $"ParrotStub<{typeof(T).Name}> call to {methodName} failed.\n{ex.Message}", ex);
-            }
-        }
-
-        public void ConstructorCalledWith(ConstructorParameterInfo[] parameters)
-        {
-            // Allow constructor logging when ParrotStub is used with ObjectFactory
-        }
-
-    }
-
     public class Parrot(CallLog callLog, ObjectFactory? objectFactory = null)
     {
         public T Create<T>(string emoji = "🦜") where T : class
