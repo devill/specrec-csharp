@@ -1,0 +1,14 @@
+🎲 Next:
+  🔸 minValue: 0
+  🔸 maxValue: 5
+  🔹 Returns: 3
+
+🔔 INotificationService constructor called with:
+
+🔔 SendUrgentNotification:
+  🔸 message: "Urgent notification"
+
+🔄 IBatchProcessor constructor called with:
+
+🔄 GetProcessedCount:
+  🔹 Returns: 16

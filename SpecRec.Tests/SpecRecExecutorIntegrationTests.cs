@@ -223,6 +223,26 @@ namespace SpecRec.Tests
                 return processor.ProcessBatch(orderIds, urgent);
             });
         }
+        
+        /// <summary>
+        /// Test with complex object parameters and array return
+        /// </summary>
+        [Theory]
+        [SpecRecLogs]
+        public async Task MixingWrappersWithParrots(Context ctx)
+        {
+            await ctx.Verify(async () =>
+            {
+                ctx.Substitute<IBatchProcessor>("🔄")
+                   .Substitute<INotificationService>("🔔");
+
+                ctx.SetOne(ctx.Wrap<Random>(new RandomStub(), "🎲"));
+
+                Create<Random>().Next(0, 5);
+                Create<INotificationService>().SendUrgentNotification("Urgent notification");
+                Create<IBatchProcessor>().GetProcessedCount();
+            });
+        }
 
         /// <summary>
         /// Test that returns null to verify null handling
@@ -278,6 +298,14 @@ namespace SpecRec.Tests
                 
                 return $"Scenario '{scenario}' processed {count} times with result: {result}";
             });
+        }
+    }
+
+    public class RandomStub : Random
+    {
+        public override int Next(int minValue, int maxValue)
+        {
+            return 3;
         }
     }
 

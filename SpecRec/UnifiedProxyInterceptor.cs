@@ -61,8 +61,11 @@ namespace SpecRec
                     }
                     else
                     {
-                        // Logging mode: call the real target
+                        // Logging mode: call the real target and consume call index for synchronization
                         result = InvokeTarget(invocation);
+                        
+                        // Ensure wrappers also consume from _parsedCalls to maintain index sync
+                        ConsumeCallIndexForWrapper(invocation, methodName);
                     }
                     
                     invocation.ReturnValue = result;
@@ -311,6 +314,28 @@ namespace SpecRec
             var mainInterface = interfaces.FirstOrDefault(i =>
                 i.Name.StartsWith("I") && i != typeof(IConstructorCalledWith));
             return mainInterface?.Name ?? type.Name;
+        }
+
+        private void ConsumeCallIndexForWrapper(IInvocation invocation, string methodName)
+        {
+            // Make wrappers also consume from _parsedCalls to maintain index synchronization
+            // We ignore the return value since wrappers use the actual method result
+            var methodArgs = invocation.Arguments ?? new object[0];
+            var hasReturnValue = invocation.Method.ReturnType != typeof(void);
+            
+            try
+            {
+                _logger.CallLog.GetNextReturnValue(methodName, methodArgs, hasReturnValue);
+            }
+            catch (ParrotMissingReturnValueException)
+            {
+                // Wrappers can function even if there's no verified file or matching call
+                // This allows mixed scenarios and recording mode to work properly
+            }
+            catch (InvalidOperationException)
+            {
+                // Same as above - wrappers should be resilient to missing verified data
+            }
         }
     }
 
