@@ -136,19 +136,8 @@ namespace SpecRec
                 }
             }
 
-            var expectedCall = _parsedCalls[_currentCallIndex];
-            
-            // Only check method names - let Verify() handle parameter validation at the end
-            if (expectedCall.MethodName != methodName)
-            {
-                throw new InvalidOperationException(
-                    $"Call sequence mismatch at position {_currentCallIndex + 1}.\n" +
-                    $"Expected method: {expectedCall.MethodName}\n" +
-                    $"Actual method: {methodName}");
-            }
+            var expectedCall = getExpectedReturnValue(methodName, hasReturnValue);
 
-            _currentCallIndex++;
-            
             // Check if the return value is the special <missing_value> placeholder
             if (expectedCall.ReturnValue == "<missing_value>")
             {
@@ -194,6 +183,23 @@ namespace SpecRec
             }
             
             return expectedCall.ReturnValue;
+        }
+
+        private ParsedCall getExpectedReturnValue(string methodName, bool hasReturnValue)
+        {
+            var expectedCall = _parsedCalls[_currentCallIndex];
+            
+            // Only check method names - let Verify() handle parameter validation at the end
+            if (expectedCall.MethodName != methodName && hasReturnValue)
+            {
+                throw new InvalidOperationException(
+                    $"Call sequence mismatch at position {_currentCallIndex + 1}.\n" +
+                    $"Expected method: {expectedCall.MethodName}\n" +
+                    $"Actual method: {methodName}");
+            }
+
+            _currentCallIndex++;
+            return expectedCall;
         }
 
         public void LogCall(string methodName, object?[] args, object? returnValue)
@@ -554,23 +560,16 @@ namespace SpecRec
             }
         }
 
-        private string FormatCallSignature(string methodName, object?[] args)
-        {
-            var argStrings = args?.Select(a => a?.ToString() ?? "null") ?? new string[0];
-            return $"{methodName}({string.Join(", ", argStrings)})";
-        }
-
-        private string FormatCallSignature(string methodName, Dictionary<string, string> args)
-        {
-            var argStrings = args.Values.Select(a => a ?? "null");
-            return $"{methodName}({string.Join(", ", argStrings)})";
-        }
-
         private class ParsedCall
         {
             public string MethodName { get; set; } = "";
             public Dictionary<string, string> Arguments { get; set; } = new();
             public string? ReturnValue { get; set; }
+        }
+
+        public void AdvanceCallTracker(string methodName)
+        {
+            _currentCallIndex++;
         }
     }
 }
