@@ -29,6 +29,9 @@ bld/
 # User-specific files
 *.DotSettings.user
 
+# Coverage reports
+coverage_report/
+
 # NuGet packages
 *.nupkg
 *.snupkg
