@@ -315,65 +315,6 @@ namespace SpecRec
     }
 
     /// <summary>
-    /// Proxy wrapper that implements IConstructorCalledWith for constructor logging
-    /// </summary>
-    public class ProxyWithConstructorLogging<T> : IConstructorCalledWith where T : class
-    {
-        private readonly T _proxy;
-        private readonly CallLogger _logger;
-        private readonly string _emoji;
-        private readonly string _interfaceName;
-
-        public ProxyWithConstructorLogging(T proxy, CallLogger logger, string emoji)
-        {
-            _proxy = proxy;
-            _logger = logger;
-            _emoji = emoji;
-            _interfaceName = FindInterfaceName(typeof(T));
-        }
-
-        public T GetProxy() => _proxy;
-
-        public void ConstructorCalledWith(ConstructorParameterInfo[] parameters)
-        {
-            // Log the constructor call
-            var callLogger = new CallLogger(_logger.CallLog, _logger._objectFactory);
-            callLogger.forInterface(_interfaceName);
-
-            // Add constructor arguments
-            if (parameters != null)
-            {
-                var constructorArgNames = CallLogFormatterContext.GetConstructorArgumentNames();
-                for (int i = 0; i < parameters.Length; i++)
-                {
-                    var parameter = parameters[i];
-                    var argName = (constructorArgNames != null && i < constructorArgNames.Length)
-                        ? constructorArgNames[i]
-                        : parameter.Name ?? $"arg{i}";
-                    callLogger.withArgument(parameter.Value, argName);
-                }
-            }
-
-            callLogger.log(_emoji, "ConstructorCalledWith");
-            
-            // Pass through to target if it also implements IConstructorCalledWith
-            if (_proxy is IConstructorCalledWith targetConstructor)
-            {
-                targetConstructor.ConstructorCalledWith(parameters);
-            }
-        }
-
-        private static string FindInterfaceName(Type type)
-        {
-            // Try to find the main interface
-            var interfaces = type.GetInterfaces();
-            var mainInterface = interfaces.FirstOrDefault(i =>
-                i.Name.StartsWith("I") && i != typeof(IConstructorCalledWith));
-            return mainInterface?.Name ?? type.Name;
-        }
-    }
-
-    /// <summary>
     /// Simplified factory for creating proxies using Castle DynamicProxy
     /// </summary>
     public static class UnifiedProxyFactory
