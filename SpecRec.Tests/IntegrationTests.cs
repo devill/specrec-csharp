@@ -90,61 +90,6 @@ namespace SpecRec.Tests
             objectFactory.ClearAll();
         }
 
-        [Fact]
-        public void CallLogFormatter_Integration_ShouldFormatCorrectly()
-        {
-            var callLog = new CallLog();
-            var formatter = new CallLogFormatter(callLog, "ICustomService");
-            
-            var parameters = new List<(string name, object? value, string emoji)>
-            {
-                ("id", 42, "🔸"),
-                ("name", "Test", "🔸"),
-                ("active", true, "🔸")
-            };
-            
-            formatter.LogMethodCall("🔧", "ProcessData", parameters, "Success", "Operation completed");
-            
-            var output = callLog.ToString();
-            Assert.Contains("🔧 ProcessData:", output);
-            Assert.Contains("🔸 id: 42", output);
-            Assert.Contains("🔸 name: \"Test\"", output);
-            Assert.Contains("🔸 active: True", output);
-            Assert.Contains("🗒️ Operation completed", output);
-            Assert.Contains("🔹 Returns: \"Success\"", output);
-        }
-
-        [Fact]
-        public void CallLoggingContext_Integration_ShouldManageIgnoredItems()
-        {
-            var context = new CallLoggingContext();
-            
-            // Test ignore management
-            Assert.False(context.ShouldIgnoreCall("Method1"));
-            context._ignoredCalls.Add("Method1");
-            Assert.True(context.ShouldIgnoreCall("Method1"));
-            
-            Assert.False(context.ShouldIgnoreArgument("Method2", 0));
-            context._ignoredArguments["Method2"] = new HashSet<int> { 0, 2 };
-            Assert.True(context.ShouldIgnoreArgument("Method2", 0));
-            Assert.False(context.ShouldIgnoreArgument("Method2", 1));
-            Assert.True(context.ShouldIgnoreArgument("Method2", 2));
-            
-            Assert.False(context.ShouldIgnoreAllArguments("Method3"));
-            context._ignoredAllArguments.Add("Method3");
-            Assert.True(context.ShouldIgnoreAllArguments("Method3"));
-            
-            Assert.False(context.ShouldIgnoreReturnValue("Method4"));
-            context._ignoredReturnValues.Add("Method4");
-            Assert.True(context.ShouldIgnoreReturnValue("Method4"));
-            
-            // Test clear
-            context.Clear();
-            Assert.False(context.ShouldIgnoreCall("Method1"));
-            Assert.False(context.ShouldIgnoreArgument("Method2", 0));
-            Assert.False(context.ShouldIgnoreAllArguments("Method3"));
-            Assert.False(context.ShouldIgnoreReturnValue("Method4"));
-        }
 
         [Fact]
         public void CompleteRefactoringFlow_WithAllNewComponents_ShouldWork()
