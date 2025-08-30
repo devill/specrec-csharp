@@ -125,88 +125,11 @@ namespace SpecRec
     }
 
 
-    public class CallLoggerProxy<T> : DispatchProxy, IConstructorCalledWith where T : class
+    public class CallLoggerProxy<T> : DispatchProxy where T : class
     {
         private T _target = null!;
         private CallLogger _logger = null!;
         private string _emoji = "";
-        private string? _interfaceName = null;
-
-        public void ConstructorCalledWith(ConstructorParameterInfo[] parameters)
-        {
-            var args = parameters.Select(p => p.Value).ToArray();
-            SetupContextForTarget(args);
-            NotifyTargetOfConstructorCall(parameters);
-            var interfaceName = DetermineInterfaceName();
-            LogConstructorCall(interfaceName, parameters);
-            CallLogFormatterContext.ClearCurrentLogger();
-        }
-
-        private void SetupContextForTarget(object?[] args)
-        {
-            CallLogFormatterContext.SetCurrentLogger(new CallLogger(_logger.CallLog, _logger._objectFactory));
-            CallLogFormatterContext.SetCurrentMethodName("ConstructorCalledWith");
-        }
-
-        private void NotifyTargetOfConstructorCall(ConstructorParameterInfo[] parameters)
-        {
-            if (_target is IConstructorCalledWith constructorTarget)
-            {
-                constructorTarget.ConstructorCalledWith(parameters);
-            }
-        }
-
-        private string DetermineInterfaceName()
-        {
-            var interfaceName = _interfaceName ?? typeof(T).Name;
-            
-            if (IsValidInterfaceName(interfaceName))
-                return interfaceName;
-
-            return FindMainInterface();
-        }
-
-        private bool IsValidInterfaceName(string interfaceName)
-        {
-            return interfaceName.StartsWith("I") && interfaceName.Length > 1;
-        }
-
-        private string FindMainInterface()
-        {
-            var interfaces = _target?.GetType().GetInterfaces() ?? typeof(T).GetInterfaces();
-            var mainInterface = interfaces.FirstOrDefault(i => 
-                i.Name.StartsWith("I") && i != typeof(IConstructorCalledWith));
-            return mainInterface?.Name ?? typeof(T).Name;
-        }
-
-        private void LogConstructorCall(string interfaceName, ConstructorParameterInfo[] parameters)
-        {
-            var callLogger = new CallLogger(_logger.CallLog, _logger._objectFactory);
-            callLogger.forInterface(interfaceName);
-
-            AddConstructorArguments(callLogger, parameters);
-            callLogger.log(_emoji, "ConstructorCalledWith");
-        }
-
-        private void AddConstructorArguments(CallLogger callLogger, ConstructorParameterInfo[] parameters)
-        {
-            if (parameters == null) return;
-
-            var constructorArgNames = CallLogFormatterContext.GetConstructorArgumentNames();
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                var parameter = parameters[i];
-                var argName = GetArgumentName(constructorArgNames, i, parameter.Name);
-                callLogger.withArgument(parameter.Value, argName);
-            }
-        }
-
-        private string GetArgumentName(string[]? constructorArgNames, int index, string actualParameterName)
-        {
-            return (constructorArgNames != null && index < constructorArgNames.Length)
-                ? constructorArgNames[index]
-                : actualParameterName ?? $"Arg{index}";
-        }
 
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
