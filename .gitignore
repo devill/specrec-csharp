@@ -30,7 +30,7 @@ bld/
 *.DotSettings.user
 
 # Coverage reports
-coverage_report/
+coverage-report/
 
 # NuGet packages
 *.nupkg
