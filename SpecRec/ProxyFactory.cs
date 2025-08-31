@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace SpecRec
 {
     public static class ProxyFactory
@@ -29,17 +27,6 @@ namespace SpecRec
         public static bool CanCreateProxyForType(Type type)
         {
             return UnifiedProxyFactory.CanCreateProxy(type);
-        }
-
-        private static bool HasParameterlessConstructor(Type type)
-        {
-            return type.GetConstructor(Type.EmptyTypes) != null;
-        }
-
-        private static bool HasVirtualMethods(Type type)
-        {
-            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
-            return methods.Any(m => m.IsVirtual && !m.IsFinal && m.DeclaringType != typeof(object));
         }
     }
 }

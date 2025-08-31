@@ -54,14 +54,6 @@ namespace SpecRec
             return Path.Combine(testDirectory, fileName);
         }
 
-        public static string GetVerifiedFilePathWithTestCase(string testDirectory, string methodName, string testCaseName, string sourceFilePath)
-        {
-            var testClass = GetTestClassFromContext(methodName, sourceFilePath);
-            var className = GetFullClassName(testClass);
-            var fileName = $"{className}.{methodName}.{testCaseName}.verified.txt";
-            return Path.Combine(testDirectory, fileName);
-        }
-
         public static string GetFullClassName(Type testClass)
         {
             // For nested classes, build the full hierarchy: OuterClass.InnerClass
