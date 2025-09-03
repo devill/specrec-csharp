@@ -242,6 +242,8 @@ CallLogger produces readable specifications including exception recording:
 
 **Solution:** Parrot reads verified files and automatically provides the right return values.
 
+**Note:** Exception replay works best with simple exceptions that have writable properties and string constructors. Exceptions with read-only properties, complex constructors, or special initialization may not reproduce exactly - see [Exception Reproduction Limitations](#exception-reproduction-limitations) for details.
+
 #### With Context API
 
 ```csharp
@@ -487,6 +489,54 @@ SpecRec enforces strict formatting in verified files:
 - **Arrays**: No spaces: `[1,2,3]` or `["a","b","c"]`
 - **Objects**: Use IDs: `<id:myObject>`
 - **Null**: Lowercase: `null`
+
+## Exception Reproduction Limitations
+
+SpecRec can record and replay most exceptions, but some exceptions may not reproduce exactly due to .NET's exception design:
+
+### Exceptions That Reproduce Well
+- Standard exceptions with string constructors: `ArgumentException`, `InvalidOperationException`, `NotSupportedException`
+- Custom exceptions with writable properties and simple constructors
+- Exceptions that store state in public, writable properties
+
+### Exceptions That May Not Reproduce Correctly
+
+**Read-only Message Property**
+```csharp
+// Some exceptions don't allow message changes after construction
+// Result: Default message instead of your custom message
+```
+
+**No String Constructor**
+```csharp
+// Exceptions without Exception(string message) constructor
+// Result: Created with parameterless constructor, custom message lost
+```
+
+**Complex Constructors Only**
+```csharp
+// ArgumentException(string message, string paramName) requires two parameters
+// Result: Falls back to generic Exception with prefixed message like "[Original: ArgumentException] your message"
+```
+
+**Read-only or Private State**
+```csharp
+// SqlException with complex internal state, FileNotFoundException with file system details
+// Result: Exception created but internal collections/state not reproduced
+```
+
+**Missing Inner Exceptions**
+```csharp
+// Exception chains with InnerException are not supported in current format
+// Result: Only outer exception reproduced, chain broken
+```
+
+**Always Lost Information**
+- Stack traces (exceptions are created fresh during replay)
+- Source file/line information
+- Thread context and timing information
+
+For complex scenarios, consider using simpler custom exceptions or implementing manual stubs with `CallLogFormatterContext.LoggedReturnValue<T>()`.
 
 ## Requirements
 
