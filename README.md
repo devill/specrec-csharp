@@ -219,7 +219,7 @@ public async Task RecordManually()
 
 #### Specification Format
 
-CallLogger produces readable specifications:
+CallLogger produces readable specifications including exception recording:
 
 ```
 📧 SendEmail:
@@ -230,6 +230,10 @@ CallLogger produces readable specifications:
 📧 GetPendingEmails:
   🔸 maxCount: 10
   🔹 Returns: ["email1", "email2"]
+
+📧 SendBulkEmail:
+  🔸 recipients: ["user1@example.com", "user2@example.com"]
+  🔻 Throws: InvalidOperationException("Rate limit exceeded")
 ```
 
 ### Parrot: Replaying Interactions
