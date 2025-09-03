@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -343,6 +344,7 @@ namespace SpecRec
         internal readonly ObjectFactory? _objectFactory;
         private object? _returnValue;
         private string? _note;
+        private Exception? _throwsException;
         private readonly List<(string name, object? value, string emoji)> _parameters = new();
         private string? _methodName;
         private string? _forcedInterfaceName;
@@ -408,6 +410,12 @@ namespace SpecRec
             return this;
         }
 
+        public CallLogger withThrows(Exception exception)
+        {
+            _throwsException = exception;
+            return this;
+        }
+
         public CallLogger withArgument(object? value, string? name = null)
         {
             var paramName = name ?? $"Arg{_parameters.Count}";
@@ -445,6 +453,7 @@ namespace SpecRec
             _parameters.Clear();
             _returnValue = null;
             _note = null;
+            _throwsException = null;
             _forcedInterfaceName = null;
         }
 
@@ -477,13 +486,111 @@ namespace SpecRec
                 _callLog.AppendLine($"  🗒️ {_note}");
             }
 
-            if (_returnValue != null)
+            if (_throwsException != null)
+            {
+                var exceptionFormat = FormatException(_throwsException);
+                _callLog.AppendLine($"  🔻 Throws: {exceptionFormat}");
+            }
+            else if (_returnValue != null)
             {
                 var formattedReturn = _callLog.FormatValue(_returnValue);
                 _callLog.AppendLine($"  🔹 Returns: {formattedReturn}");
             }
 
             _callLog.AppendLine();
+        }
+
+        private string FormatException(Exception exception)
+        {
+            var type = exception.GetType();
+            var typeName = type.Name;
+            
+            // Check if it's a standard .NET exception with no meaningful custom properties
+            var meaningfulProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.DeclaringType != typeof(Exception) && 
+                           p.DeclaringType != typeof(SystemException) &&
+                           p.Name != "Data" &&
+                           HasMeaningfulValue(p, exception))
+                .ToList();
+            
+            // For simple exceptions with just a message, use simple format  
+            if (meaningfulProperties.Count == 0)
+            {
+                return $"{typeName}(\"{exception.Message}\")";
+            }
+            
+            // For complex exceptions, include custom properties
+            var sb = new StringBuilder();
+            sb.Append($"{exception.GetType().FullName} {{ ");
+            sb.Append($"Message: \"{exception.Message}\"");
+            
+            // Add custom properties
+            var properties = exception.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.Name != "Message" && p.Name != "StackTrace" && p.Name != "InnerException" 
+                    && p.Name != "Source" && p.Name != "HResult" && p.Name != "HelpLink" 
+                    && p.Name != "TargetSite" && p.Name != "Data");
+            
+            foreach (var prop in properties)
+            {
+                try
+                {
+                    var value = prop.GetValue(exception);
+                    if (value != null)
+                    {
+                        sb.Append($", {prop.Name}: ");
+                        // Don't use FormatValue for collections to avoid double formatting
+                        if (value is IEnumerable<string> list)
+                        {
+                            sb.Append($"[{string.Join(", ", list.Select(s => $"\"{s}\""))}]");
+                        }
+                        else if (value is string str)
+                        {
+                            sb.Append($"\"{str}\"");
+                        }
+                        else
+                        {
+                            sb.Append(value.ToString());
+                        }
+                    }
+                }
+                catch
+                {
+                    // Skip properties that can't be read
+                }
+            }
+            
+            sb.Append(" }");
+            return sb.ToString();
+        }
+
+        private bool HasMeaningfulValue(PropertyInfo property, Exception exception)
+        {
+            try
+            {
+                var value = property.GetValue(exception);
+                
+                // Null values are not meaningful
+                if (value == null)
+                    return false;
+                
+                // Empty strings are not meaningful
+                if (value is string str && string.IsNullOrEmpty(str))
+                    return false;
+                
+                // Empty collections are not meaningful
+                if (value is IEnumerable enumerable && !enumerable.Cast<object>().Any())
+                    return false;
+                
+                // Zero integers might not be meaningful (depends on context, but conservative approach)
+                if (value is int intVal && intVal == 0)
+                    return false;
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
 

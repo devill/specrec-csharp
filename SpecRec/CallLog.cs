@@ -138,6 +138,13 @@ namespace SpecRec
 
             var expectedCall = getExpectedReturnValue(methodName, hasReturnValue);
 
+            // Check if this call should throw an exception
+            if (!string.IsNullOrEmpty(expectedCall.ThrowsException))
+            {
+                var exception = ExceptionParser.ParseException(expectedCall.ThrowsException, _objectFactory);
+                throw exception;
+            }
+
             // Check if the return value is the special <missing_value> placeholder
             if (expectedCall.ReturnValue == "<missing_value>")
             {
@@ -192,7 +199,7 @@ namespace SpecRec
             // Only check method names - let Verify() handle parameter validation at the end
             if (expectedCall.MethodName != methodName && hasReturnValue)
             {
-                throw new InvalidOperationException(
+                throw new ParrotCallMismatchException(
                     $"Call sequence mismatch at position {_currentCallIndex + 1}.\n" +
                     $"Expected method: {expectedCall.MethodName}\n" +
                     $"Actual method: {methodName}");
@@ -453,6 +460,10 @@ namespace SpecRec
             {
                 ParseReturnLine(trimmedLine.Substring(12), call);
             }
+            else if (trimmedLine.StartsWith("🔻 Throws: "))
+            {
+                ParseThrowsLine(trimmedLine.Substring(11), call);
+            }
         }
 
         private void ParseParameterLine(string parameterPart, ParsedCall call)
@@ -476,6 +487,11 @@ namespace SpecRec
             ValidateSpecialValues(returnPart);
             
             call.ReturnValue = returnPart; // Store as raw string
+        }
+
+        private void ParseThrowsLine(string throwsPart, ParsedCall call)
+        {
+            call.ThrowsException = throwsPart; // Store as raw string for later parsing
         }
 
         private void ValidateSpecialValues(string valueStr)
@@ -565,6 +581,7 @@ namespace SpecRec
             public string MethodName { get; set; } = "";
             public Dictionary<string, string> Arguments { get; set; } = new();
             public string? ReturnValue { get; set; }
+            public string? ThrowsException { get; set; }
         }
 
         public void AdvanceCallTracker(string methodName)

@@ -135,7 +135,7 @@ namespace SpecRec
                     }
                     catch (Exception ex)
                     {
-                        throw new InvalidOperationException(
+                        throw new ParrotTypeConversionException(
                             $"Failed to convert preamble parameter '{paramName}' of value '{valueStr}' to type {paramType.Name}. " +
                             $"Original error: {ex.GetType().Name}: {ex.Message}", ex);
                     }
@@ -178,7 +178,7 @@ namespace SpecRec
                         
                         var suggestedPreamble = GenerateSuggestedPreamble(methodParams);
                         
-                        throw new InvalidOperationException(
+                        throw new ParrotMissingParameterValueException(
                             $"Required parameter '{paramName}' not found{fileInfo}. Available parameters: {availableParams}\n\n" +
                             $"Add this preamble section to your verified file:\n{suggestedPreamble}");
                     }

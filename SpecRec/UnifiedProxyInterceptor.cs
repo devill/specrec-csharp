@@ -171,22 +171,16 @@ namespace SpecRec
             var methodArgs = invocation.Arguments ?? new object[0];
             var hasReturnValue = invocation.Method.ReturnType != typeof(void);
             
-            try
-            {
-                return _logger.CallLog.GetNextReturnValue(
-                    methodName, 
-                    methodArgs, 
-                    hasReturnValue, 
-                    hasReturnValue ? invocation.Method.ReturnType : null);
-            }
-            catch (InvalidOperationException ex) when (!(ex is ParrotMissingReturnValueException))
-            {
-                // Only wrap InvalidOperationExceptions that are NOT ParrotMissingReturnValueException
-                // Let ParrotMissingReturnValueException pass through unchanged
-                var typeName = invocation.TargetType?.Name ?? invocation.Method.DeclaringType?.Name ?? "Unknown";
-                throw new ParrotCallMismatchException(
-                    $"ParrotInterceptor<{typeName}> call to {methodName} failed.\n{ex.Message}", ex);
-            }
+            // GetNextReturnValue can throw:
+            // 1. ParrotException subclasses (ParrotMissingReturnValueException, etc.) - pass through
+            // 2. Replayed exceptions from ExceptionParser - pass through
+            // 3. InvalidOperationException for call sequence issues - wrap as ParrotCallMismatchException
+            
+            return _logger.CallLog.GetNextReturnValue(
+                methodName, 
+                methodArgs, 
+                hasReturnValue, 
+                hasReturnValue ? invocation.Method.ReturnType : null);
         }
 
         private object? InvokeTarget(IInvocation invocation)
@@ -212,11 +206,10 @@ namespace SpecRec
             // Log exception if present
             if (exception != null)
             {
-                callLogger.withNote($"Exception: {exception.Message}");
+                callLogger.withThrows(exception);
             }
-            
-            // Log return value for non-void methods
-            if (invocation.Method.ReturnType != typeof(void) && !ShouldIgnoreReturnValue(callLogger, methodName))
+            // Log return value for non-void methods (only if no exception)
+            else if (invocation.Method.ReturnType != typeof(void) && !ShouldIgnoreReturnValue(callLogger, methodName))
             {
                 if (result != null || (result as string) == "<missing_value>")
                 {

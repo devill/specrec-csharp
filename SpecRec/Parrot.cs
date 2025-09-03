@@ -32,6 +32,12 @@ namespace SpecRec
         public ParrotMissingReturnValueException(string message, Exception innerException) : base(message, innerException) { }
     }
 
+    public class ParrotMissingParameterValueException : ParrotException
+    {
+        public ParrotMissingParameterValueException(string message) : base(message) { }
+        public ParrotMissingParameterValueException(string message, Exception innerException) : base(message, innerException) { }
+    }
+
     public class ParrotTypeConversionException : ParrotException
     {
         public ParrotTypeConversionException(string message) : base(message) { }
