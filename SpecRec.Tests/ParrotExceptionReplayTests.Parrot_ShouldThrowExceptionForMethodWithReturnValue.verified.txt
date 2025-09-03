@@ -1,0 +1,6 @@
+﻿💳 IPaymentService constructor called with:
+
+💳 ChargeCard:
+  🔸 cardNumber: "invalid-card"
+  🔸 amount: 50
+  🔻 Throws: InvalidOperationException("Card declined")

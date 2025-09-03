@@ -1,0 +1,13 @@
+﻿📊 IDataService constructor called with:
+
+📊 GetData:
+  🔸 id: "valid-id"
+  🔹 Returns: "data"
+
+📊 GetData:
+  🔸 id: "invalid-id"
+  🔻 Throws: NotFoundException("Data not found")
+
+📊 GetData:
+  🔸 id: "another-id"
+  🔹 Returns: "more-data"

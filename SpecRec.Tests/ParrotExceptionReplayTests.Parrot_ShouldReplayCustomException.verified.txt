@@ -1,0 +1,5 @@
+﻿✅ IValidationService constructor called with:
+
+✅ ValidateInput:
+  🔸 input: "bad-data"
+  🔻 Throws: SpecRec.Tests.ParrotExceptionReplayTests+ValidationException { Message: "Input validation failed", ErrorCode: "VALIDATION_ERROR", Errors: ["Field1 required", "Field2 invalid", "Field3 too long"] }

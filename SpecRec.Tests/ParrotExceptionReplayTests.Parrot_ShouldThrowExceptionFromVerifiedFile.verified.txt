@@ -1,0 +1,6 @@
+﻿💳 IPaymentService constructor called with:
+
+💳 ProcessPayment:
+  🔸 cardNumber: "invalid-card"
+  🔸 amount: 100
+  🔻 Throws: InvalidOperationException("Card validation failed")
