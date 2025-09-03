@@ -1,0 +1,4 @@
+﻿💥 ThrowingMethod:
+  🔸 param1: "input"
+  🔻 Throws: InvalidOperationException("Manual exception")
+

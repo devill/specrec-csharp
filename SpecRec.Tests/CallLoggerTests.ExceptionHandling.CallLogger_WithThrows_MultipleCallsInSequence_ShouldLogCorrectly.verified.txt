@@ -1,0 +1,12 @@
+﻿✅ Process:
+  🔸 valid: "id"
+  🔹 Returns: "success"
+
+❌ Process:
+  🔸 invalid: "id"
+  🔻 Throws: InvalidOperationException("Invalid ID")
+
+✅ Process:
+  🔸 valid2: "id"
+  🔹 Returns: "success2"
+

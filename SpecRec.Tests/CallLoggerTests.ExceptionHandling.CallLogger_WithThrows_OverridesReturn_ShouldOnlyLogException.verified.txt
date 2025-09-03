@@ -1,0 +1,4 @@
+﻿⚡ MethodWithBoth:
+  🔸 param: "value"
+  🔻 Throws: InvalidOperationException("Exception takes precedence")
+

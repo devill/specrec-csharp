@@ -1,0 +1,4 @@
+﻿⚠️ ValidateParameter:
+  🔸 value: "test"
+  🔻 Throws: System.ArgumentNullException { Message: "Parameter cannot be null (Parameter 'paramName')", ParamName: "paramName" }
+

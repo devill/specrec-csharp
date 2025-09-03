@@ -387,6 +387,97 @@ namespace SpecRec.Tests
 
                 await Verify(logger.SpecBook.ToString());
             }
+
+            [Fact]
+            public async Task CallLogger_WithThrows_ManualLogging_ShouldFormatCorrectly()
+            {
+                var logger = new CallLogger();
+
+                logger.withArgument("input", "param1")
+                    .withThrows(new InvalidOperationException("Manual exception"))
+                    .log("💥", "ThrowingMethod");
+
+                await Verify(logger.SpecBook.ToString());
+            }
+
+            [Fact]
+            public async Task CallLogger_WithThrows_SimpleException_ShouldUseSimpleFormat()
+            {
+                var logger = new CallLogger();
+
+                logger.withArgument("test", "value")
+                    .withThrows(new ArgumentNullException("paramName", "Parameter cannot be null"))
+                    .log("⚠️", "ValidateParameter");
+
+                await Verify(logger.SpecBook.ToString());
+            }
+
+            [Fact]
+            public async Task CallLogger_WithThrows_CustomException_ShouldIncludeProperties()
+            {
+                var logger = new CallLogger();
+                var customEx = new CustomTestException("Custom error occurred")
+                {
+                    ErrorCode = "ERR_001",
+                    Severity = "High",
+                    Details = new List<string> { "Detail 1", "Detail 2", "Detail 3" }
+                };
+
+                logger.withArgument("data", "input")
+                    .withThrows(customEx)
+                    .log("🚨", "ProcessWithCustomException");
+
+                await Verify(logger.SpecBook.ToString());
+            }
+
+            [Fact]
+            public async Task CallLogger_WithThrows_OverridesReturn_ShouldOnlyLogException()
+            {
+                var logger = new CallLogger();
+
+                logger.withArgument("value", "param")
+                    .withReturn("this should not appear")
+                    .withThrows(new InvalidOperationException("Exception takes precedence"))
+                    .log("⚡", "MethodWithBoth");
+
+                await Verify(logger.SpecBook.ToString());
+            }
+
+            [Fact]
+            public async Task CallLogger_WithThrows_AndNote_ShouldLogBoth()
+            {
+                var logger = new CallLogger();
+
+                logger.withArgument("id", "123")
+                    .withNote("Processing failed due to validation")
+                    .withThrows(new ArgumentException("Invalid ID format"))
+                    .log("🔴", "ValidateId");
+
+                await Verify(logger.SpecBook.ToString());
+            }
+
+            [Fact]
+            public async Task CallLogger_WithThrows_MultipleCallsInSequence_ShouldLogCorrectly()
+            {
+                var logger = new CallLogger();
+
+                // First call succeeds
+                logger.withArgument("id", "valid")
+                    .withReturn("success")
+                    .log("✅", "Process");
+
+                // Second call throws
+                logger.withArgument("id", "invalid")
+                    .withThrows(new InvalidOperationException("Invalid ID"))
+                    .log("❌", "Process");
+
+                // Third call succeeds again
+                logger.withArgument("id", "valid2")
+                    .withReturn("success2")
+                    .log("✅", "Process");
+
+                await Verify(logger.SpecBook.ToString());
+            }
         }
 
         public class EdgeCases
@@ -686,5 +777,14 @@ namespace SpecRec.Tests
         {
             // Do nothing - this will test the fallback to actual parameter names
         }
+    }
+
+    public class CustomTestException : Exception
+    {
+        public string ErrorCode { get; set; } = "";
+        public string Severity { get; set; } = "";
+        public List<string> Details { get; set; } = new();
+
+        public CustomTestException(string message) : base(message) { }
     }
 }

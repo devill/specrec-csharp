@@ -1,0 +1,4 @@
+﻿🚨 ProcessWithCustomException:
+  🔸 input: "data"
+  🔻 Throws: SpecRec.Tests.CustomTestException { Message: "Custom error occurred", ErrorCode: "ERR_001", Severity: "High", Details: ["Detail 1", "Detail 2", "Detail 3"] }
+

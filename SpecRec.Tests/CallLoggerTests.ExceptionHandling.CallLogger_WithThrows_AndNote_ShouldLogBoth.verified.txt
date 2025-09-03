@@ -1,0 +1,5 @@
+﻿🔴 ValidateId:
+  🔸 123: "id"
+  🗒️ Processing failed due to validation
+  🔻 Throws: System.ArgumentException { Message: "Invalid ID format" }
+
