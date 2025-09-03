@@ -30,16 +30,15 @@ Create a test that uses SpecRec's Context API to automatically record and verify
 [SpecRecLogs]
 public async Task UserRegistration(Context ctx, string email = "john@example.com", string name = "John Doe")
 {
-    await ctx.Verify(async () =>
-    {
-        // Set up automatic test doubles
-        ctx.Substitute<IEmailService>("📧")
-           .Substitute<IDatabaseService>("🗃️");
-        
-        // Run your legacy code
-        var userService = new UserService();
-        return userService.RegisterNewUser(email, name);
-    });
+    await ctx
+        .Substitute<IEmailService>("📧")
+        .Substitute<IDatabaseService>("🗃️")
+        .Verify(async () =>
+        {
+            // Run your legacy code
+            var userService = new UserService();
+            return userService.RegisterNewUser(email, name);
+        });
 }
 ```
 
@@ -111,14 +110,13 @@ Install-Package Verify.Xunit
 [SpecRecLogs]
 public async Task MyTest(Context ctx)
 {
-    await ctx.Verify(async () =>
-    {
-        // Automatically injects test doubles for Create<IRepository>
-        ctx.Substitute<IRepository>("🗄️");
-        
-        // Your code can now use:
-        var repo = Create<IRepository>();  // Gets the test double
-    });
+    await ctx
+        .Substitute<IRepository>("🗄️")
+        .Verify(async () =>
+        {
+            // Your code can now use:
+            var repo = Create<IRepository>();  // Gets the test double
+        });
 }
 ```
 
@@ -251,16 +249,15 @@ CallLogger produces readable specifications including exception recording:
 [SpecRecLogs]
 public async Task ReplayWithParrot(Context ctx)
 {
-    await ctx.Verify(async () =>
-    {
-        // Automatically creates Parrots from verified file
-        ctx.Substitute<IEmailService>("📧")
-           .Substitute<IUserService>("👤");
-        
-        // Your code gets Parrots that replay from verified file
-        var result = ProcessUserFlow();
-        return result;
-    });
+    await ctx
+        .Substitute<IEmailService>("📧")
+        .Substitute<IUserService>("👤")
+        .Verify(async () =>
+        {
+            // Your code gets Parrots that replay from verified file
+            var result = ProcessUserFlow();
+            return result;
+        });
 }
 ```
 
@@ -297,19 +294,15 @@ public async Task ManualParrot()
 [SpecRecLogs]
 public async Task TrackObjects(Context ctx)
 {
-    await ctx.Verify(async () =>
-    {
-        var complexConfig = new DatabaseConfig { /* ... */ };
-        
-        // Register with an ID
-        ctx.Register(complexConfig, "dbConfig");
-        
-        // When logged, shows as <id:dbConfig> instead of full dump
-        ctx.Substitute<IDataService>("🗃️");
-        
-        var service = Create<IDataService>();
-        service.Initialize(complexConfig);  // Logs as <id:dbConfig>
-    });
+    await ctx
+        .Register(new DatabaseConfig { /* ... */ }, "dbConfig")
+        .Substitute<IDataService>("🗃️")
+        .Verify(async () =>
+        {
+            // When logged, shows as <id:dbConfig> instead of full dump
+            var service = Create<IDataService>();
+            service.Initialize(ctx.GetRegistered<DatabaseConfig>("dbConfig"));  // Logs as <id:dbConfig>
+        });
 }
 ```
 
@@ -357,14 +350,14 @@ Tests can accept parameters from verified files:
 [SpecRecLogs]
 public async Task TestWithData(Context ctx, string userName, bool isAdmin = false)
 {
-    await ctx.Verify(async () =>
-    {
-        ctx.Substitute<IUserService>("👤");
-        
-        var service = Create<IUserService>();
-        var result = service.CreateUser(userName, isAdmin);
-        return $"Created: {userName} (Admin: {isAdmin})";
-    });
+    await ctx
+        .Substitute<IUserService>("👤")
+        .Verify(async () =>
+        {
+            var service = Create<IUserService>();
+            var result = service.CreateUser(userName, isAdmin);
+            return $"Created: {userName} (Admin: {isAdmin})";
+        });
 }
 ```
 
