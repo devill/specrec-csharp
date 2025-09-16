@@ -6,16 +6,18 @@ namespace SpecRec
     {
         public static async Task Verify<T>(this Context ctx, Func<Task<T>> testMethod,
             [CallerMemberName] string? testName = null,
-            [CallerFilePath] string? sourceFilePath = null)
+            [CallerFilePath] string? sourceFilePath = null,
+            ExceptionHandling exceptions = ExceptionHandling.None)
         {
-            await SpecRecExecutor.ExecuteTestAsync(testMethod, ctx, testName, sourceFilePath);
+            await SpecRecExecutor.ExecuteTestAsync(testMethod, ctx, testName, sourceFilePath, exceptions);
         }
 
         public static async Task Verify(this Context ctx, Func<Task> testMethod,
             [CallerMemberName] string? testName = null,
-            [CallerFilePath] string? sourceFilePath = null)
+            [CallerFilePath] string? sourceFilePath = null,
+            ExceptionHandling exceptions = ExceptionHandling.None)
         {
-            await SpecRecExecutor.ExecuteTestAsync(testMethod, ctx, testName, sourceFilePath);
+            await SpecRecExecutor.ExecuteTestAsync(testMethod, ctx, testName, sourceFilePath, exceptions);
         }
     }
 }

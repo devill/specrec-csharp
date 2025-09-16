@@ -42,6 +42,27 @@ public async Task UserRegistration(Context ctx, string email = "john@example.com
 }
 ```
 
+#### Exception Handling Options
+
+Control how exceptions are handled during verification:
+
+```csharp
+// Default (0): Log exceptions, continue test
+await ctx.Verify(testMethod);
+
+// Skip logging exceptions
+await ctx.Verify(testMethod, exceptions: ExceptionHandling.SkipVerify);
+
+// Rethrow exceptions after processing
+await ctx.Verify(testMethod, exceptions: ExceptionHandling.PassThrough);
+
+// Print stacktrace to stderr
+await ctx.Verify(testMethod, exceptions: ExceptionHandling.Trace);
+
+// Combine flags
+await ctx.Verify(testMethod, exceptions: ExceptionHandling.PassThrough + ExceptionHandling.Trace);
+```
+
 ### Step 3: Run Test and Fill Return Values
 
 First run generates a `.received.txt` file with `<missing_value>` placeholders:

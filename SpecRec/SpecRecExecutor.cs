@@ -9,9 +9,10 @@ namespace SpecRec
         /// Executes a SpecRec test method with the unified execution flow.
         /// Handles Context setup, optional parameters, return value capture, exception handling, and cleanup.
         /// </summary>
-        public static async Task ExecuteTestAsync<T>(Func<Task<T>> testMethod, Context ctx, 
-            [CallerMemberName] string? testName = null, 
-            [CallerFilePath] string? sourceFilePath = null)
+        public static async Task ExecuteTestAsync<T>(Func<Task<T>> testMethod, Context ctx,
+            [CallerMemberName] string? testName = null,
+            [CallerFilePath] string? sourceFilePath = null,
+            ExceptionHandling exceptions = ExceptionHandling.None)
         {
             await ExecuteCoreAsync(
                 async () => {
@@ -20,7 +21,8 @@ namespace SpecRec
                 },
                 ctx,
                 testName,
-                sourceFilePath);
+                sourceFilePath,
+                exceptions);
         }
 
         /// <summary>
@@ -28,17 +30,18 @@ namespace SpecRec
         /// Handles Context setup, optional parameters, exception handling, and cleanup.
         /// </summary>
         public static async Task ExecuteTestAsync(Func<Task> testMethod, Context ctx,
-            [CallerMemberName] string? testName = null, 
-            [CallerFilePath] string? sourceFilePath = null)
+            [CallerMemberName] string? testName = null,
+            [CallerFilePath] string? sourceFilePath = null,
+            ExceptionHandling exceptions = ExceptionHandling.None)
         {
-            await ExecuteCoreAsync(testMethod, ctx, testName, sourceFilePath);
+            await ExecuteCoreAsync(testMethod, ctx, testName, sourceFilePath, exceptions);
         }
 
         private static async Task ExecuteCoreAsync(Func<Task> testAction, Context ctx,
-            string? testName, string? sourceFilePath)
+            string? testName, string? sourceFilePath, ExceptionHandling exceptions = ExceptionHandling.None)
         {
             ctx.CallLog.SetSourceTestInfo(testName, sourceFilePath);
-            
+
             try
             {
                 await testAction();
@@ -49,9 +52,26 @@ namespace SpecRec
             }
             catch (Exception ex)
             {
-                ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
+                var skipVerify = exceptions.HasFlag(ExceptionHandling.SkipVerify);
+                var passThrough = exceptions.HasFlag(ExceptionHandling.PassThrough);
+                var trace = exceptions.HasFlag(ExceptionHandling.Trace);
+
+                if (trace)
+                {
+                    Console.Error.WriteLine($"StackTrace: {ex}");
+                }
+
+                if (!skipVerify)
+                {
+                    ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
+                }
+
+                if (passThrough)
+                {
+                    throw;
+                }
             }
-            finally 
+            finally
             {
                 await ctx.CallLog.Verify(testName, sourceFilePath);
                 ctx.Factory.ClearAll();

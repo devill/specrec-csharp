@@ -36,6 +36,7 @@ coverage-report/
 *.nupkg
 *.snupkg
 *.nuspec
+nuget.config
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
