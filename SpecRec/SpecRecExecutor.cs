@@ -40,6 +40,7 @@ namespace SpecRec
         private static async Task ExecuteCoreAsync(Func<Task> testAction, Context ctx,
             string? testName, string? sourceFilePath, ExceptionHandling exceptions = ExceptionHandling.None)
         {
+            bool caughtException = false;
             ctx.CallLog.SetSourceTestInfo(testName, sourceFilePath);
 
             try
@@ -52,29 +53,30 @@ namespace SpecRec
             }
             catch (Exception ex)
             {
-                var skipVerify = exceptions.HasFlag(ExceptionHandling.SkipVerify);
-                var passThrough = exceptions.HasFlag(ExceptionHandling.PassThrough);
-                var trace = exceptions.HasFlag(ExceptionHandling.Trace);
 
-                if (trace)
-                {
-                    Console.Error.WriteLine($"StackTrace: {ex}");
-                }
-
-                if (!skipVerify)
+                if (!exceptions.HasFlag(ExceptionHandling.SkipVerify))
                 {
                     ctx.CallLog.AppendLine($"❌ Exception {ex.GetType().Name}: {ex.Message}");
                 }
-
-                if (passThrough)
+                
+                if (exceptions.HasFlag(ExceptionHandling.Trace) && ex.StackTrace != null)
                 {
+                    ctx.CallLog.AppendLine(ex.StackTrace);
+                }
+
+                if (exceptions.HasFlag(ExceptionHandling.PassThrough))
+                {
+                    caughtException = true;
                     throw;
                 }
             }
             finally
             {
-                await ctx.CallLog.Verify(testName, sourceFilePath);
                 ctx.Factory.ClearAll();
+                if (!caughtException)
+                {
+                    await ctx.CallLog.Verify(testName, sourceFilePath);
+                }
             }
         }
     }
