@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Xunit;
-using static SpecRec.GlobalObjectFactory;
+using static ObjectFactory.GlobalObjectFactory;
 
 namespace SpecRec.Tests
 {
@@ -40,7 +40,7 @@ namespace SpecRec.Tests
             string testParam = "default"
         )
         {
-            var factory = ObjectFactory.Instance();
+            var factory = ObjectFactory.ObjectFactory.Instance();
             
             try
             {

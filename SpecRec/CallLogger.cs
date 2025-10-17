@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using ObjectFactory;
 
 namespace SpecRec
 {
@@ -341,7 +342,7 @@ namespace SpecRec
     public class CallLogger
     {
         private readonly CallLog _callLog;
-        internal readonly ObjectFactory? _objectFactory;
+        internal readonly ObjectFactory.ObjectFactory? _objectFactory;
         private object? _returnValue;
         private string? _note;
         private Exception? _throwsException;
@@ -371,9 +372,9 @@ namespace SpecRec
         public string FormatValue(object? value) => _callLog.FormatValue(value);
         
         [Obsolete("StringBuilder-based constructor is deprecated. Use CallLogger() instead.")]
-        public CallLogger(StringBuilder specbook, ObjectFactory? objectFactory = null)
+        public CallLogger(StringBuilder specbook, ObjectFactory.ObjectFactory? objectFactory = null)
         {
-            _objectFactory = objectFactory ?? ObjectFactory.Instance();
+            _objectFactory = objectFactory ?? ObjectFactory.ObjectFactory.Instance();
             _callLog = new CallLog(objectFactory: _objectFactory);
             
             // For backward compatibility, if a StringBuilder was provided, we need to sync it
@@ -387,9 +388,9 @@ namespace SpecRec
         /// <summary>
         /// Constructor for internal use with specific CallLog.
         /// </summary>
-        public CallLogger(CallLog? callLog = null, ObjectFactory? objectFactory = null)
+        public CallLogger(CallLog? callLog = null, ObjectFactory.ObjectFactory? objectFactory = null)
         {
-            _objectFactory = objectFactory ?? ObjectFactory.Instance();
+            _objectFactory = objectFactory ?? ObjectFactory.ObjectFactory.Instance();
             _callLog = callLog ?? new CallLog(objectFactory: _objectFactory);
         }
 

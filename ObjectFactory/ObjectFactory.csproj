@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>ObjectFactory</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>SpecRec</Authors>
+    <Description>ObjectFactory - Lightweight dependency injection for legacy code. Replace 'new' with testable factories without major refactoring.</Description>
+    <PackageTags>dependency-injection;factory;legacy;testing</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="LICENSE.md" Pack="true" PackagePath="/" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

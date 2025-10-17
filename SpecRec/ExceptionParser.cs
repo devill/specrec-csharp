@@ -1,11 +1,12 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
+using ObjectFactory;
 
 namespace SpecRec
 {
     public static class ExceptionParser
     {
-        public static Exception ParseException(string exceptionSpec, ObjectFactory? objectFactory = null)
+        public static Exception ParseException(string exceptionSpec, ObjectFactory.ObjectFactory? objectFactory = null)
         {
             if (string.IsNullOrWhiteSpace(exceptionSpec))
                 throw new ArgumentException("Exception specification cannot be empty");
@@ -73,7 +74,7 @@ namespace SpecRec
             }
         }
 
-        private static Exception CreateComplexException(string typeName, string propertiesString, ObjectFactory? objectFactory)
+        private static Exception CreateComplexException(string typeName, string propertiesString, ObjectFactory.ObjectFactory? objectFactory)
         {
             try
             {
@@ -256,7 +257,7 @@ namespace SpecRec
             return text.Length;
         }
 
-        private static void SetExceptionProperties(Exception exception, Dictionary<string, string> properties, ObjectFactory? objectFactory)
+        private static void SetExceptionProperties(Exception exception, Dictionary<string, string> properties, ObjectFactory.ObjectFactory? objectFactory)
         {
             var type = exception.GetType();
             
@@ -280,7 +281,7 @@ namespace SpecRec
             }
         }
 
-        private static object? ParsePropertyValue(string valueStr, Type targetType, ObjectFactory? objectFactory)
+        private static object? ParsePropertyValue(string valueStr, Type targetType, ObjectFactory.ObjectFactory? objectFactory)
         {
             // Handle strings
             if (targetType == typeof(string))
@@ -318,7 +319,7 @@ namespace SpecRec
             return valueStr;
         }
 
-        private static object? ParseList(string valueStr, Type listType, ObjectFactory? objectFactory)
+        private static object? ParseList(string valueStr, Type listType, ObjectFactory.ObjectFactory? objectFactory)
         {
             valueStr = valueStr.Trim();
             

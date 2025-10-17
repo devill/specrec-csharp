@@ -20,6 +20,6 @@ public static class ModuleInitializer
         }
         
         // Force initial cleanup to ensure clean state
-        ObjectFactory.Instance().ClearAll();
+        ObjectFactory.ObjectFactory.Instance().ClearAll();
     }
 }

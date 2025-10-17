@@ -221,7 +221,7 @@ namespace SpecRec.Tests
                 """;
             
             var testObject = new TestObject { Name = "Test", Value = 100 };
-            var objectFactory = ObjectFactory.Instance();
+            var objectFactory = ObjectFactory.ObjectFactory.Instance();
             objectFactory.Register(testObject, "testObj");
             
             var callLog = new CallLog(verifiedContent, objectFactory);

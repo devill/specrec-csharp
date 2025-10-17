@@ -8,17 +8,17 @@ public class CallLoggerObjectLoggingTests
     {
         public BasicObjectIdFormattingTests()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
         
         public void Dispose()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
         [Fact]
         public void FormatValue_WithRegisteredObject_ShouldReturnIdFormat()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var testService = new TestService();
             globalFactory.Register(testService, "testSvc");
             
@@ -41,7 +41,7 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public void FormatValue_WithMultipleRegisteredObjects_ShouldUseCorrectIds()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var service1 = new TestService { Name = "Service1" };
             var service2 = new TestService { Name = "Service2" };
             globalFactory.Register(service1, "svc1");
@@ -58,17 +58,17 @@ public class CallLoggerObjectLoggingTests
     {
         public IntegrationWithWrappedObjectsTests()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
         
         public void Dispose()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
         [Fact]
         public async Task Wrap_WithRegisteredService_ShouldLogIdInArguments()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var service = new TestService();
             var dependency = new AnotherService();
             globalFactory.Register(dependency, "emailService");
@@ -84,7 +84,7 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public async Task Wrap_WithRegisteredService_ShouldLogIdInReturnValue()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var service = new TestService();
             var returnedObject = new AnotherService();
             service.SetReturnValue(returnedObject);
@@ -115,7 +115,7 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public async Task Wrap_WithMixedRegisteredAndPrimitiveArgs_ShouldFormatCorrectly()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var service = new TestService();
             var dependency = new AnotherService();
             globalFactory.Register(dependency, "dbConnection");
@@ -131,7 +131,7 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public async Task Wrap_WithComplexObjectScenario_ShouldShowRealWorldUsage()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var userService = new TestService();
             var emailService = new AnotherService { Name = "EmailService" };
             var dbService = new AnotherService { Name = "DatabaseService" };
@@ -204,7 +204,7 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public void CallLogger_WithCustomObjectFactory_ShouldUseProvidedRegistry()
         {
-            var customFactory = new ObjectFactory();
+            var customFactory = new ObjectFactory.ObjectFactory();
             var testObj = new TestService();
             customFactory.Register(testObj, "customId");
             
@@ -217,7 +217,7 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public void CallLogger_WithGlobalObjectFactory_ShouldUseGlobalRegistry()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var testObj = new TestService();
             globalFactory.Register(testObj, "globalId");
             
@@ -251,7 +251,7 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public void FormatValue_WithObjectThatBecomesUnregistered_ShouldHandleGracefully()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var testObj = new TestService();
             
             factory.Register(testObj, "tempId");
@@ -267,7 +267,7 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public void FormatValue_WithObjectFactoryChanges_ShouldReflectCurrentState()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var testObj = new TestService();
             var callLogger = new CallLogger(objectFactory: factory);
             
@@ -281,7 +281,7 @@ public class CallLoggerObjectLoggingTests
         [Fact]
         public void FormatValue_WithNestedObjectsInCollections_ShouldFormatEachCorrectly()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var service1 = new TestService { Name = "Service1" };
             var service2 = new TestService { Name = "Service2" };
             

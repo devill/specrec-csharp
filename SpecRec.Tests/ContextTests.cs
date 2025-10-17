@@ -8,7 +8,7 @@ public class ContextTests
         public void Context_WithCallLogAndFactory_ShouldInitializeCorrectly()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var context = new Context(callLog, factory);
             
@@ -20,7 +20,7 @@ public class ContextTests
         public void Context_WithTestCaseName_ShouldReturnCorrectToString()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var context = new Context(callLog, factory, "EventCreation");
             
@@ -34,40 +34,40 @@ public class ContextTests
         public void Substitute_WithInterface_ShouldConfigureAutoParrot()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             
             var result = context.Substitute<IContextTestService>("🔧");
             
             Assert.Same(context, result); // Should return this for fluent interface
-            Assert.True(factory.HasAutoParrot<IContextTestService>());
+            Assert.True(factory.HasCustomFactory<IContextTestService>());
         }
 
         [Fact]
         public void Substitute_WithDefaultIcon_ShouldUseDefault()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             
             context.Substitute<IContextTestService>();
             
-            Assert.True(factory.HasAutoParrot<IContextTestService>());
+            Assert.True(factory.HasCustomFactory<IContextTestService>());
         }
 
         [Fact]
         public void Substitute_ChainedCalls_ShouldWorkCorrectly()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             
             var result = context.Substitute<IContextTestService>("🔧")
                                .Substitute<IAnotherContextTestService>("⚡");
             
             Assert.Same(context, result);
-            Assert.True(factory.HasAutoParrot<IContextTestService>());
-            Assert.True(factory.HasAutoParrot<IAnotherContextTestService>());
+            Assert.True(factory.HasCustomFactory<IContextTestService>());
+            Assert.True(factory.HasCustomFactory<IAnotherContextTestService>());
         }
     }
 
@@ -77,7 +77,7 @@ public class ContextTests
         public void Wrap_WithObject_ShouldReturnWrappedInstance()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             var service = new ContextTestServiceImpl();
             
@@ -92,7 +92,7 @@ public class ContextTests
         public void Wrap_WithDefaultIcon_ShouldWork()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             var service = new ContextTestServiceImpl();
             
@@ -109,7 +109,7 @@ public class ContextTests
         public void Parrot_ShouldCreateParrotInstance()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             
             var parrot = context.Parrot<IContextTestService>("🦜");
@@ -122,7 +122,7 @@ public class ContextTests
         public void Parrot_WithDefaultIcon_ShouldWork()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             
             var parrot = context.Parrot<IContextTestService>();
@@ -138,7 +138,7 @@ public class ContextTests
         public void SetAlways_ShouldDelegateToFactory()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             var service = new ContextTestServiceImpl();
             
@@ -152,7 +152,7 @@ public class ContextTests
         public void SetOne_ShouldDelegateToFactory()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             var service = new ContextTestServiceImpl();
             
@@ -166,7 +166,7 @@ public class ContextTests
         public void Register_ShouldDelegateToFactory()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             var service = new ContextTestServiceImpl();
             
@@ -180,7 +180,7 @@ public class ContextTests
         public void SetAlways_WithoutId_ShouldGenerateAutoId()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             var service = new ContextTestServiceImpl();
             
@@ -198,7 +198,7 @@ public class ContextTests
         public void ComplexFluentChain_ShouldWorkCorrectly()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             var service1 = new ContextTestServiceImpl();
             var service2 = new AnotherContextTestServiceImpl();
@@ -210,7 +210,7 @@ public class ContextTests
                 .Register<IContextTestService>(new ContextTestServiceImpl(), "service3");
             
             Assert.Same(context, result);
-            Assert.True(factory.HasAutoParrot<IThirdContextTestService>());
+            Assert.True(factory.HasCustomFactory<IThirdContextTestService>());
             Assert.Equal("service1", factory.GetRegisteredId(service1));
             Assert.Equal("service2", factory.GetRegisteredId(service2));
         }
@@ -226,7 +226,7 @@ public class ContextTests
                   🔸 input: "test"
                   🔹 Returns: "processed"
                 """);
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             
             context.Substitute<IContextTestService>("🔧");
@@ -241,7 +241,7 @@ public class ContextTests
         public void Context_WithWrapAndLogging_ShouldLogCalls()
         {
             var callLog = new CallLog();
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var context = new Context(callLog, factory);
             var service = new ContextTestServiceImpl();
             

@@ -1,14 +1,16 @@
+using ObjectFactory;
+
 namespace SpecRec
 {
     public class Context
     {
         public CallLog CallLog { get; }
-        internal ObjectFactory Factory { get; }
+        internal ObjectFactory.ObjectFactory Factory { get; }
         internal CallLogger CallLogger { get; }
         internal Parrot ParrotFactory { get; }
         internal string? TestCaseName { get; }
-        
-        public Context(CallLog callLog, ObjectFactory factory, string? testCaseName = null)
+
+        public Context(CallLog callLog, ObjectFactory.ObjectFactory factory, string? testCaseName = null)
         {
             CallLog = callLog ?? throw new ArgumentNullException(nameof(callLog));
             Factory = factory ?? throw new ArgumentNullException(nameof(factory));
@@ -20,7 +22,7 @@ namespace SpecRec
         // Substitute - sets up ObjectFactory to create new parrots automatically for T
         public Context Substitute<T>(string icon = "🔧") where T : class
         {
-            Factory.SetAutoParrot<T>(CallLog, icon);
+            Factory.SetFactory<T>(args => SpecRec.Parrot.Create<T>(CallLog, icon, Factory));
             return this;
         }
 

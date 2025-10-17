@@ -1,13 +1,15 @@
+using ObjectFactory;
+
 namespace SpecRec
 {
-    public class Parrot(CallLog callLog, ObjectFactory? objectFactory = null)
+    public class Parrot(CallLog callLog, ObjectFactory.ObjectFactory? objectFactory = null)
     {
         public T Create<T>(string emoji = "🦜") where T : class
         {
             return Create<T>(callLog, emoji, objectFactory);
         }
 
-        public static T Create<T>(CallLog callLog, string emoji = "🦜", ObjectFactory? objectFactory = null) where T : class
+        public static T Create<T>(CallLog callLog, string emoji = "🦜", ObjectFactory.ObjectFactory? objectFactory = null) where T : class
         {
             var callLogger = new CallLogger(callLog, objectFactory);
             return ProxyFactory.CreateParrotProxy<T>(callLogger, emoji);

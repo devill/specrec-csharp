@@ -9,7 +9,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParseValue_WithIdFormat_ShouldResolveRegisteredObject()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var anotherService = new AnotherService();
             factory.Register(anotherService, "testSvc");
             
@@ -27,7 +27,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParseValue_WithMultipleIds_ShouldResolveCorrectObjects()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var service1 = new AnotherService(); // This can be returned as IAnotherService
             var service2 = new AnotherService();
             factory.Register(service1, "service1");
@@ -50,7 +50,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParseValue_WithInvalidIdFormat_ShouldThrowException()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var ex = Assert.Throws<ParrotCallMismatchException>(() => 
                 new CallLog("""
@@ -64,7 +64,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParseValue_WithEmptyId_ShouldThrowException()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var ex = Assert.Throws<ParrotCallMismatchException>(() => 
                 new CallLog("""
@@ -81,7 +81,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParseValue_WithUnknownMarker_ShouldThrowParrotUnknownObjectException()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var ex = Assert.Throws<ParrotUnknownObjectException>(() => 
                 new CallLog("""
@@ -95,7 +95,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParseValue_WithUnknownInVerifiedFile_ShouldFailImmediately()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var ex = Assert.Throws<ParrotUnknownObjectException>(() => 
                 new CallLog(
@@ -111,7 +111,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParseValue_WithUnknownReturnValue_ShouldProvideHelpfulErrorMessage()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var ex = Assert.Throws<ParrotUnknownObjectException>(() => 
                 new CallLog("""
@@ -128,7 +128,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void Parrot_WithRegisteredObjects_ShouldReturnCorrectInstances()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var service1 = new AnotherService { Name = "First" };
             var service2 = new AnotherService { Name = "Second" };
             factory.Register(service1, "first");
@@ -154,7 +154,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void Parrot_WithUnregisteredId_ShouldThrowParrotCallMismatchException()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var ex = Assert.Throws<ParrotCallMismatchException>(() => 
                 new CallLog("🦜 TestMethod:\n  🔹 Returns: <id:missing>", factory));
@@ -165,8 +165,8 @@ public class ParrotObjectIdTests
         [Fact]
         public void Parrot_WithChangedRegistry_ShouldReflectCurrentState()
         {
-            var factory1 = new ObjectFactory();
-            var factory2 = new ObjectFactory();
+            var factory1 = new ObjectFactory.ObjectFactory();
+            var factory2 = new ObjectFactory.ObjectFactory();
             var service1 = new AnotherService { Name = "First" };
             var service2 = new AnotherService { Name = "Second" };
             
@@ -190,17 +190,17 @@ public class ParrotObjectIdTests
     {
         public EndToEndParrotWorkflowTests()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
         
         public void Dispose()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
         [Fact]
         public async Task ParrotWorkflow_RegisterCreateReplay_ShouldWork()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var emailService = new EmailService();
             var userDb = new DatabaseService();
             globalFactory.Register(emailService, "emailSvc");
@@ -229,7 +229,7 @@ public class ParrotObjectIdTests
         [Fact]
         public async Task ParrotWorkflow_WithMixedPrimitivesAndObjects_ShouldWork()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var dependency = new EmailService();
             globalFactory.Register(dependency, "email");
             
@@ -253,7 +253,7 @@ public class ParrotObjectIdTests
         [Fact]
         public async Task ParrotWorkflow_WithComplexServiceInteraction_ShouldWork()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var emailSvc = new EmailService();
             var dbSvc = new DatabaseService();
             globalFactory.Register(emailSvc, "emailService");
@@ -279,7 +279,7 @@ public class ParrotObjectIdTests
         [Fact]
         public async Task ParrotWorkflow_WithObjectReturnsAndChaining_ShouldWork()
         {
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var service1 = new TestService();
             var service2 = new AnotherService();
             globalFactory.Register(service1, "primary");
@@ -311,7 +311,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParrotError_WithUnknownObject_ShouldShowHelpfulMessage()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var ex = Assert.Throws<ParrotUnknownObjectException>(() => 
                 new CallLog("""
@@ -326,7 +326,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParrotError_WithMissingId_ShouldShowHelpfulMessage()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             var ex = Assert.Throws<ParrotCallMismatchException>(() => 
                 new CallLog("""
@@ -341,7 +341,7 @@ public class ParrotObjectIdTests
         [Fact]
         public void ParrotError_WithTypeMismatch_ShouldShowHelpfulMessage()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var testService = new TestService(); // TestService cannot be assigned to IAnotherService
             factory.Register(testService, "wrongType");
             

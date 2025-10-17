@@ -55,7 +55,7 @@ namespace SpecRec.Tests
         [Fact]
         public void ParseDictionary_WithObjectIds_ShouldWork()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var service1 = new TestService();
             var service2 = new TestService();
             factory.Register(service1, "svc1");
@@ -73,7 +73,7 @@ namespace SpecRec.Tests
         [Fact]
         public void ParseDictionary_WithObjectIdKeys_ShouldWork()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var key1 = new TestService();
             var key2 = new TestService(); 
             factory.Register(key1, "key1");

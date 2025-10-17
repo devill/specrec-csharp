@@ -6,9 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Build and Test
 - Build: `dotnet build`
+- Build for packaging: `dotnet build -c Release`
 - Run all tests: `dotnet test`
 - Run specific test: `dotnet test --filter "TestClassName.TestMethodName"`
 - Run single test with specific case: `dotnet test --filter "TestClassName.TestMethodName.CaseName"`
+
+### Package Development
+- Always build in Release configuration for package generation: `dotnet build -c Release`
+- Package is automatically generated in `bin/Release/` due to `<GeneratePackageOnBuild>true</GeneratePackageOnBuild>`
+- Copy the resulting `.nupkg` file to `/Users/ivett/LocalNuGetFeed/` for local testing
 
 ### Important Testing Notes
 - **NEVER** prepend `dotnet test` with `CLAUDECODE=1`! The environment variable is already set for you

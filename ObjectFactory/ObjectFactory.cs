@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace SpecRec
+namespace ObjectFactory
 {
     public class ObjectFactory
     {
@@ -9,13 +9,13 @@ namespace SpecRec
 
         private readonly Dictionary<Type, Queue<object>> _queuedObjects = new Dictionary<Type, Queue<object>>();
         private readonly Dictionary<Type, object> _alwaysObjects = new Dictionary<Type, object>();
-        
+
         private readonly Dictionary<string, object> _registeredObjectsById = new Dictionary<string, object>();
         private readonly Dictionary<object, string> _registeredIdsByObject = new Dictionary<object, string>();
         private int _autoIdCounter = 1;
         private readonly object _registryLock = new object();
-        
-        private readonly Dictionary<Type, (CallLog CallLog, string Icon)> _autoParrotConfigs = new Dictionary<Type, (CallLog, string)>();
+
+        private readonly Dictionary<Type, Func<object[], object>> _customFactories = new();
 
         public static ObjectFactory Instance()
         {
@@ -46,23 +46,23 @@ namespace SpecRec
         private I FetchObject<I, T>(object[] args) where T : class, I
         {
             var interfaceType = typeof(I);
-            
+
             if (_queuedObjects.ContainsKey(interfaceType) && _queuedObjects[interfaceType].Count > 0)
             {
                 return (I)_queuedObjects[interfaceType].Dequeue();
             }
-            
+
             if (_alwaysObjects.ContainsKey(interfaceType))
             {
                 return (I)_alwaysObjects[interfaceType];
             }
-            
-            // Check for auto-substitute configuration
-            if (_autoParrotConfigs.ContainsKey(interfaceType))
+
+            // Check for custom factory
+            if (_customFactories.ContainsKey(interfaceType))
             {
-                return (I)CreateAutoSubstitute(interfaceType);
+                return (I)_customFactories[interfaceType](args);
             }
-            
+
             return (T)Activator.CreateInstance(typeof(T), args)!;
         }
 
@@ -70,14 +70,8 @@ namespace SpecRec
         {
             if (obj is IConstructorCalledWith constructorLogger)
             {
-                // Pass the interface name through context so the proxy can use it
-                CallLogFormatterContext.SetCurrentInterfaceName(typeof(I).Name);
-                
                 var parameterInfos = ExtractParameterInfo<T>(args);
                 constructorLogger.ConstructorCalledWith(parameterInfos);
-                
-                // Clear the context after use
-                CallLogFormatterContext.ClearCurrentInterfaceName();
             }
         }
 
@@ -85,9 +79,9 @@ namespace SpecRec
         {
             var type = typeof(T);
             var matchingConstructor = FindMatchingConstructor(type, args);
-            
-            return matchingConstructor == null 
-                ? CreateParameterInfosWithoutConstructor(args) 
+
+            return matchingConstructor == null
+                ? CreateParameterInfosWithoutConstructor(args)
                 : CreateParameterInfosFromConstructor(matchingConstructor, args);
         }
 
@@ -116,7 +110,7 @@ namespace SpecRec
                     }
                 }
             }
-            
+
             return true;
         }
 
@@ -124,34 +118,34 @@ namespace SpecRec
         {
             var parameters = constructor.GetParameters();
             var parameterInfos = new ConstructorParameterInfo[parameters.Length];
-            
+
             for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = parameters[i];
                 var value = i < args.Length ? args[i] : null;
                 parameterInfos[i] = new ConstructorParameterInfo(parameter.Name!, parameter.ParameterType, value);
             }
-            
+
             return parameterInfos;
         }
 
         private static ConstructorParameterInfo[] CreateParameterInfosWithoutConstructor(object[] args)
         {
             var parameterInfos = new ConstructorParameterInfo[args.Length];
-            
+
             for (var i = 0; i < args.Length; i++)
             {
                 var argType = args[i]?.GetType() ?? typeof(object);
                 parameterInfos[i] = new ConstructorParameterInfo($"arg{i}", argType, args[i]);
             }
-            
+
             return parameterInfos;
         }
 
         private static bool IsPrimitiveCompatible(Type parameterType, Type argumentType)
         {
             if (parameterType.IsAssignableFrom(argumentType)) return true;
-            
+
             // Handle primitive to wrapper conversions
             if (parameterType == typeof(int) && argumentType == typeof(int)) return true;
             if (parameterType == typeof(string) && argumentType == typeof(string)) return true;
@@ -162,7 +156,7 @@ namespace SpecRec
             if (parameterType == typeof(char) && argumentType == typeof(char)) return true;
             if (parameterType == typeof(byte) && argumentType == typeof(byte)) return true;
             if (parameterType == typeof(short) && argumentType == typeof(short)) return true;
-            
+
             return false;
         }
 
@@ -225,15 +219,15 @@ namespace SpecRec
             var type = typeof(T);
             _alwaysObjects.Remove(type);
             _queuedObjects.Remove(type);
-            _autoParrotConfigs.Remove(type);
-            
+            _customFactories.Remove(type);
+
             // Remove from registry all objects of this type
             lock (_registryLock)
             {
                 var objectsToRemove = _registeredIdsByObject.Keys
                     .Where(obj => obj.GetType() == type || type.IsAssignableFrom(obj.GetType()))
                     .ToList();
-                
+
                 foreach (var obj in objectsToRemove)
                 {
                     var id = _registeredIdsByObject[obj];
@@ -247,7 +241,7 @@ namespace SpecRec
         {
             _alwaysObjects.Clear();
             _queuedObjects.Clear();
-            _autoParrotConfigs.Clear();
+            _customFactories.Clear();
             lock (_registryLock)
             {
                 _registeredObjectsById.Clear();
@@ -259,12 +253,12 @@ namespace SpecRec
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
             if (id == null) throw new ArgumentNullException(nameof(id));
-            
+
             lock (_registryLock)
             {
                 if (_registeredObjectsById.ContainsKey(id))
                     throw new ArgumentException($"An object with ID '{id}' is already registered.", nameof(id));
-                
+
                 _registeredObjectsById[id] = obj;
                 _registeredIdsByObject[obj] = id;
             }
@@ -273,7 +267,7 @@ namespace SpecRec
         public string? GetRegisteredId(object obj)
         {
             if (obj == null) return null;
-            
+
             lock (_registryLock)
             {
                 return _registeredIdsByObject.TryGetValue(obj, out var id) ? id : null;
@@ -283,7 +277,7 @@ namespace SpecRec
         public T? GetRegisteredObject<T>(string id) where T : class
         {
             if (id == null) return null;
-            
+
             lock (_registryLock)
             {
                 return _registeredObjectsById.TryGetValue(id, out var obj) ? obj as T : null;
@@ -293,58 +287,27 @@ namespace SpecRec
         public bool IsRegistered(object obj)
         {
             if (obj == null) return false;
-            
+
             lock (_registryLock)
             {
                 return _registeredIdsByObject.ContainsKey(obj);
             }
         }
 
-        public void SetAutoParrot<T>(CallLog callLog, string icon) where T : class
+        public void SetFactory<T>(Func<object[], T> factory) where T : class
         {
-            var type = typeof(T);
-            _autoParrotConfigs[type] = (callLog, icon);
+            if (factory == null) throw new ArgumentNullException(nameof(factory));
+            _customFactories[typeof(T)] = args => factory(args)!;
         }
 
-        public bool HasAutoParrot<T>() where T : class
+        public bool HasCustomFactory<T>() where T : class
         {
-            return _autoParrotConfigs.ContainsKey(typeof(T));
+            return _customFactories.ContainsKey(typeof(T));
         }
 
-        public void ClearAutoParrot<T>() where T : class
+        public void ClearFactory<T>() where T : class
         {
-            _autoParrotConfigs.Remove(typeof(T));
-        }
-
-        private object CreateAutoSubstitute(Type interfaceType)
-        {
-            var config = _autoParrotConfigs[interfaceType];
-            var callLog = config.CallLog;
-            var icon = config.Icon;
-            
-            // Use reflection to call Parrot.Create<T>(callLog, icon, this)
-            var createMethod = typeof(Parrot).GetMethod("Create", new[] { typeof(CallLog), typeof(string), typeof(ObjectFactory) });
-            if (createMethod == null)
-                throw new InvalidOperationException("Could not find Parrot.Create method");
-                
-            var genericCreateMethod = createMethod.MakeGenericMethod(interfaceType);
-            var parrot = genericCreateMethod.Invoke(null, new object[] { callLog, icon, this });
-            
-            if (parrot == null)
-                throw new InvalidOperationException($"Failed to create parrot for {interfaceType.Name}");
-            
-            // Generate a unique ID and register it
-            var autoId = GenerateAutoId(interfaceType);
-            lock (_registryLock)
-            {
-                if (!_registeredObjectsById.ContainsKey(autoId))
-                {
-                    _registeredObjectsById[autoId] = parrot;
-                    _registeredIdsByObject[parrot] = autoId;
-                }
-            }
-            
-            return parrot;
+            _customFactories.Remove(typeof(T));
         }
 
         private string GenerateAutoId(Type objectType)

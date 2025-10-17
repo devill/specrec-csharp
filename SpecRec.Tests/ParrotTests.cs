@@ -118,10 +118,10 @@ namespace SpecRec.Tests
                 
                 // Create a Parrot and register it with ObjectFactory
                 var parrotService = Parrot.Create<ITestConstructorService>(callLog, "🦜");
-                ObjectFactory.Instance().SetOne<ITestConstructorService>(parrotService);
+                ObjectFactory.ObjectFactory.Instance().SetOne<ITestConstructorService>(parrotService);
                 
                 // ObjectFactory.Create should return the registered Parrot (no constructor call)  
-                var createdService = ObjectFactory.Instance().Create<ITestConstructorService>("connectionString", 42);
+                var createdService = ObjectFactory.ObjectFactory.Instance().Create<ITestConstructorService>("connectionString", 42);
                 
                 // Make a method call to test the Parrot
                 var result = createdService.DoSomething("test");
@@ -304,7 +304,7 @@ namespace SpecRec.Tests
             public async Task ParrotWithObjectFactory_ShouldUseProvidedFactory()
             {
                 var callLog = CallLog.FromVerifiedFile();
-                var factory = new ObjectFactory();
+                var factory = new ObjectFactory.ObjectFactory();
                 var testService = new ParrotTestServiceImpl();
                 factory.Register(testService, "testSvc");
                 

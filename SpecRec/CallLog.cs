@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using ObjectFactory;
 
 namespace SpecRec
 {
@@ -11,7 +12,7 @@ namespace SpecRec
         private readonly List<ParsedCall> _parsedCalls;
         private int _currentCallIndex;
         private readonly List<(string methodName, object?[] args, object? returnValue)> _loggedCalls;
-        private readonly ObjectFactory? _objectFactory;
+        private readonly ObjectFactory.ObjectFactory? _objectFactory;
         private readonly string? _sourceFilePath;
         private string? _sourceTestName;
         private string? _sourceTestFilePath;
@@ -22,7 +23,7 @@ namespace SpecRec
         internal string? SourceTestName => _sourceTestName;
         internal string? SourceTestFilePath => _sourceTestFilePath;
 
-        public CallLog(string? verifiedContent = null, ObjectFactory? objectFactory = null, string? sourceFilePath = null, string? sourceTestName = null, string? sourceTestFilePath = null)
+        public CallLog(string? verifiedContent = null, ObjectFactory.ObjectFactory? objectFactory = null, string? sourceFilePath = null, string? sourceTestName = null, string? sourceTestFilePath = null)
         {
             _content = new StringBuilder();
             _parsedCalls = new List<ParsedCall>();
@@ -39,7 +40,7 @@ namespace SpecRec
             }
         }
 
-        public static CallLog FromFile(string filePath, ObjectFactory? objectFactory = null, string? sourceTestName = null, string? sourceTestFilePath = null)
+        public static CallLog FromFile(string filePath, ObjectFactory.ObjectFactory? objectFactory = null, string? sourceTestName = null, string? sourceTestFilePath = null)
         {
             if (!File.Exists(filePath))
                 return new CallLog(objectFactory: objectFactory, sourceFilePath: filePath, sourceTestName: sourceTestName, sourceTestFilePath: sourceTestFilePath); // Return empty CallLog if no verified file exists yet
@@ -48,7 +49,7 @@ namespace SpecRec
             return new CallLog(content, objectFactory, filePath, sourceTestName, sourceTestFilePath);
         }
 
-        public static CallLog FromVerifiedFile(ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
+        public static CallLog FromVerifiedFile(ObjectFactory.ObjectFactory? objectFactory = null, [CallerMemberName] string? testName = null, [CallerFilePath] string? sourceFilePath = null)
         {
             if (string.IsNullOrEmpty(testName) || string.IsNullOrEmpty(sourceFilePath))
                 throw new ArgumentException("Could not determine test name or source file path");

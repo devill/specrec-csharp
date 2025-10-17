@@ -4,6 +4,7 @@ using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using ObjectFactory;
 
 namespace SpecRec
 {
@@ -100,7 +101,7 @@ namespace SpecRec
             if (firstParamType == typeof(Context))
             {
                 // Create Context with CallLog, ObjectFactory, and TestCaseName
-                var factory = ObjectFactory.Instance();
+                var factory = ObjectFactory.ObjectFactory.Instance();
                 var context = new Context(callLog, factory, callLog.TestCaseName);
                 paramValues[0] = context;
             }

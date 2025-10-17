@@ -6,12 +6,12 @@ namespace SpecRec.Tests
     {
         public SpecRecExecutorTests()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
 
         public void Dispose()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
 
         [Fact]
@@ -21,10 +21,10 @@ namespace SpecRec.Tests
 
             // This object should be cleared from the factory by the end
             var testDouble = new FlightServiceStub();
-            ObjectFactory.Instance().SetAlways(testDouble);
+            ObjectFactory.ObjectFactory.Instance().SetAlways(testDouble);
 
             var callLog = CallLog.FromVerifiedFile();
-            var ctx = new Context(callLog, ObjectFactory.Instance());
+            var ctx = new Context(callLog, ObjectFactory.ObjectFactory.Instance());
             
             // Act 
             await SpecRecExecutor.ExecuteTestAsync(
@@ -33,7 +33,7 @@ namespace SpecRec.Tests
                 }),
                 ctx);
 
-            Assert.NotEqual(testDouble, ObjectFactory.Instance().Create<FlightServiceStub>());
+            Assert.NotEqual(testDouble, ObjectFactory.ObjectFactory.Instance().Create<FlightServiceStub>());
         }
 
         [Fact]
@@ -41,10 +41,10 @@ namespace SpecRec.Tests
         {
             // This object should be cleared from the factory by the end
             var testDouble = new FlightServiceStub();
-            ObjectFactory.Instance().SetAlways(testDouble);
+            ObjectFactory.ObjectFactory.Instance().SetAlways(testDouble);
 
             var callLog = CallLog.FromVerifiedFile();
-            var ctx = new Context(callLog, ObjectFactory.Instance());
+            var ctx = new Context(callLog, ObjectFactory.ObjectFactory.Instance());
             
             // Act & Assert: Should swallow exception
             await SpecRecExecutor.ExecuteTestAsync(
@@ -52,7 +52,7 @@ namespace SpecRec.Tests
                     throw new InvalidOperationException("Test exception");
                 }), ctx);
 
-            Assert.NotEqual(testDouble, ObjectFactory.Instance().Create<FlightServiceStub>());
+            Assert.NotEqual(testDouble, ObjectFactory.ObjectFactory.Instance().Create<FlightServiceStub>());
         }
 
         [Fact]
@@ -60,10 +60,10 @@ namespace SpecRec.Tests
         {
             // This object should be cleared from the factory by the end
             var testDouble = new FlightServiceStub();
-            ObjectFactory.Instance().SetAlways(testDouble);
+            ObjectFactory.ObjectFactory.Instance().SetAlways(testDouble);
 
             var callLog = CallLog.FromVerifiedFile();
-            var ctx = new Context(callLog, ObjectFactory.Instance());
+            var ctx = new Context(callLog, ObjectFactory.ObjectFactory.Instance());
 
             // Act & Assert: Should swallow exception but still verify
             await Assert.ThrowsAsync<ParrotMissingReturnValueException>(() =>
@@ -73,7 +73,7 @@ namespace SpecRec.Tests
                     throw new ParrotMissingReturnValueException("Missing return value for TestMethod");
                 }), ctx));
 
-            Assert.NotEqual(testDouble, ObjectFactory.Instance().Create<FlightServiceStub>());
+            Assert.NotEqual(testDouble, ObjectFactory.ObjectFactory.Instance().Create<FlightServiceStub>());
         }
 
         [Theory]

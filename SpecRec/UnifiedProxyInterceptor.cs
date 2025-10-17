@@ -1,5 +1,6 @@
 using System.Reflection;
 using Castle.DynamicProxy;
+using ObjectFactory;
 
 namespace SpecRec
 {

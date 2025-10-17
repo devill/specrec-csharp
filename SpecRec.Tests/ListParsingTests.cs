@@ -57,7 +57,7 @@ namespace SpecRec.Tests
         [Fact]
         public void ParseList_WithObjectIds_ShouldWork()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var service1 = new TestService();
             var service2 = new TestService();
             var service3 = new TestService();
@@ -78,7 +78,7 @@ namespace SpecRec.Tests
         public void ParseList_WithMixedObjectIdsAndPrimitives_ShouldWork()
         {
             // This tests a List<object> with mixed content types
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var service = new TestService();
             factory.Register(service, "testSvc");
 
@@ -166,7 +166,7 @@ namespace SpecRec.Tests
         [Fact]
         public void ParseList_WithUnknownObjectId_ShouldThrowParrotCallMismatchException()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             Assert.Throws<ParrotCallMismatchException>(() => 
                 ValueParser.ParseTypedValue("[<id:nonExistent>]", typeof(List<TestService>), factory));
@@ -175,7 +175,7 @@ namespace SpecRec.Tests
         [Fact]
         public void ParseList_WithTypeMismatchInObjectId_ShouldThrowParrotTypeConversionException()
         {
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             var wrongTypeService = new WrongTypeService(); // Different type
             factory.Register(wrongTypeService, "wrongType");
 

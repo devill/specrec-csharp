@@ -81,7 +81,7 @@ namespace SpecRec.Tests
         {
             // Document what actually happens with Context.Substitute and concrete classes
             var callLog = new CallLog();
-            var objectFactory = ObjectFactory.Instance();
+            var objectFactory = ObjectFactory.ObjectFactory.Instance();
             var context = new Context(callLog, objectFactory);
             
             // Context.Substitute with concrete class 
@@ -101,7 +101,7 @@ namespace SpecRec.Tests
         {
             // Test Context.Substitute with an interface works correctly
             var callLog = new CallLog();
-            var objectFactory = ObjectFactory.Instance();
+            var objectFactory = ObjectFactory.ObjectFactory.Instance();
             var context = new Context(callLog, objectFactory);
             
             // This should work fine with an interface
@@ -121,7 +121,7 @@ namespace SpecRec.Tests
                 """;
             
             var callLog = new CallLog(verifiedContent);
-            var factory = ObjectFactory.Instance();
+            var factory = ObjectFactory.ObjectFactory.Instance();
             
             // Clear any existing configuration
             factory.ClearAll();
@@ -228,7 +228,7 @@ namespace SpecRec.Tests
             // var value = random.Next(100);
             
             // After: Dependency on interface
-            var factory = ObjectFactory.Instance();
+            var factory = ObjectFactory.ObjectFactory.Instance();
             factory.SetAlways<IRandomService>(new RandomServiceWrapper());
             
             var service = factory.Create<IRandomService>();
@@ -244,7 +244,7 @@ namespace SpecRec.Tests
         {
             // Show how to use Context with concrete class workarounds
             var callLog = new CallLog();
-            var objectFactory = ObjectFactory.Instance();
+            var objectFactory = ObjectFactory.ObjectFactory.Instance();
             var context = new Context(callLog, objectFactory);
             
             // Register a real implementation for production

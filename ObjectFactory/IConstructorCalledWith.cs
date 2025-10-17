@@ -1,8 +1,8 @@
-namespace SpecRec
+namespace ObjectFactory
 {
     /// <summary>
     /// Interface for test doubles that need to log constructor arguments to the specbook.
-    /// When a fake implements this interface, ObjectFactory will call 
+    /// When a fake implements this interface, ObjectFactory will call
     /// ConstructorCalledWith with detailed parameter information including names, types, and values.
     /// </summary>
     public interface IConstructorCalledWith

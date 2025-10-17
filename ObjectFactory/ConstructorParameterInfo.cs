@@ -1,4 +1,4 @@
-namespace SpecRec
+namespace ObjectFactory
 {
     /// <summary>
     /// Contains information about a constructor parameter including its name, type, and value.
@@ -9,12 +9,12 @@ namespace SpecRec
         /// The name of the parameter as defined in the constructor.
         /// </summary>
         public string Name { get; }
-        
+
         /// <summary>
         /// The type of the parameter.
         /// </summary>
         public Type Type { get; }
-        
+
         /// <summary>
         /// The actual value passed for this parameter.
         /// </summary>

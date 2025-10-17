@@ -1,6 +1,6 @@
-using static SpecRec.GlobalObjectFactory;
+using static ObjectFactory.GlobalObjectFactory;
 
-namespace SpecRec.Tests;
+namespace ObjectFactory.Tests;
 
 public class ObjectFactoryTests
 {
@@ -11,7 +11,7 @@ public class ObjectFactoryTests
         {
             var instance1 = ObjectFactory.Instance();
             var instance2 = ObjectFactory.Instance();
-            
+
             Assert.Same(instance1, instance2);
         }
     }
@@ -22,31 +22,31 @@ public class ObjectFactoryTests
         public void Create_WithoutSetup_CreatesDefaultInstance()
         {
             var factory = new ObjectFactory();
-            
+
             var result = factory.Create<TestClass>();
-            
+
             Assert.NotNull(result);
             Assert.IsType<TestClass>(result);
         }
-        
+
         [Fact]
         public void Create_WithConstructorArgs_PassesArgsToConstructor()
         {
             var factory = new ObjectFactory();
-            
+
             var result = factory.Create<TestClassWithConstructor>("test", 42);
-            
+
             Assert.Equal("test", result.Name);
             Assert.Equal(42, result.Value);
         }
-        
+
         [Fact]
         public void CreateGeneric_WithInterface_CreatesConcreteType()
         {
             var factory = new ObjectFactory();
-            
+
             var result = factory.Create<ITestInterface, TestImplementation>();
-            
+
             Assert.IsType<TestImplementation>(result);
             Assert.IsAssignableFrom<ITestInterface>(result);
         }
@@ -59,10 +59,10 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var testObj = new TestClass();
-            
+
             factory.SetOne<TestClass>(testObj);
             var result = factory.Create<TestClass>();
-            
+
             Assert.Same(testObj, result);
         }
 
@@ -72,13 +72,13 @@ public class ObjectFactoryTests
             var factory = new ObjectFactory();
             var obj1 = new TestClass();
             var obj2 = new TestClass();
-            
+
             factory.SetOne<TestClass>(obj1);
             factory.SetOne<TestClass>(obj2);
-            
+
             var result1 = factory.Create<TestClass>();
             var result2 = factory.Create<TestClass>();
-            
+
             Assert.Same(obj1, result1);
             Assert.Same(obj2, result2);
         }
@@ -88,12 +88,12 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var testObj = new TestClass();
-            
+
             factory.SetOne<TestClass>(testObj);
             factory.Create<TestClass>(); // Consume queued object
-            
+
             var result = factory.Create<TestClass>();
-            
+
             Assert.NotSame(testObj, result);
             Assert.IsType<TestClass>(result);
         }
@@ -103,11 +103,11 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestImplementation();
-            
+
             factory.SetOne<ITestInterface>(mockObj);
-            
+
             var result = factory.Create<ITestInterface, TestImplementation>();
-            
+
             Assert.Same(mockObj, result);
         }
     }
@@ -119,12 +119,12 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var testObj = new TestClass();
-            
+
             factory.SetAlways<TestClass>(testObj);
-            
+
             var result1 = factory.Create<TestClass>();
             var result2 = factory.Create<TestClass>();
-            
+
             Assert.Same(testObj, result1);
             Assert.Same(testObj, result2);
         }
@@ -135,12 +135,12 @@ public class ObjectFactoryTests
             var factory = new ObjectFactory();
             var alwaysObj = new TestClass();
             var queuedObj = new TestClass();
-            
+
             factory.SetAlways<TestClass>(alwaysObj);
             factory.SetOne<TestClass>(queuedObj);
-            
+
             var result = factory.Create<TestClass>();
-            
+
             Assert.Same(queuedObj, result);
         }
     }
@@ -153,29 +153,29 @@ public class ObjectFactoryTests
             var factory = new ObjectFactory();
             var alwaysObj = new TestClass();
             var queuedObj = new TestClass();
-            
+
             factory.SetAlways<TestClass>(alwaysObj);
             factory.SetOne<TestClass>(queuedObj);
-            
+
             factory.Clear<TestClass>();
-            
+
             var result = factory.Create<TestClass>();
-            
+
             Assert.NotSame(alwaysObj, result);
             Assert.NotSame(queuedObj, result);
             Assert.IsType<TestClass>(result);
         }
-        
+
         [Fact]
         public void Clear_DoesNotRemoveOtherTypes()
         {
             var factory = new ObjectFactory();
             var alwaysObj = new TestClass();
             var queuedObj = new TestClass();
-            
+
             factory.SetAlways<TestClass>(alwaysObj);
             factory.SetOne<TestClass>(queuedObj);
-            
+
             factory.Clear<AnotherTestClass>();
 
             Assert.Same(queuedObj, factory.Create<TestClass>());
@@ -188,15 +188,15 @@ public class ObjectFactoryTests
             var factory = new ObjectFactory();
             var testObj1 = new TestClass();
             var testObj2 = new AnotherTestClass();
-            
+
             factory.SetAlways<TestClass>(testObj1);
             factory.SetAlways<AnotherTestClass>(testObj2);
-            
+
             factory.ClearAll();
-            
+
             var result1 = factory.Create<TestClass>();
             var result2 = factory.Create<AnotherTestClass>();
-            
+
             Assert.NotSame(testObj1, result1);
             Assert.NotSame(testObj2, result2);
         }
@@ -209,11 +209,11 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestImplementation();
-            
+
             factory.SetOne<ITestInterface>(mockObj);
-            
+
             factory.Create<ITestInterface, TestImplementation>("arg1", 123);
-            
+
             Assert.NotNull(mockObj.LastConstructorArgs);
             Assert.Equal(2, mockObj.LastConstructorArgs.Length);
             Assert.Equal("arg1", mockObj.LastConstructorArgs[0]);
@@ -225,11 +225,11 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestImplementation();
-            
+
             factory.SetAlways<ITestInterface>(mockObj);
-            
+
             factory.Create<ITestInterface, TestImplementation>("arg1", 123);
-            
+
             Assert.NotNull(mockObj.LastConstructorArgs);
             Assert.Equal(2, mockObj.LastConstructorArgs.Length);
             Assert.Equal("arg1", mockObj.LastConstructorArgs[0]);
@@ -241,11 +241,11 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestImplementation();
-            
+
             factory.SetOne<MockTestImplementation>(mockObj);
-            
+
             factory.Create<MockTestImplementation>("arg1", 123);
-            
+
             Assert.NotNull(mockObj.LastConstructorArgs);
             Assert.Equal(2, mockObj.LastConstructorArgs.Length);
             Assert.Equal("arg1", mockObj.LastConstructorArgs[0]);
@@ -257,46 +257,46 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestImplementation();
-            
+
             factory.SetOne<ITestInterface>(mockObj);
-            
+
             factory.Create<ITestInterface, TestClassWithConstructor>("testArg", 42);
-            
+
             Assert.NotNull(mockObj.LastParameterDetails);
             var parameterStrings = string.Join("\n", mockObj.LastParameterDetails.Select(p => p.ToString()));
-            
+
             await Verify(parameterStrings);
         }
-        
+
         [Fact]
         public async Task Create_WithTestClassWithConstructor_ExtractsParameterNames()
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestClassWithConstructor();
-            
+
             factory.SetOne<TestClassWithConstructor>(mockObj);
-            
+
             factory.Create<TestClassWithConstructor>("paramName", 99);
-            
+
             Assert.NotNull(mockObj.LastParameterDetails);
             var parameterStrings = string.Join("\n", mockObj.LastParameterDetails.Select(p => p.ToString()));
-            
+
             await Verify(parameterStrings);
         }
-        
+
         [Fact]
         public async Task Create_WithNoMatchingConstructor_UsesGenericParameterNames()
         {
             var factory = new ObjectFactory();
             var mockObj = new MockTestImplementation();
-            
+
             factory.SetOne<ITestInterface>(mockObj);
-            
+
             factory.Create<ITestInterface, TestImplementation>("unexpected", 42);
-            
+
             Assert.NotNull(mockObj.LastParameterDetails);
             var parameterStrings = string.Join("\n", mockObj.LastParameterDetails.Select(p => p.ToString()));
-            
+
             await Verify(parameterStrings);
         }
     }
@@ -308,11 +308,11 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var childInstance = new ChildClass("child value");
-            
+
             factory.SetOne<ParentClass>(childInstance);
-            
+
             var result = factory.Create<ParentClass>();
-            
+
             Assert.Same(childInstance, result);
             Assert.IsType<ChildClass>(result);
             Assert.Equal("child value", ((ChildClass)result).ChildProperty);
@@ -323,12 +323,12 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var childInstance = new ChildClass("always child");
-            
+
             factory.SetAlways<ParentClass>(childInstance);
-            
+
             var result1 = factory.Create<ParentClass>();
             var result2 = factory.Create<ParentClass>();
-            
+
             Assert.Same(childInstance, result1);
             Assert.Same(childInstance, result2);
             Assert.IsType<ChildClass>(result1);
@@ -339,9 +339,9 @@ public class ObjectFactoryTests
         public void Create_WithParentType_NoSetup_CreatesParentDirectly()
         {
             var factory = new ObjectFactory();
-            
+
             var result = factory.Create<ParentClass>();
-            
+
             Assert.NotNull(result);
             Assert.IsType<ParentClass>(result);
             Assert.IsNotType<ChildClass>(result);
@@ -352,11 +352,11 @@ public class ObjectFactoryTests
         {
             var factory = new ObjectFactory();
             var mockChild = new MockChildClass();
-            
+
             factory.SetOne<ParentClass>(mockChild);
-            
+
             factory.Create<ParentClass>("parent arg", 42);
-            
+
             Assert.NotNull(mockChild.LastConstructorArgs);
             Assert.Equal(2, mockChild.LastConstructorArgs.Length);
             Assert.Equal("parent arg", mockChild.LastConstructorArgs[0]);
@@ -369,17 +369,17 @@ public class ObjectFactoryTests
             var factory = new ObjectFactory();
             var alwaysChild = new ChildClass("always");
             var queuedChild = new ChildClass("queued");
-            
+
             factory.SetAlways<ParentClass>(alwaysChild);
             factory.SetOne<ParentClass>(queuedChild);
-            
+
             var result1 = factory.Create<ParentClass>();
             var result2 = factory.Create<ParentClass>();
-            
+
             // First call should return queued child
             Assert.Same(queuedChild, result1);
             Assert.Equal("queued", ((ChildClass)result1).ChildProperty);
-            
+
             // Second call should return always child (queue is empty)
             Assert.Same(alwaysChild, result2);
             Assert.Equal("always", ((ChildClass)result2).ChildProperty);
@@ -393,11 +393,11 @@ public class ObjectFactoryTests
         {
             var testObj = new TestClass();
             ObjectFactory.Instance().SetOne<TestClass>(testObj);
-            
+
             var result = GlobalObjectFactory.Create<TestClass>();
-            
+
             Assert.Same(testObj, result);
-            
+
             // Cleanup
             ObjectFactory.Instance().ClearAll();
         }
@@ -407,11 +407,11 @@ public class ObjectFactoryTests
         {
             var mockObj = new MockTestImplementation();
             ObjectFactory.Instance().SetOne<ITestInterface>(mockObj);
-            
+
             var result = GlobalObjectFactory.Create<ITestInterface, TestImplementation>();
-            
+
             Assert.Same(mockObj, result);
-            
+
             // Cleanup
             ObjectFactory.Instance().ClearAll();
         }
@@ -420,7 +420,7 @@ public class ObjectFactoryTests
         public void GlobalObjectFactory_Create_PassesConstructorArgs()
         {
             var result = GlobalObjectFactory.Create<TestClassWithConstructor>("test", 42);
-            
+
             Assert.Equal("test", result.Name);
             Assert.Equal(42, result.Value);
         }
@@ -429,7 +429,7 @@ public class ObjectFactoryTests
         public void DirectCreate_WithStaticImport_WorksWithoutClassPrefix()
         {
             var result = Create<TestClassWithConstructor>("direct", 99);
-            
+
             Assert.Equal("direct", result.Name);
             Assert.Equal(99, result.Value);
         }

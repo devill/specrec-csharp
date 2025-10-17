@@ -8,18 +8,18 @@ public class ObjectIdIntegrationTests
     {
         public CompleteWorkflowTests()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
         
         public void Dispose()
         {
-            ObjectFactory.Instance().ClearAll();
+            ObjectFactory.ObjectFactory.Instance().ClearAll();
         }
         [Fact]
         public async Task CompleteWorkflow_LogThenReplay_ShouldWork()
         {
             // Arrange: Set up factory and register objects
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var emailService = new EmailService();
             var databaseService = new DatabaseService();
             globalFactory.Register(emailService, "emailSvc");
@@ -53,7 +53,7 @@ public class ObjectIdIntegrationTests
         public async Task CompleteWorkflow_WithMixedScenarios_ShouldWork()
         {
             // Arrange: Mix of registered objects, primitives, and unregistered objects
-            var globalFactory = ObjectFactory.Instance();
+            var globalFactory = ObjectFactory.ObjectFactory.Instance();
             var emailService = new EmailService();
             globalFactory.Register(emailService, "email");
             
@@ -92,7 +92,7 @@ public class ObjectIdIntegrationTests
         public void ErrorHandling_UnknownInVerifiedFile_ShouldFailParrotWithHelpfulMessage()
         {
             // Arrange: CallLog with <unknown> object
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             // Act & Assert: Should throw with helpful message
             var ex = Assert.Throws<ParrotUnknownObjectException>(() => 
@@ -109,7 +109,7 @@ public class ObjectIdIntegrationTests
         public void ErrorHandling_MissingRegisteredId_ShouldFailWithHelpfulMessage()
         {
             // Arrange: CallLog with missing object ID
-            var factory = new ObjectFactory();
+            var factory = new ObjectFactory.ObjectFactory();
             
             // Act & Assert: Should throw with helpful message
             var ex = Assert.Throws<ParrotCallMismatchException>(() => 

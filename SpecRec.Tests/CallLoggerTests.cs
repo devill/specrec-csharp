@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using ObjectFactory;
 
 namespace SpecRec.Tests
 {
@@ -248,7 +249,7 @@ namespace SpecRec.Tests
             public async Task CallLoggerProxy_WithAutoParameterNames_ShouldUseActualParameterNames()
             {
                 var logger = new CallLogger();
-                var factory = new ObjectFactory();
+                var factory = new ObjectFactory.ObjectFactory();
                 
                 var stubService = new AutoParameterNamesService("stub", 0);
                 factory.SetAlways(logger.Wrap<IAutoParameterNamesService>(stubService, "🔧"));
@@ -502,7 +503,7 @@ namespace SpecRec.Tests
             public async Task CallLoggerProxy_IntegratedWithObjectFactory_ShouldLogConstructorCalls()
             {
                 var logger = new CallLogger();
-                var factory = new ObjectFactory();
+                var factory = new ObjectFactory.ObjectFactory();
                 
                 var mockService = new DetailedConstructorService("test", 123, false);
                 factory.SetAlways(logger.Wrap<IDetailedConstructorService>(mockService, "🏭"));

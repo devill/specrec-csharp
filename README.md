@@ -100,6 +100,26 @@ Parrot is SpecRec's intelligent test double that:
 
 This means you never have to manually set up mocks - just provide the return values once and Parrot handles the rest.
 
+## Packages
+
+SpecRec relies on ObjectFactory for dependency injection.
+
+### ObjectFactory (1.0.0)
+Standalone dependency injection for legacy code. This is a separate package that can be used independently of SpecRec if you only need to make legacy code testable without the full recording/replay features.
+
+```xml
+<PackageReference Include="ObjectFactory" Version="1.0.0" />
+```
+
+### SpecRec (3.0.0)
+Full testing framework with recording, replay, and automatic test double generation. Depends on ObjectFactory.
+
+```xml
+<PackageReference Include="SpecRec" Version="3.0.0" />
+```
+
+**Note:** When you install SpecRec, ObjectFactory is included automatically as a dependency.
+
 ## Installation
 
 Add to your test project:

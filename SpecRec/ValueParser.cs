@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using ObjectFactory;
 
 namespace SpecRec
 {
     public static class ValueParser
     {
-        public static object? ParseTypedValue(string valueStr, Type targetType, ObjectFactory? objectFactory = null)
+        public static object? ParseTypedValue(string valueStr, Type targetType, ObjectFactory.ObjectFactory? objectFactory = null)
         {
             if (string.Equals(valueStr, "null", StringComparison.OrdinalIgnoreCase)) return null;
             if (valueStr == "<missing_value>") return "<missing_value>"; // Special placeholder
@@ -211,7 +212,7 @@ namespace SpecRec
         }
 
 
-        public static object ParseArrayFromString(string arrayString, Type arrayType, ObjectFactory? objectFactory = null)
+        public static object ParseArrayFromString(string arrayString, Type arrayType, ObjectFactory.ObjectFactory? objectFactory = null)
         {
             var elementType = arrayType.GetElementType()!;
             
@@ -250,7 +251,7 @@ namespace SpecRec
             return result;
         }
 
-        public static object ParseListFromString(string listString, Type listType, ObjectFactory? objectFactory = null)
+        public static object ParseListFromString(string listString, Type listType, ObjectFactory.ObjectFactory? objectFactory = null)
         {
             var elementType = listType.GetGenericArguments()[0];
             
@@ -302,7 +303,7 @@ namespace SpecRec
             return listInstance!;
         }
 
-        public static object ParseDictionaryFromString(string dictString, Type dictType, ObjectFactory? objectFactory = null)
+        public static object ParseDictionaryFromString(string dictString, Type dictType, ObjectFactory.ObjectFactory? objectFactory = null)
         {
             var genericArgs = dictType.GetGenericArguments();
             var keyType = genericArgs[0];
@@ -456,7 +457,7 @@ namespace SpecRec
             return false;
         }
 
-        private static object ResolveObjectById(string objectId, ObjectFactory? objectFactory)
+        private static object ResolveObjectById(string objectId, ObjectFactory.ObjectFactory? objectFactory)
         {
             if (objectFactory == null)
             {

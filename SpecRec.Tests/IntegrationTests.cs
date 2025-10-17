@@ -43,7 +43,7 @@ namespace SpecRec.Tests
         [Fact]
         public void IntegratedFlow_LoggingToParrot_ShouldWorkSeamlessly()
         {
-            var objectFactory = ObjectFactory.Instance();
+            var objectFactory = ObjectFactory.ObjectFactory.Instance();
             var user1 = new User { Id = 1, Name = "Alice", Email = "alice@test.com" };
             var user2 = new User { Id = 2, Name = "Bob", Email = "bob@test.com" };
             
@@ -95,7 +95,7 @@ namespace SpecRec.Tests
         public void CompleteRefactoringFlow_WithAllNewComponents_ShouldWork()
         {
             // This test verifies that all new components work together
-            var objectFactory = ObjectFactory.Instance();
+            var objectFactory = ObjectFactory.ObjectFactory.Instance();
             var testObject = new User { Id = 99, Name = "Integration", Email = "test@example.com" };
             objectFactory.Register(testObject, "testUser");
             

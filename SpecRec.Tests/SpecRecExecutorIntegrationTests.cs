@@ -1,5 +1,5 @@
 using Xunit;
-using static SpecRec.GlobalObjectFactory;
+using static ObjectFactory.GlobalObjectFactory;
 
 namespace SpecRec.Tests
 {
