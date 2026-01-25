@@ -272,6 +272,107 @@ namespace SpecRec.Tests
             }
         }
 
+        public class AsyncTaskSupport
+        {
+            [Fact]
+            public async Task ParrotWithTaskOfT_ShouldUnwrapAndReturnCorrectValue()
+            {
+                var verifiedContent = """
+                    🦜 CheckAndGetAvailableSeatsForBooking:
+                      🔸 flightNumber: "FL123"
+                      🔸 departureDate: 2025-12-25 10:00:00
+                      🔸 passengerCount: 2
+                      🔹 Returns: ["11A","11B"]
+
+                    """;
+                var callLog = new CallLog(verifiedContent);
+                var service = Parrot.Create<IAsyncFlightService>(callLog);
+
+                var result = await service.CheckAndGetAvailableSeatsForBooking("FL123", new DateTime(2025, 12, 25, 10, 0, 0), 2);
+
+                Assert.Equal(new List<string> { "11A", "11B" }, result);
+                await Verify(callLog.ToString());
+            }
+
+            [Fact]
+            public async Task ParrotWithTask_ShouldReturnCompletedTask()
+            {
+                var verifiedContent = """
+                    🦜 LogBookingActivity:
+                      🔸 bookingRef: "BOOK123"
+                      🔸 activity: "Created"
+
+                    """;
+                var callLog = new CallLog(verifiedContent);
+                var service = Parrot.Create<IAsyncFlightService>(callLog);
+
+                await service.LogBookingActivity("BOOK123", "Created");
+
+                await Verify(callLog.ToString());
+            }
+
+            [Fact]
+            public async Task WrapWithTaskOfT_ShouldLogUnwrappedValue()
+            {
+                var callLog = new CallLog();
+                var logger = new CallLogger(callLog);
+                var target = new AsyncFlightServiceImpl();
+
+                var proxy = logger.Wrap<IAsyncFlightService>(target, "✈️");
+
+                var result = await proxy.CheckAndGetAvailableSeatsForBooking("FL123", new DateTime(2025, 12, 25, 10, 0, 0), 2);
+
+                Assert.Equal(new List<string> { "11A", "11B" }, result);
+                await Verify(callLog.ToString());
+            }
+
+            [Fact]
+            public async Task WrapWithTask_ShouldNotLogReturnValue()
+            {
+                var callLog = new CallLog();
+                var logger = new CallLogger(callLog);
+                var target = new AsyncFlightServiceImpl();
+
+                var proxy = logger.Wrap<IAsyncFlightService>(target, "✈️");
+
+                await proxy.LogBookingActivity("BOOK123", "Created");
+
+                await Verify(callLog.ToString());
+            }
+
+            [Fact]
+            public async Task ParrotWithMultipleAsyncCalls_ShouldReplayInSequence()
+            {
+                var verifiedContent = """
+                    🦜 CheckAndGetAvailableSeatsForBooking:
+                      🔸 flightNumber: "FL123"
+                      🔸 departureDate: 2025-12-25 10:00:00
+                      🔸 passengerCount: 2
+                      🔹 Returns: ["11A","11B"]
+
+                    🦜 SaveBookingDetails:
+                      🔸 passengerName: "John Doe"
+                      🔸 flightDetails: "FL123 on 2025-12-25"
+                      🔹 Returns: "BOOKING456"
+
+                    🦜 LogBookingActivity:
+                      🔸 bookingRef: "BOOKING456"
+                      🔸 activity: "Confirmed"
+
+                    """;
+                var callLog = new CallLog(verifiedContent);
+                var service = Parrot.Create<IAsyncFlightService>(callLog);
+
+                var seats = await service.CheckAndGetAvailableSeatsForBooking("FL123", new DateTime(2025, 12, 25, 10, 0, 0), 2);
+                var bookingRef = await service.SaveBookingDetails("John Doe", "FL123 on 2025-12-25");
+                await service.LogBookingActivity("BOOKING456", "Confirmed");
+
+                Assert.Equal(new List<string> { "11A", "11B" }, seats);
+                Assert.Equal("BOOKING456", bookingRef);
+                await Verify(callLog.ToString());
+            }
+        }
+
         public class NewConstructorSyntax
         {
             [Fact]
@@ -396,5 +497,42 @@ namespace SpecRec.Tests
         DateTime GetCurrentTime();
         DateTime? GetOptionalDateTime(bool hasValue);
         string FormatDateTime(DateTime dt);
+    }
+
+    public interface IAsyncFlightService
+    {
+        Task<List<string>> CheckAndGetAvailableSeatsForBooking(string flightNumber, DateTime departureDate, int passengerCount);
+        Task<string> SaveBookingDetails(string passengerName, string flightDetails);
+        Task<bool> ValidateAndNotifySpecialRequests(string bookingRef, List<string> requests);
+        Task LogBookingActivity(string bookingRef, string activity);
+        Task NotifyPartnerAboutBooking(string partnerCode, string bookingRef);
+    }
+
+    public class AsyncFlightServiceImpl : IAsyncFlightService
+    {
+        public Task<List<string>> CheckAndGetAvailableSeatsForBooking(string flightNumber, DateTime departureDate, int passengerCount)
+        {
+            return Task.FromResult(new List<string> { "11A", "11B" });
+        }
+
+        public Task<string> SaveBookingDetails(string passengerName, string flightDetails)
+        {
+            return Task.FromResult("BOOKING123");
+        }
+
+        public Task<bool> ValidateAndNotifySpecialRequests(string bookingRef, List<string> requests)
+        {
+            return Task.FromResult(true);
+        }
+
+        public Task LogBookingActivity(string bookingRef, string activity)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task NotifyPartnerAboutBooking(string partnerCode, string bookingRef)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

@@ -51,6 +51,7 @@ namespace SpecRec
             try
             {
                 object? result = null;
+                object? unwrappedResultForLogging = null;
                 Exception? exception = null;
 
                 try
@@ -64,11 +65,15 @@ namespace SpecRec
                     {
                         // Logging mode: call the real target and consume call index for synchronization
                         result = InvokeTarget(invocation);
-                        
+
                         // Ensure wrappers also consume from _parsedCalls to maintain index sync
                         ConsumeCallIndexForWrapper(invocation, methodName);
                     }
-                    
+
+                    // For async methods, wait for Task completion and unwrap the result for logging
+                    // This must happen here so exceptions are caught by the exception handlers
+                    unwrappedResultForLogging = UnwrapTaskForLogging(result, invocation.Method.ReturnType);
+
                     invocation.ReturnValue = result;
                 }
                 catch (TargetInvocationException ex) when (ex.InnerException != null)
@@ -110,8 +115,8 @@ namespace SpecRec
                     {
                         if (!ShouldIgnoreCall(callLogger, methodName))
                         {
-                            LogMethodCall(callLogger, invocation, methodName, result, null, originalArguments);
-                            CallLogFormatterContext.SetLastReturnValue(result);
+                            LogMethodCall(callLogger, invocation, methodName, unwrappedResultForLogging, null, originalArguments);
+                            CallLogFormatterContext.SetLastReturnValue(unwrappedResultForLogging);
                         }
                     }
                     else if (exception is not ParrotCallMismatchException && exception is not ParrotMissingReturnValueException)
@@ -119,7 +124,7 @@ namespace SpecRec
                         // Log regular exceptions
                         if (!ShouldIgnoreCall(callLogger, methodName))
                         {
-                            LogMethodCall(callLogger, invocation, methodName, result, exception, originalArguments);
+                            LogMethodCall(callLogger, invocation, methodName, unwrappedResultForLogging, exception, originalArguments);
                         }
                     }
                 }
@@ -170,18 +175,32 @@ namespace SpecRec
         private object? GetParrotReturnValue(IInvocation invocation, string methodName)
         {
             var methodArgs = invocation.Arguments ?? new object[0];
-            var hasReturnValue = invocation.Method.ReturnType != typeof(void);
-            
-            // GetNextReturnValue can throw:
-            // 1. ParrotException subclasses (ParrotMissingReturnValueException, etc.) - pass through
-            // 2. Replayed exceptions from ExceptionParser - pass through
-            // 3. InvalidOperationException for call sequence issues - wrap as ParrotCallMismatchException
-            
+            var returnType = invocation.Method.ReturnType;
+
+            // Handle Task<T> return types - parse inner type and wrap with Task.FromResult
+            if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                var innerType = returnType.GetGenericArguments()[0];
+                var innerValue = _logger.CallLog.GetNextReturnValue(methodName, methodArgs, true, innerType);
+
+                var fromResultMethod = typeof(Task).GetMethod("FromResult")!.MakeGenericMethod(innerType);
+                return fromResultMethod.Invoke(null, new[] { innerValue });
+            }
+
+            // Handle non-generic Task return types - return Task.CompletedTask
+            if (returnType == typeof(Task))
+            {
+                _logger.CallLog.GetNextReturnValue(methodName, methodArgs, false, null);
+                return Task.CompletedTask;
+            }
+
+            // Regular synchronous return
+            var hasReturnValue = returnType != typeof(void);
             return _logger.CallLog.GetNextReturnValue(
-                methodName, 
-                methodArgs, 
-                hasReturnValue, 
-                hasReturnValue ? invocation.Method.ReturnType : null);
+                methodName,
+                methodArgs,
+                hasReturnValue,
+                hasReturnValue ? returnType : null);
         }
 
         private object? InvokeTarget(IInvocation invocation)
@@ -203,15 +222,19 @@ namespace SpecRec
         {
             // Log input arguments first using original values for out/ref parameters
             LogInputArguments(callLogger, invocation, methodName, invocation.Method.GetParameters(), originalArguments);
-            
+
             // Log exception if present
             if (exception != null)
             {
                 callLogger.withThrows(exception);
             }
             // Log return value for non-void methods (only if no exception)
-            else if (invocation.Method.ReturnType != typeof(void) && !ShouldIgnoreReturnValue(callLogger, methodName))
+            // Task (non-generic) is treated as void - no return value to log
+            else if (invocation.Method.ReturnType != typeof(void) &&
+                     invocation.Method.ReturnType != typeof(Task) &&
+                     !ShouldIgnoreReturnValue(callLogger, methodName))
             {
+                // Result is already unwrapped for Task<T> - just log it
                 if (result != null || (result as string) == "<missing_value>")
                 {
                     callLogger.withReturn(result);
@@ -223,6 +246,29 @@ namespace SpecRec
 
             // Log the call itself
             callLogger.log(_emoji, methodName);
+        }
+
+        private object? UnwrapTaskForLogging(object? result, Type returnType)
+        {
+            if (result == null) return null;
+
+            // For Task<T>, await and get the actual result
+            if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                var task = (Task)result;
+                task.GetAwaiter().GetResult();
+                var resultProperty = returnType.GetProperty("Result");
+                return resultProperty?.GetValue(result);
+            }
+
+            // For non-generic Task, return null (void equivalent - don't log a return value)
+            if (returnType == typeof(Task))
+            {
+                ((Task)result).GetAwaiter().GetResult();
+                return null;
+            }
+
+            return result;
         }
 
         private void LogOutputParameters(CallLogger callLogger, IInvocation invocation)

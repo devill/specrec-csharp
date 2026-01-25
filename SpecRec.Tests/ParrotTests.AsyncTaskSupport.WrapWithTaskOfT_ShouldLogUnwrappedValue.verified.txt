@@ -1,0 +1,5 @@
+﻿✈️ CheckAndGetAvailableSeatsForBooking:
+  🔸 flightNumber: "FL123"
+  🔸 departureDate: 2025-12-25 10:00:00
+  🔸 passengerCount: 2
+  🔹 Returns: ["11A","11B"]
