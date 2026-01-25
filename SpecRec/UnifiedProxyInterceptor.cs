@@ -4,10 +4,7 @@ using ObjectFactory;
 
 namespace SpecRec
 {
-    /// <summary>
-    /// Unified interceptor that handles both logging mode (with target) and parrot mode (without target)
-    /// </summary>
-    public class UnifiedProxyInterceptor : IInterceptor
+    public class UnifiedProxyInterceptor : IAsyncInterceptor
     {
         private readonly CallLogger _logger;
         private readonly string _emoji;
@@ -22,451 +19,457 @@ namespace SpecRec
             _isParrotMode = target == null;
         }
 
-        public void Intercept(IInvocation invocation)
+        public void InterceptSynchronous(IInvocation invocation)
         {
-            var methodName = invocation.Method.Name;
-            var parameters = invocation.Method.GetParameters();
-            var callLogger = CreateCallLogger();
+            var context = new InterceptionContext(invocation, CreateCallLogger());
 
-            // Handle IConstructorCalledWith.ConstructorCalledWith method specially
-            if (methodName == "ConstructorCalledWith" && 
-                invocation.Method.DeclaringType == typeof(IConstructorCalledWith))
+            if (IsConstructorCalledWith(invocation))
             {
-                HandleConstructorCalledWith(invocation, callLogger);
+                HandleConstructorCalledWith(invocation, context.CallLogger);
                 return;
             }
 
-            // Set up logging context
-            CallLogFormatterContext.SetCurrentLogger(callLogger);
-            CallLogFormatterContext.SetCurrentMethodName(methodName);
+            var originalArguments = CaptureOriginalArguments(invocation);
 
-            // Capture initial argument values before method execution (for out/ref parameters)
-            object?[]? originalArguments = null;
-            if (invocation.Arguments != null && parameters.Any(p => p.IsOut || p.ParameterType.IsByRef))
+            using (new LoggingScope(context))
             {
-                originalArguments = new object?[invocation.Arguments.Length];
-                Array.Copy(invocation.Arguments, originalArguments, invocation.Arguments.Length);
+                var (result, exception) = ExecuteSyncMethod(invocation, context.MethodName);
+                invocation.ReturnValue = result;
+                LogResult(context, result, exception, originalArguments);
+                if (exception != null) throw exception;
             }
+        }
 
+        public void InterceptAsynchronous(IInvocation invocation)
+        {
+            invocation.ReturnValue = ExecuteAsyncVoidMethod(invocation);
+        }
+
+        public void InterceptAsynchronous<TResult>(IInvocation invocation)
+        {
+            invocation.ReturnValue = ExecuteAsyncMethod<TResult>(invocation);
+        }
+
+        private (object? result, Exception? exception) ExecuteSyncMethod(IInvocation invocation, string methodName)
+        {
             try
             {
-                object? result = null;
-                object? unwrappedResultForLogging = null;
-                Exception? exception = null;
-
-                try
+                object? result;
+                if (_isParrotMode)
+                    result = GetParrotReturnValue(invocation, methodName);
+                else
                 {
-                    if (_isParrotMode)
-                    {
-                        // Parrot mode: get return value from CallLog
-                        result = GetParrotReturnValue(invocation, methodName);
-                    }
-                    else
-                    {
-                        // Logging mode: call the real target and consume call index for synchronization
-                        result = InvokeTarget(invocation);
-
-                        // Ensure wrappers also consume from _parsedCalls to maintain index sync
-                        ConsumeCallIndexForWrapper(invocation, methodName);
-                    }
-
-                    // For async methods, wait for Task completion and unwrap the result for logging
-                    // This must happen here so exceptions are caught by the exception handlers
-                    unwrappedResultForLogging = UnwrapTaskForLogging(result, invocation.Method.ReturnType);
-
-                    invocation.ReturnValue = result;
+                    result = InvokeTarget(invocation);
+                    ConsumeCallIndexForWrapper(invocation, methodName);
                 }
-                catch (TargetInvocationException ex) when (ex.InnerException != null)
-                {
-                    exception = ex.InnerException;
-                    throw ex.InnerException;
-                }
-                catch (ParrotCallMismatchException ex)
-                {
-                    // For call mismatch exceptions, log the call with missing value
-                    exception = ex;
-                    if (!ShouldIgnoreCall(callLogger, methodName))
-                    {
-                        LogMethodCall(callLogger, invocation, methodName, "<missing_value>", null, originalArguments);
-                    }
-                    CallLogFormatterContext.SetLastReturnValue("<missing_value>");
-                    throw;
-                }
-                catch (ParrotMissingReturnValueException ex)
-                {
-                    // For missing return value exceptions, log the call with missing value
-                    exception = ex;
-                    if (!ShouldIgnoreCall(callLogger, methodName))
-                    {
-                        LogMethodCall(callLogger, invocation, methodName, "<missing_value>", null, originalArguments);
-                    }
-                    CallLogFormatterContext.SetLastReturnValue("<missing_value>");
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    exception = ex;
-                    throw;
-                }
-                finally
-                {
-                    // Only log if we haven't already logged in catch blocks
-                    if (exception == null)
-                    {
-                        if (!ShouldIgnoreCall(callLogger, methodName))
-                        {
-                            LogMethodCall(callLogger, invocation, methodName, unwrappedResultForLogging, null, originalArguments);
-                            CallLogFormatterContext.SetLastReturnValue(unwrappedResultForLogging);
-                        }
-                    }
-                    else if (exception is not ParrotCallMismatchException && exception is not ParrotMissingReturnValueException)
-                    {
-                        // Log regular exceptions
-                        if (!ShouldIgnoreCall(callLogger, methodName))
-                        {
-                            LogMethodCall(callLogger, invocation, methodName, unwrappedResultForLogging, exception, originalArguments);
-                        }
-                    }
-                }
+                return (result, null);
             }
-            finally
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
             {
-                CallLogFormatterContext.ClearCurrentLogger();
+                return (null, ex.InnerException);
+            }
+            catch (Exception ex)
+            {
+                return (null, ex);
             }
         }
 
-        private CallLogger CreateCallLogger()
+        private async Task ExecuteAsyncVoidMethod(IInvocation invocation)
         {
-            return new CallLogger(_logger.CallLog, _logger._objectFactory);
+            var context = new InterceptionContext(invocation, CreateCallLogger());
+
+            using (new LoggingScope(context))
+            {
+                var exception = await ExecuteAsyncVoidCore(invocation, context.MethodName);
+                LogVoidResult(context, exception);
+                if (exception != null) throw exception;
+            }
         }
 
-        private void LogInputArguments(CallLogger callLogger, IInvocation invocation, string methodName, ParameterInfo[] parameters, object?[]? originalArguments = null)
+        private async Task<Exception?> ExecuteAsyncVoidCore(IInvocation invocation, string methodName)
         {
-            if (invocation.Arguments == null || ShouldIgnoreAllArguments(callLogger, methodName))
-                return;
-
-            // Use original arguments if provided, otherwise use current arguments
-            var argumentsToLog = originalArguments ?? invocation.Arguments;
-
-            for (int i = 0; i < argumentsToLog.Length && i < parameters.Length; i++)
+            try
             {
-                if (ShouldIgnoreArgument(callLogger, methodName, i))
-                    continue;
-
-                // Log parameters as input with special handling for out and ref parameters
-                if (parameters[i].IsOut)
+                if (_isParrotMode)
                 {
-                    // For out parameters, log "out" as the input value
-                    callLogger.withArgument("out", parameters[i].Name);
-                }
-                else if (parameters[i].ParameterType.IsByRef)
-                {
-                    // For ref parameters, log the current (final) value, not the original
-                    callLogger.withArgument(invocation.Arguments[i], parameters[i].Name);
+                    _logger.CallLog.GetNextReturnValue(methodName, invocation.Arguments ?? Array.Empty<object>(), false, null);
                 }
                 else
                 {
-                    // For regular parameters, log their original values
-                    callLogger.withArgument(argumentsToLog[i], parameters[i].Name);
+                    await InvokeTargetAsync(invocation);
+                    ConsumeCallIndexForWrapper(invocation, methodName);
                 }
+                return null;
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
+            {
+                return ex.InnerException;
+            }
+            catch (Exception ex)
+            {
+                return ex;
             }
         }
 
-        private object? GetParrotReturnValue(IInvocation invocation, string methodName)
+        private async Task<TResult> ExecuteAsyncMethod<TResult>(IInvocation invocation)
         {
-            var methodArgs = invocation.Arguments ?? new object[0];
-            var returnType = invocation.Method.ReturnType;
+            var context = new InterceptionContext(invocation, CreateCallLogger());
 
-            // Handle Task<T> return types - parse inner type and wrap with Task.FromResult
-            if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+            using (new LoggingScope(context))
             {
-                var innerType = returnType.GetGenericArguments()[0];
-                var innerValue = _logger.CallLog.GetNextReturnValue(methodName, methodArgs, true, innerType);
-
-                var fromResultMethod = typeof(Task).GetMethod("FromResult")!.MakeGenericMethod(innerType);
-                return fromResultMethod.Invoke(null, new[] { innerValue });
+                var (result, exception) = await ExecuteAsyncCore<TResult>(invocation, context.MethodName);
+                LogResult(context, result, exception, null);
+                if (exception != null) throw exception;
+                return result;
             }
-
-            // Handle non-generic Task return types - return Task.CompletedTask
-            if (returnType == typeof(Task))
-            {
-                _logger.CallLog.GetNextReturnValue(methodName, methodArgs, false, null);
-                return Task.CompletedTask;
-            }
-
-            // Regular synchronous return
-            var hasReturnValue = returnType != typeof(void);
-            return _logger.CallLog.GetNextReturnValue(
-                methodName,
-                methodArgs,
-                hasReturnValue,
-                hasReturnValue ? returnType : null);
         }
+
+        private async Task<(TResult result, Exception? exception)> ExecuteAsyncCore<TResult>(IInvocation invocation, string methodName)
+        {
+            try
+            {
+                TResult result;
+                if (_isParrotMode)
+                {
+                    var value = _logger.CallLog.GetNextReturnValue(methodName, invocation.Arguments ?? Array.Empty<object>(), true, typeof(TResult));
+                    result = (TResult)value!;
+                }
+                else
+                {
+                    result = await InvokeTargetAsync<TResult>(invocation);
+                    ConsumeCallIndexForWrapper(invocation, methodName);
+                }
+                return (result, null);
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
+            {
+                return (default!, ex.InnerException);
+            }
+            catch (Exception ex)
+            {
+                return (default!, ex);
+            }
+        }
+
+        private void LogResult(InterceptionContext context, object? result, Exception? exception, object?[]? originalArguments)
+        {
+            if (ShouldIgnoreCall(context.CallLogger, context.MethodName))
+                return;
+
+            if (IsParrotException(exception))
+            {
+                LogMethodCall(context, "<missing_value>", null, originalArguments);
+                CallLogFormatterContext.SetLastReturnValue("<missing_value>");
+                return;
+            }
+
+            if (exception != null)
+            {
+                LogMethodCall(context, null, exception, originalArguments);
+                return;
+            }
+
+            LogMethodCall(context, result, null, originalArguments);
+            CallLogFormatterContext.SetLastReturnValue(result);
+        }
+
+        private void LogVoidResult(InterceptionContext context, Exception? exception)
+        {
+            if (ShouldIgnoreCall(context.CallLogger, context.MethodName))
+                return;
+
+            if (IsParrotException(exception))
+            {
+                LogMethodCallVoid(context, null);
+                return;
+            }
+
+            LogMethodCallVoid(context, exception);
+        }
+
+        private static bool IsParrotException(Exception? ex) =>
+            ex is ParrotCallMismatchException or ParrotMissingReturnValueException;
 
         private object? InvokeTarget(IInvocation invocation)
         {
             if (_target != null)
-            {
-                // Direct invocation for explicit target
                 return invocation.Method.Invoke(_target, invocation.Arguments);
+
+            invocation.Proceed();
+            return invocation.ReturnValue;
+        }
+
+        private async Task InvokeTargetAsync(IInvocation invocation)
+        {
+            if (_target != null)
+            {
+                var task = (Task)invocation.Method.Invoke(_target, invocation.Arguments)!;
+                await task.ConfigureAwait(false);
             }
             else
             {
-                // Let Castle handle it (shouldn't happen in our usage)
                 invocation.Proceed();
-                return invocation.ReturnValue;
+                await ((Task)invocation.ReturnValue!).ConfigureAwait(false);
             }
         }
 
-        private void LogMethodCall(CallLogger callLogger, IInvocation invocation, string methodName, object? result, Exception? exception, object?[]? originalArguments = null)
+        private async Task<TResult> InvokeTargetAsync<TResult>(IInvocation invocation)
         {
-            // Log input arguments first using original values for out/ref parameters
-            LogInputArguments(callLogger, invocation, methodName, invocation.Method.GetParameters(), originalArguments);
+            if (_target != null)
+            {
+                var task = (Task<TResult>)invocation.Method.Invoke(_target, invocation.Arguments)!;
+                return await task.ConfigureAwait(false);
+            }
 
-            // Log exception if present
+            invocation.Proceed();
+            return await ((Task<TResult>)invocation.ReturnValue!).ConfigureAwait(false);
+        }
+
+        private object? GetParrotReturnValue(IInvocation invocation, string methodName)
+        {
+            var returnType = invocation.Method.ReturnType;
+            var hasReturnValue = returnType != typeof(void);
+            return _logger.CallLog.GetNextReturnValue(
+                methodName,
+                invocation.Arguments ?? Array.Empty<object>(),
+                hasReturnValue,
+                hasReturnValue ? returnType : null);
+        }
+
+        private CallLogger CreateCallLogger() => new(_logger.CallLog, _logger._objectFactory);
+
+        private static bool IsConstructorCalledWith(IInvocation invocation) =>
+            invocation.Method.Name == "ConstructorCalledWith" &&
+            invocation.Method.DeclaringType == typeof(IConstructorCalledWith);
+
+        private static object?[]? CaptureOriginalArguments(IInvocation invocation)
+        {
+            var parameters = invocation.Method.GetParameters();
+            if (invocation.Arguments == null || !parameters.Any(p => p.IsOut || p.ParameterType.IsByRef))
+                return null;
+
+            var copy = new object?[invocation.Arguments.Length];
+            Array.Copy(invocation.Arguments, copy, invocation.Arguments.Length);
+            return copy;
+        }
+
+        private void LogMethodCall(InterceptionContext context, object? result, Exception? exception, object?[]? originalArguments)
+        {
+            LogInputArguments(context, originalArguments);
+
             if (exception != null)
             {
-                callLogger.withThrows(exception);
+                context.CallLogger.withThrows(exception);
             }
-            // Log return value for non-void methods (only if no exception)
-            // Task (non-generic) is treated as void - no return value to log
-            else if (invocation.Method.ReturnType != typeof(void) &&
-                     invocation.Method.ReturnType != typeof(Task) &&
-                     !ShouldIgnoreReturnValue(callLogger, methodName))
+            else if (ShouldLogReturnValue(context))
             {
-                // Result is already unwrapped for Task<T> - just log it
                 if (result != null || (result as string) == "<missing_value>")
-                {
-                    callLogger.withReturn(result);
-                }
+                    context.CallLogger.withReturn(result);
             }
 
-            // Log output parameters
-            LogOutputParameters(callLogger, invocation);
-
-            // Log the call itself
-            callLogger.log(_emoji, methodName);
+            LogOutputParameters(context);
+            context.CallLogger.log(_emoji, context.MethodName);
         }
 
-        private object? UnwrapTaskForLogging(object? result, Type returnType)
+        private void LogMethodCallVoid(InterceptionContext context, Exception? exception)
         {
-            if (result == null) return null;
+            LogInputArguments(context, null);
 
-            // For Task<T>, await and get the actual result
-            if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
-            {
-                var task = (Task)result;
-                task.GetAwaiter().GetResult();
-                var resultProperty = returnType.GetProperty("Result");
-                return resultProperty?.GetValue(result);
-            }
+            if (exception != null)
+                context.CallLogger.withThrows(exception);
 
-            // For non-generic Task, return null (void equivalent - don't log a return value)
-            if (returnType == typeof(Task))
-            {
-                ((Task)result).GetAwaiter().GetResult();
-                return null;
-            }
-
-            return result;
+            context.CallLogger.log(_emoji, context.MethodName);
         }
 
-        private void LogOutputParameters(CallLogger callLogger, IInvocation invocation)
+        private bool ShouldLogReturnValue(InterceptionContext context)
         {
-            if (invocation.Arguments == null) return;
+            var returnType = context.Invocation.Method.ReturnType;
+            if (returnType == typeof(void) || returnType == typeof(Task))
+                return false;
+            return !ShouldIgnoreReturnValue(context.CallLogger, context.MethodName);
+        }
 
-            var parameters = invocation.Method.GetParameters();
-            for (int i = 0; i < invocation.Arguments.Length && i < parameters.Length; i++)
+        private void LogInputArguments(InterceptionContext context, object?[]? originalArguments)
+        {
+            if (context.Invocation.Arguments == null || ShouldIgnoreAllArguments(context.CallLogger, context.MethodName))
+                return;
+
+            var parameters = context.Invocation.Method.GetParameters();
+            var argumentsToLog = originalArguments ?? context.Invocation.Arguments;
+
+            for (int i = 0; i < argumentsToLog.Length && i < parameters.Length; i++)
+            {
+                if (ShouldIgnoreArgument(context.CallLogger, context.MethodName, i))
+                    continue;
+
+                LogArgument(context, parameters[i], argumentsToLog[i], i);
+            }
+        }
+
+        private void LogArgument(InterceptionContext context, ParameterInfo param, object? originalValue, int index)
+        {
+            if (param.IsOut)
+                context.CallLogger.withArgument("out", param.Name);
+            else if (param.ParameterType.IsByRef)
+                context.CallLogger.withArgument(context.Invocation.Arguments[index], param.Name);
+            else
+                context.CallLogger.withArgument(originalValue, param.Name);
+        }
+
+        private void LogOutputParameters(InterceptionContext context)
+        {
+            if (context.Invocation.Arguments == null) return;
+
+            var parameters = context.Invocation.Method.GetParameters();
+            for (int i = 0; i < context.Invocation.Arguments.Length && i < parameters.Length; i++)
             {
                 if (parameters[i].IsOut || parameters[i].ParameterType.IsByRef)
-                {
-                    callLogger.withOut(invocation.Arguments[i], parameters[i].Name);
-                }
+                    context.CallLogger.withOut(context.Invocation.Arguments[i], parameters[i].Name);
             }
         }
 
-        private bool ShouldIgnoreCall(CallLogger callLogger, string methodName)
-        {
-            return callLogger._ignoredCalls.Contains(methodName);
-        }
+        private bool ShouldIgnoreCall(CallLogger logger, string methodName) =>
+            logger._ignoredCalls.Contains(methodName);
 
-        private bool ShouldIgnoreAllArguments(CallLogger callLogger, string methodName)
-        {
-            return callLogger._ignoredAllArguments.Contains(methodName);
-        }
+        private bool ShouldIgnoreAllArguments(CallLogger logger, string methodName) =>
+            logger._ignoredAllArguments.Contains(methodName);
 
-        private bool ShouldIgnoreArgument(CallLogger callLogger, string methodName, int index)
-        {
-            return (callLogger._ignoredAllArguments.Contains(methodName)) ||
-                   (callLogger._ignoredArguments.ContainsKey(methodName) &&
-                    callLogger._ignoredArguments[methodName].Contains(index));
-        }
+        private bool ShouldIgnoreArgument(CallLogger logger, string methodName, int index) =>
+            logger._ignoredAllArguments.Contains(methodName) ||
+            (logger._ignoredArguments.ContainsKey(methodName) && logger._ignoredArguments[methodName].Contains(index));
 
-        private bool ShouldIgnoreReturnValue(CallLogger callLogger, string methodName)
-        {
-            return callLogger._ignoredReturnValues.Contains(methodName);
-        }
+        private bool ShouldIgnoreReturnValue(CallLogger logger, string methodName) =>
+            logger._ignoredReturnValues.Contains(methodName);
 
         private void HandleConstructorCalledWith(IInvocation invocation, CallLogger callLogger)
         {
-            // Extract constructor parameters from invocation
             var parameters = invocation.Arguments[0] as ConstructorParameterInfo[];
-            
-            // Get the interface name from context (set by ObjectFactory)
-            var interfaceName = CallLogFormatterContext.GetCurrentInterfaceName();
-            if (string.IsNullOrEmpty(interfaceName))
-            {
-                // Fallback to finding it from the proxy type if not set in context
-                var proxyType = invocation.Proxy.GetType();
-                interfaceName = FindInterfaceName(proxyType);
-            }
+            var interfaceName = GetInterfaceName(invocation);
+
             callLogger.forInterface(interfaceName);
 
-            // Pass through to target first if it implements IConstructorCalledWith
-            // This allows the target to set constructor argument names via CallLogFormatterContext
             if (_target is IConstructorCalledWith targetConstructor)
-            {
                 targetConstructor.ConstructorCalledWith(parameters);
-            }
 
-            // Add constructor arguments using potentially overridden names
-            if (parameters != null)
-            {
-                var constructorArgNames = CallLogFormatterContext.GetConstructorArgumentNames();
-                for (int i = 0; i < parameters.Length; i++)
-                {
-                    var parameter = parameters[i];
-                    var argName = (constructorArgNames != null && i < constructorArgNames.Length)
-                        ? constructorArgNames[i]
-                        : parameter.Name ?? $"arg{i}";
-                    callLogger.withArgument(parameter.Value, argName);
-                }
-            }
-
-            // Log with the interface name in the message
+            LogConstructorParameters(callLogger, parameters);
             callLogger.log(_emoji, $"{interfaceName} constructor called with");
+        }
+
+        private static string GetInterfaceName(IInvocation invocation)
+        {
+            var name = CallLogFormatterContext.GetCurrentInterfaceName();
+            if (!string.IsNullOrEmpty(name)) return name;
+
+            return FindInterfaceName(invocation.Proxy.GetType());
+        }
+
+        private static void LogConstructorParameters(CallLogger callLogger, ConstructorParameterInfo[]? parameters)
+        {
+            if (parameters == null) return;
+
+            var argNames = CallLogFormatterContext.GetConstructorArgumentNames();
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var argName = (argNames != null && i < argNames.Length)
+                    ? argNames[i]
+                    : parameters[i].Name ?? $"arg{i}";
+                callLogger.withArgument(parameters[i].Value, argName);
+            }
         }
 
         private static string FindInterfaceName(Type type)
         {
-            // Try to find the main interface
-            var interfaces = type.GetInterfaces();
-            var mainInterface = interfaces.FirstOrDefault(i =>
-                i.Name.StartsWith("I") && i != typeof(IConstructorCalledWith));
+            var mainInterface = type.GetInterfaces()
+                .FirstOrDefault(i => i.Name.StartsWith("I") && i != typeof(IConstructorCalledWith));
             return mainInterface?.Name ?? type.Name;
         }
 
         private void ConsumeCallIndexForWrapper(IInvocation invocation, string methodName)
         {
-            // Make wrappers also consume from _parsedCalls to maintain index synchronization
-            // We ignore the return value since wrappers use the actual method result
-            var methodArgs = invocation.Arguments ?? new object[0];
-            var hasReturnValue = invocation.Method.ReturnType != typeof(void);
-            
             try
             {
-                _logger.CallLog.GetNextReturnValue(methodName, methodArgs, hasReturnValue);
+                var hasReturnValue = invocation.Method.ReturnType != typeof(void);
+                _logger.CallLog.GetNextReturnValue(methodName, invocation.Arguments ?? Array.Empty<object>(), hasReturnValue);
             }
-            catch (ParrotMissingReturnValueException)
+            catch (ParrotMissingReturnValueException) { }
+            catch (InvalidOperationException) { }
+        }
+
+        private readonly struct InterceptionContext
+        {
+            public IInvocation Invocation { get; }
+            public CallLogger CallLogger { get; }
+            public string MethodName { get; }
+
+            public InterceptionContext(IInvocation invocation, CallLogger callLogger)
             {
-                // Wrappers can function even if there's no verified file or matching call
-                // This allows mixed scenarios and recording mode to work properly
+                Invocation = invocation;
+                CallLogger = callLogger;
+                MethodName = invocation.Method.Name;
             }
-            catch (InvalidOperationException)
+        }
+
+        private readonly struct LoggingScope : IDisposable
+        {
+            private readonly InterceptionContext _context;
+
+            public LoggingScope(InterceptionContext context)
             {
-                // Same as above - wrappers should be resilient to missing verified data
+                _context = context;
+                CallLogFormatterContext.SetCurrentLogger(context.CallLogger);
+                CallLogFormatterContext.SetCurrentMethodName(context.MethodName);
             }
+
+            public void Dispose() => CallLogFormatterContext.ClearCurrentLogger();
         }
     }
 
-    /// <summary>
-    /// Simplified factory for creating proxies using Castle DynamicProxy
-    /// </summary>
     public static class UnifiedProxyFactory
     {
-        private static readonly ProxyGenerator _proxyGenerator = new ProxyGenerator();
+        private static readonly ProxyGenerator _proxyGenerator = new();
 
-        /// <summary>
-        /// Creates a proxy for any type (interface or class) with optional target
-        /// </summary>
         public static T CreateProxy<T>(CallLogger logger, string emoji, T? target = null) where T : class
         {
-            var interceptor = new UnifiedProxyInterceptor(logger, emoji, target);
-            
-            if (typeof(T).IsInterface)
-            {
-                // Both logging mode and parrot mode need IConstructorCalledWith support
-                // This allows ObjectFactory to call ConstructorCalledWith when creating instances
-                var options = new ProxyGenerationOptions();
-                var proxyType = typeof(T);
-                var additionalInterfaces = new[] { typeof(IConstructorCalledWith) };
-                
-                if (target != null)
-                {
-                    // Logging mode - proxy with target
-                    var proxy = _proxyGenerator.CreateInterfaceProxyWithTarget(
-                        proxyType,
-                        additionalInterfaces,
-                        target,
-                        options,
-                        interceptor) as T;
-                    
-                    return proxy!;
-                }
-                else
-                {
-                    // Parrot mode - proxy without target but still with IConstructorCalledWith
-                    var proxy = _proxyGenerator.CreateInterfaceProxyWithoutTarget(
-                        proxyType,
-                        additionalInterfaces,
-                        options,
-                        interceptor) as T;
-                    
-                    return proxy!;
-                }
-            }
-            else
-            {
-                return target != null
-                    ? _proxyGenerator.CreateClassProxyWithTarget<T>(target, interceptor)
-                    : _proxyGenerator.CreateClassProxy<T>(interceptor);
-            }
+            var interceptor = new UnifiedProxyInterceptor(logger, emoji, target).ToInterceptor();
+            return typeof(T).IsInterface
+                ? CreateInterfaceProxy<T>(target, interceptor)
+                : CreateClassProxy(target, interceptor);
         }
 
-        /// <summary>
-        /// Determines if a type can be proxied
-        /// </summary>
+        private static T CreateInterfaceProxy<T>(T? target, IInterceptor interceptor) where T : class
+        {
+            var options = new ProxyGenerationOptions();
+            var additionalInterfaces = new[] { typeof(IConstructorCalledWith) };
+
+            return target != null
+                ? (T)_proxyGenerator.CreateInterfaceProxyWithTarget(typeof(T), additionalInterfaces, target, options, interceptor)
+                : (T)_proxyGenerator.CreateInterfaceProxyWithoutTarget(typeof(T), additionalInterfaces, options, interceptor);
+        }
+
+        private static T CreateClassProxy<T>(T? target, IInterceptor interceptor) where T : class =>
+            target != null
+                ? _proxyGenerator.CreateClassProxyWithTarget(target, interceptor)
+                : _proxyGenerator.CreateClassProxy<T>(interceptor);
+
         public static bool CanCreateProxy(Type type)
         {
-            if (type.IsInterface)
-                return true;
-
-            if (type.IsSealed)
-                return false;
-
-            // For concrete classes, check if they have virtual members or accessible constructor
+            if (type.IsInterface) return true;
+            if (type.IsSealed) return false;
             return HasVirtualMembers(type) && HasAccessibleConstructor(type);
         }
 
         public static string FindInterfaceName(Type type)
         {
-            // Try to find the main interface
-            var interfaces = type.GetInterfaces();
-            var mainInterface = interfaces.FirstOrDefault(i =>
-                i.Name.StartsWith("I") && i != typeof(IConstructorCalledWith));
+            var mainInterface = type.GetInterfaces()
+                .FirstOrDefault(i => i.Name.StartsWith("I") && i != typeof(IConstructorCalledWith));
             return mainInterface?.Name ?? type.Name;
         }
 
-        private static bool HasVirtualMembers(Type type)
-        {
-            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
-            return methods.Any(m => m.IsVirtual && !m.IsFinal && m.DeclaringType != typeof(object));
-        }
+        private static bool HasVirtualMembers(Type type) =>
+            type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Any(m => m.IsVirtual && !m.IsFinal && m.DeclaringType != typeof(object));
 
-        private static bool HasAccessibleConstructor(Type type)
-        {
-            var constructors = type.GetConstructors();
-            return constructors.Any(c => c.IsPublic);
-        }
+        private static bool HasAccessibleConstructor(Type type) =>
+            type.GetConstructors().Any(c => c.IsPublic);
     }
 }
